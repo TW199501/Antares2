@@ -59,7 +59,7 @@
     "sql-highlight": "~6.1.0",
     "v-mask": "~2.3.0",
     "vue": "~3.5.32",
-    "vue-i18n": "~11.3.2",
+    "vue-i18n": "~11.2.8",
     "vuedraggable": "~4.1.0"
   },
   "devDependencies": {
@@ -88,7 +88,7 @@
     "eslint-plugin-simple-import-sort": "~10.0.0",
     "eslint-plugin-vue": "~9.33.0",
     "husky": "~9.0.11",
-    "playwright": "~1.28.1",
+    "playwright": "~1.55.1",
     "playwright-core": "~1.28.1",
     "sass": "^1.99.0",
     "standard-version": "~9.3.1",
