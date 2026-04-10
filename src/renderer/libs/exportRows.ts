@@ -1,7 +1,7 @@
 import { ClientCode } from 'common/interfaces/antares';
 import { jsonToSqlInsert } from 'common/libs/sqlUtils';
-import * as json2php from 'json2php';
-import * as moment from 'moment';
+import json2php from 'json2php';
+import moment from 'moment';
 
 export const exportRows = (args: {
    type: 'csv' | 'json'| 'sql' | 'php';

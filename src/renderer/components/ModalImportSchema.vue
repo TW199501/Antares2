@@ -71,7 +71,7 @@ const ipcRenderer = {
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IpcRendererEvent = any;
-import * as moment from 'moment';
+import moment from 'moment';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

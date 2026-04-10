@@ -104,7 +104,7 @@ const getCurrentWindow = () => ({
    webContents: { openDevTools: () => {} } as any,
    reload: () => {}
 });
-import * as moment from 'moment';
+import moment from 'moment';
 import { storeToRefs } from 'pinia';
 import { highlight } from 'sql-highlight';
 import { computed, nextTick, onMounted, Ref, ref, watch } from 'vue';
