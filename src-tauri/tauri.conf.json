@@ -15,14 +15,12 @@
          "../sidecar/node.exe": "sidecar/node.exe",
          "../sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
          "../node_modules/better-sqlite3/**/*": "node_modules/better-sqlite3/",
-         "../node_modules/node-firebird/**/*": "node_modules/node-firebird/",
          "../node_modules/ssh2/**/*": "node_modules/ssh2/",
          "../node_modules/cpu-features/**/*": "node_modules/cpu-features/",
          "../node_modules/@heroku/socksv5/**/*": "node_modules/@heroku/socksv5/",
          "../node_modules/@fabio286/ssh2-promise/**/*": "node_modules/@fabio286/ssh2-promise/",
          "../node_modules/bindings/**/*": "node_modules/bindings/",
-         "../node_modules/file-uri-to-path/**/*": "node_modules/file-uri-to-path/",
-         "../node_modules/prebuild-install/**/*": "node_modules/prebuild-install/"
+         "../node_modules/file-uri-to-path/**/*": "node_modules/file-uri-to-path/"
       },
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"]
    },

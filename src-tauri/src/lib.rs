@@ -17,6 +17,13 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![get_sidecar_port])
         .setup(|app| {
+            // Enable DevTools in all builds for debugging
+            #[cfg(debug_assertions)]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
+            }
+
             let handle = app.handle().clone();
             if let Err(e) = sidecar::spawn_server(&handle) {
                 eprintln!("Failed to spawn sidecar: {}", e);
