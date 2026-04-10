@@ -1173,6 +1173,67 @@ export class SQLServerClient extends BaseClient {
       return await this.raw(`KILL ${id}`);
    }
 
+   async destroyConnectionToCommit (tabUid: string) {
+      const transaction = this._connectionsToCommit.get(tabUid);
+      if (transaction) {
+         try { await transaction.rollback(); } catch (_) {}
+         this._connectionsToCommit.delete(tabUid);
+      }
+   }
+
+   async getDatabaseCollation (database: string) {
+      const { rows } = await this.raw(`SELECT DATABASEPROPERTYEX('${database}', 'Collation') AS collation`);
+      return rows.length ? rows[0].collation : '';
+   }
+
+   async getMaterializedViewInformations () {
+      return { rows: [] };
+   }
+
+   async dropMaterializedView () {
+      throw new Error('Materialized views are not supported in SQL Server');
+   }
+
+   async createMaterializedView () {
+      throw new Error('Materialized views are not supported in SQL Server');
+   }
+
+   async alterMaterializedView () {
+      throw new Error('Materialized views are not supported in SQL Server');
+   }
+
+   async alterTriggerFunction () {
+      throw new Error('Trigger functions are not supported in SQL Server');
+   }
+
+   async createTriggerFunction () {
+      throw new Error('Trigger functions are not supported in SQL Server');
+   }
+
+   async getEventInformations () {
+      return { rows: [] };
+   }
+
+   async dropEvent () {
+      throw new Error('Events/schedulers are not supported in SQL Server');
+   }
+
+   async alterEvent () {
+      throw new Error('Events/schedulers are not supported in SQL Server');
+   }
+
+   async createEvent () {
+      throw new Error('Events/schedulers are not supported in SQL Server');
+   }
+
+   async enableEvent () {
+      throw new Error('Events/schedulers are not supported in SQL Server');
+   }
+
+   async disableEvent () {
+      throw new Error('Events/schedulers are not supported in SQL Server');
+   }
+
    async killTabQuery (tabUid: string) {
       const request = this._runningConnections.get(tabUid);
       if (request) {
