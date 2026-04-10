@@ -1,0 +1,36 @@
+/* Colors */
+$body-bg: #f3f3f3;
+$body-bg-dark: #1d1d1d;
+$body-font-color-dark: #fff;
+$bg-color-dark: #1d1d1d;
+$bg-color-light-dark: #3f3f3f;
+$bg-color-gray: #272727;
+$bg-color-light-gray: #f1f1f1;
+$light-color: #fdfdfd;
+$primary-color: #e36929;
+$success-color: #32b643;
+$error-color: #de3b28;
+$warning-color: #e0a40c;
+
+$string-color: seagreen;
+$number-color: cornflowerblue;
+$date-color: coral;
+$bit-color: lightskyblue;
+$blob-color: darkorchid;
+$array-color: yellowgreen;
+$enum-color: goldenrod;
+$unknown-color: gray;
+
+/* Sizes */
+$border-radius: 0.3rem;
+$titlebar-height: 1.5rem;
+$settingbar-width: 3.5rem;
+$explorebar-width: 14rem;
+$footer-height: 1.5rem;
+
+@function get-excluding-size() {
+  @return $footer-height + $titlebar-height;
+}
+
+/* stylelint-disable-next-line function-no-unknown */
+$excluding-size: get-excluding-size();

@@ -1,0 +1,109 @@
+@mixin type-colors($types) {
+  @each $type, $color in $types {
+    .type-#{$type} {
+      color: $color;
+    }
+  }
+}
+
+@include type-colors(
+  (
+    "char": $string-color,
+    "varchar": $string-color,
+    "nvarchar": $string-color,
+    "longvarchar": $string-color,
+    "text": $string-color,
+    "tinytext": $string-color,
+    "mediumtext": $string-color,
+    "longtext": $string-color,
+    "string": $string-color,
+    "json": $string-color,
+    "name": $string-color,
+    "character": $string-color,
+    "character_varying": $string-color,
+    "cidr": $string-color,
+    "inet": $string-color,
+    "macaddr": $string-color,
+    "macaddr8": $string-color,
+    "uuid": $string-color,
+    "regproc": $string-color,
+    "blob-text": $string-color,
+
+    "int": $number-color,
+    "tinyint": $number-color,
+    "smallint": $number-color,
+    "mediumint": $number-color,
+    "float": $number-color,
+    "double": $number-color,
+    "decimal": $number-color,
+    "bigint": $number-color,
+    "newdecimal": $number-color,
+    "integer": $number-color,
+    "integer_unsigned": $number-color,
+    "numeric": $number-color,
+    "smallserial": $number-color,
+    "serial": $number-color,
+    "bigserial": $number-color,
+    "real": $number-color,
+    "double_precision": $number-color,
+    "oid": $number-color,
+    "xid": $number-color,
+
+    "money": $number-color,
+    "number": $number-color,
+    "datetime": $date-color,
+    "date": $date-color,
+    "time": $date-color,
+    "time_with_time_zone": $date-color,
+    "year": $date-color,
+    "timestamp": $date-color,
+    "timestamp_without_time_zone": $date-color,
+    "timestamp_with_time_zone": $date-color,
+
+    "bit": $bit-color,
+    "bit_varying": $bit-color,
+
+    "binary": $blob-color,
+    "char-binary": $blob-color,
+    "varbinary": $blob-color,
+    "blob": $blob-color,
+    "tinyblob": $blob-color,
+    "mediumblob": $blob-color,
+    "medium_blob": $blob-color,
+    "longblob": $blob-color,
+    "long_blob": $blob-color,
+    "bytea": $blob-color,
+
+    "enum": $enum-color,
+    "set": $enum-color,
+    "bool": $enum-color,
+    "boolean": $enum-color,
+
+    "interval": $array-color,
+    "array": $array-color,
+    "anyarray": $array-color,
+    "tsvector": $array-color,
+    "tsquery": $array-color,
+    "pg_node_tree": $array-color,
+    "point": $array-color,
+    "linestring": $array-color,
+    "polygon": $array-color,
+    "geometry": $array-color,
+    "multipoint": $array-color,
+    "multilinestring": $array-color,
+    "multipolygon": $array-color,
+    "geomcollection": $array-color,
+    "geometrycollection": $array-color,
+    "aclitem": $array-color,
+
+    "unknown": $unknown-color,
+  )
+);
+
+.is-null {
+  color: $unknown-color;
+
+  &::after {
+    content: "NULL";
+  }
+}

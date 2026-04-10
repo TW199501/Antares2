@@ -1,0 +1,30 @@
+name: Test end-to-end
+
+on: 
+  workflow_dispatch: {}
+  # push:
+  #   branches:
+  #       - develop
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install dependencies
+        run: npm i
+        
+      - name: Run tests
+        run: npm run test:e2e

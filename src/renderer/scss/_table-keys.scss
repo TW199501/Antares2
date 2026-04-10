@@ -1,0 +1,26 @@
+/* stylelint-disable selector-class-pattern */
+.column-key {
+  &.key-pri,
+  &.key-PRIMARY {
+    color: goldenrod;
+  }
+
+  &.key-uni,
+  &.key-UNIQUE {
+    color: deepskyblue;
+  }
+
+  &.key-mul,
+  &.key-INDEX,
+  &.key-KEY {
+    color: limegreen;
+  }
+
+  &.key-fk {
+    color: chocolate;
+  }
+
+  &.key-FULLTEXT {
+    color: mediumvioletred;
+  }
+}

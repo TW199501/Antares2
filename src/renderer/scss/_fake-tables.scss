@@ -1,0 +1,38 @@
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  border-spacing: 0;
+  display: table;
+  table-layout: fixed;
+
+  .tbody {
+    display: table-row-group;
+  }
+
+  .tr {
+    display: table-row;
+  }
+
+  /* Scollable tables */
+  &.table-scroll {
+    display: block;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .thead {
+    display: table-header-group;
+  }
+
+  .td,
+  .th {
+    padding: $unit-3 $unit-2;
+    display: table-cell;
+    border-radius: 3px;
+  }
+
+  .th {
+    border-bottom-width: $border-width-lg;
+  }
+}

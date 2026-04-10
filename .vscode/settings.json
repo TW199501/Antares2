@@ -1,0 +1,17 @@
+{
+   "conventionalCommits.scopes": [
+      "UI",
+      "core",
+      "MySQL",
+      "PostgreSQL",
+      "SQLite",
+      "Firebird SQL",
+      "Windows",
+      "translation",
+      "Linux",
+      "MacOS",
+      "deps",
+      "Flatpak"
+   ],
+   "svg.preview.background": "transparent"
+}

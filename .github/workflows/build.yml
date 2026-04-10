@@ -1,0 +1,51 @@
+name: Build & release [STABLE]
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Exit if not on master branch
+        if: contains(env.BRANCH_NAME, 'master') == false
+        run: | 
+          echo "Wrong environment ${{env.BRANCH_NAME}}"
+          exit 0
+
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+        with: 
+          ref: master
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install dependencies
+        run: | 
+          npm i
+          npm install "dmg-license" --save-optional
+        
+      - name: "Build"
+        run: npm run build
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/*.AppImage,build/*.yml,build/*.deb,build/*.dmg,build/*.blockmap,build/*.zip,build/*.exe"
+          allowUpdates: true
+          draft: true
+          generateReleaseNotes: true
