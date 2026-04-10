@@ -1,5 +1,7 @@
 mod sidecar;
 
+use tauri::Manager;
+
 #[tauri::command]
 fn get_sidecar_port() -> u16 {
     sidecar::get_port()

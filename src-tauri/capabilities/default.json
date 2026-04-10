@@ -5,11 +5,26 @@
    "permissions": [
       "core:default",
       "dialog:default",
-      "fs:default",
       "shell:default",
       "window-state:default",
       "os:default",
       "global-shortcut:default",
-      "clipboard-manager:default"
+      "clipboard-manager:default",
+      {
+         "identifier": "fs:allow-exists",
+         "allow": [{ "path": "$APPDATA/**" }]
+      },
+      {
+         "identifier": "fs:allow-mkdir",
+         "allow": [{ "path": "$APPDATA/**" }]
+      },
+      {
+         "identifier": "fs:allow-read-text-file",
+         "allow": [{ "path": "$APPDATA/**" }]
+      },
+      {
+         "identifier": "fs:allow-write-text-file",
+         "allow": [{ "path": "$APPDATA/**" }]
+      }
    ]
 }

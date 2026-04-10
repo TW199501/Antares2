@@ -472,6 +472,7 @@ const clients = [
    { name: 'MySQL', slug: 'mysql' },
    { name: 'MariaDB', slug: 'maria' },
    { name: 'PostgreSQL', slug: 'pg' },
+   { name: 'SQL Server', slug: 'mssql' },
    { name: 'SQLite', slug: 'sqlite' },
    { name: 'Firebird SQL', slug: 'firebird' }
 ];
