@@ -21,7 +21,6 @@
          "../node_modules/@fabio286/ssh2-promise/**/*": "node_modules/@fabio286/ssh2-promise/",
          "../node_modules/bindings/**/*": "node_modules/bindings/",
          "../node_modules/file-uri-to-path/**/*": "node_modules/file-uri-to-path/",
-         "../node_modules/node-addon-api/**/*": "node_modules/node-addon-api/",
          "../node_modules/prebuild-install/**/*": "node_modules/prebuild-install/"
       },
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"]
