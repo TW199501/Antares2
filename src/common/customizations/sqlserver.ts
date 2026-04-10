@@ -1,4 +1,4 @@
-import { Customizations } from 'common/interfaces/customizations';
+import { Customizations } from '../interfaces/customizations';
 import { defaults } from './defaults';
 import sqlServerTypes from '../data-types/sqlserver';
 
