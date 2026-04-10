@@ -21,7 +21,15 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     // Set NODE_PATH so external requires can find modules
     let node_modules = resource_dir.join("node_modules");
 
-    let mut child = StdCommand::new("node")
+    // Use bundled node.exe, not system node
+    let node_exe = resource_dir.join("sidecar").join("node.exe");
+    let node_bin = if node_exe.exists() {
+        node_exe.to_string_lossy().to_string()
+    } else {
+        "node".to_string() // fallback to system node in dev mode
+    };
+
+    let mut child = StdCommand::new(&node_bin)
         .arg(server_js.to_string_lossy().to_string())
         .env("NODE_PATH", node_modules.to_string_lossy().to_string())
         .stdout(Stdio::piped())

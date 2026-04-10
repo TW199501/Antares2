@@ -12,6 +12,7 @@
       "active": true,
       "targets": ["nsis"],
       "resources": {
+         "../sidecar/node.exe": "sidecar/node.exe",
          "../sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
          "../node_modules/better-sqlite3/**/*": "node_modules/better-sqlite3/",
          "../node_modules/node-firebird/**/*": "node_modules/node-firebird/",
