@@ -100,6 +100,7 @@
     "eslint-plugin-simple-import-sort": "~10.0.0",
     "eslint-plugin-vue": "~8.0.3",
     "husky": "~9.0.11",
+    "pkg": "^5.8.1",
     "playwright": "~1.28.1",
     "playwright-core": "~1.28.1",
     "standard-version": "~9.3.1",
