@@ -11,7 +11,8 @@ export function getSidecarPort (): number {
 }
 
 export async function apiCall<T = unknown> (path: string, params?: unknown): Promise<T> {
-   const baseUrl = `http://127.0.0.1:${sidecarPort.value}`;
+   const port = sidecarPort.value || 5555;
+   const baseUrl = `http://127.0.0.1:${port}`;
    const res = await fetch(`${baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
