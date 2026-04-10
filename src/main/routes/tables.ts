@@ -9,14 +9,19 @@ import * as moment from 'moment';
 
 import { getConnections } from './connection';
 
+function requireConnection (uid: string) {
+   const conn = getConnections()[uid];
+   if (!conn) throw new Error(`No active connection for uid "${uid}". The server may have restarted — please reconnect.`);
+   return conn;
+}
+
 export default async function tableRoutes (app: FastifyInstance) {
    // POST /api/tables/getColumns
    app.post('/api/tables/getColumns', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getTableColumns(params);
+         const result = await requireConnection(params.uid).getTableColumns(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -26,12 +31,11 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getData
    app.post('/api/tables/getData', async (request) => {
-      const connections = getConnections();
       const { uid, schema, table, limit, page, sortParams, where } = request.body as any;
 
       try {
          const offset = (page - 1) * limit;
-         const query = connections[uid]
+         const query = requireConnection(uid)
             .select('*')
             .schema(schema)
             .from(table)
@@ -55,11 +59,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getCount
    app.post('/api/tables/getCount', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getTableApproximateCount(params);
+         const result = await requireConnection(params.uid).getTableApproximateCount(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -69,11 +72,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getOptions
    app.post('/api/tables/getOptions', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getTableOptions(params);
+         const result = await requireConnection(params.uid).getTableOptions(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -83,11 +85,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getIndexes
    app.post('/api/tables/getIndexes', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getTableIndexes(params);
+         const result = await requireConnection(params.uid).getTableIndexes(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -97,11 +98,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getChecks
    app.post('/api/tables/getChecks', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getTableChecks(params);
+         const result = await requireConnection(params.uid).getTableChecks(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -111,11 +111,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getDdl
    app.post('/api/tables/getDdl', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getTableDll(params);
+         const result = await requireConnection(params.uid).getTableDll(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -125,11 +124,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getKeyUsage
    app.post('/api/tables/getKeyUsage', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const result = await connections[params.uid].getKeyUsage(params);
+         const result = await requireConnection(params.uid).getKeyUsage(params);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -139,11 +137,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/updateCell
    app.post('/api/tables/updateCell', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       delete params.row._antares_id;
-      const { stringsWrapper: sw } = customizations[connections[params.uid]._client];
+      const { stringsWrapper: sw } = customizations[requireConnection(params.uid)._client];
 
       try {
          let escapedParam;
@@ -153,7 +150,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          if ([...NUMBER, ...FLOAT].includes(params.type))
             escapedParam = params.content;
          else if ([...TEXT, ...LONG_TEXT].includes(params.type)) {
-            switch (connections[params.uid]._client) {
+            switch (requireConnection(params.uid)._client) {
                case 'mysql':
                case 'maria':
                   escapedParam = `"${sqlEscaper(params.content)}"`;
@@ -173,7 +170,7 @@ export default async function tableRoutes (app: FastifyInstance) {
             if (params.content) {
                let fileBlob;
 
-               switch (connections[params.uid]._client) {
+               switch (requireConnection(params.uid)._client) {
                   case 'mysql':
                   case 'maria':
                      fileBlob = fs.readFileSync(params.content);
@@ -192,7 +189,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                reload = true;
             }
             else {
-               switch (connections[params.uid]._client) {
+               switch (requireConnection(params.uid)._client) {
                   case 'mysql':
                   case 'maria':
                      escapedParam = '\'\'';
@@ -212,7 +209,7 @@ export default async function tableRoutes (app: FastifyInstance) {
             reload = true;
          }
          else if (BOOLEAN.includes(params.type)) {
-            switch (connections[params.uid]._client) {
+            switch (requireConnection(params.uid)._client) {
                case 'mysql':
                case 'maria':
                case 'pg':
@@ -230,7 +227,7 @@ export default async function tableRoutes (app: FastifyInstance) {
             escapedParam = `'${sqlEscaper(params.content)}'`;
 
          if (params.primary) {
-            await connections[params.uid]
+            await requireConnection(params.uid)
                .update({ [params.field]: `= ${escapedParam}` })
                .schema(params.schema)
                .from(params.table)
@@ -248,14 +245,14 @@ export default async function tableRoutes (app: FastifyInstance) {
                if (typeof orgRow[key] === 'string')
                   orgRow[key] = ` = '${sqlEscaper(orgRow[key])}'`;
                else if (typeof orgRow[key] === 'object' && orgRow[key] !== null)
-                  orgRow[key] = formatJsonForSqlWhere(orgRow[key], connections[params.uid]._client);
+                  orgRow[key] = formatJsonForSqlWhere(orgRow[key], requireConnection(params.uid)._client);
                else if (orgRow[key] === null)
                   orgRow[key] = `IS ${orgRow[key]}`;
                else
                   orgRow[key] = `= ${orgRow[key]}`;
             }
 
-            await connections[params.uid]
+            await requireConnection(params.uid)
                .schema(params.schema)
                .update({ [params.field]: `= ${escapedParam}` })
                .from(params.table)
@@ -273,7 +270,6 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/deleteRows
    app.post('/api/tables/deleteRows', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       if (params.primary) {
@@ -286,7 +282,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          }).join(',');
 
          try {
-            const result: unknown = await connections[params.uid]
+            const result: unknown = await requireConnection(params.uid)
                .schema(params.schema)
                .delete(params.table)
                .where({ [params.primary]: `IN (${idString})` })
@@ -312,7 +308,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                      row[key] = `= ${row[key]}`;
                }
 
-               await connections[params.uid]
+               await requireConnection(params.uid)
                   .schema(params.schema)
                   .delete(params.table)
                   .where(row)
@@ -330,7 +326,6 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/insertFakeRows
    app.post('/api/tables/insertFakeRows', async (request) => {
-      const connections = getConnections();
       const params = request.body as any as InsertRowsParams;
 
       try {
@@ -349,7 +344,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                   else if ([...NUMBER, ...FLOAT].includes(type))
                      escapedParam = params.row[key].value;
                   else if ([...TEXT, ...LONG_TEXT].includes(type)) {
-                     switch (connections[params.uid]._client) {
+                     switch (requireConnection(params.uid)._client) {
                         case 'mysql':
                         case 'maria':
                            escapedParam = `"${sqlEscaper(params.row[key].value)}"`;
@@ -365,7 +360,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                      if (params.row[key].value) {
                         let fileBlob;
 
-                        switch (connections[params.uid]._client) {
+                        switch (requireConnection(params.uid)._client) {
                            case 'mysql':
                            case 'maria':
                               fileBlob = fs.readFileSync(params.row[key].value);
@@ -378,7 +373,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                         }
                      }
                      else {
-                        switch (connections[params.uid]._client) {
+                        switch (requireConnection(params.uid)._client) {
                            case 'mysql':
                            case 'maria':
                               escapedParam = '""';
@@ -417,7 +412,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                      if (params.row[key].length)
                         fakeValue = fakeValue.substring(0, params.row[key].length);
 
-                     switch (connections[params.uid]._client) {
+                     switch (requireConnection(params.uid)._client) {
                         case 'mysql':
                         case 'maria':
                            fakeValue = `'${sqlEscaper(fakeValue)}'`;
@@ -439,7 +434,7 @@ export default async function tableRoutes (app: FastifyInstance) {
             rows.push(insertObj);
          }
 
-         await connections[params.uid]
+         await requireConnection(params.uid)
             .schema(params.schema)
             .into(params.table)
             .insert(rows)
@@ -454,12 +449,11 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/getForeignList
    app.post('/api/tables/getForeignList', async (request) => {
-      const connections = getConnections();
       const { uid, schema, table, column, description } = request.body as any;
-      const { elementsWrapper: ew } = customizations[connections[uid]._client];
+      const { elementsWrapper: ew } = customizations[requireConnection(uid)._client];
 
       try {
-         const query = connections[uid]
+         const query = requireConnection(uid)
             .select(`${ew}${column}${ew} AS foreign_column`)
             .schema(schema)
             .from(table)
@@ -492,11 +486,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/create
    app.post('/api/tables/create', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].createTable(params);
+         await requireConnection(params.uid).createTable(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -506,11 +499,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/alter
    app.post('/api/tables/alter', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].alterTable(params);
+         await requireConnection(params.uid).alterTable(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -520,11 +512,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/duplicate
    app.post('/api/tables/duplicate', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].duplicateTable(params);
+         await requireConnection(params.uid).duplicateTable(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -534,11 +525,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/truncate
    app.post('/api/tables/truncate', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].truncateTable(params);
+         await requireConnection(params.uid).truncateTable(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -548,11 +538,10 @@ export default async function tableRoutes (app: FastifyInstance) {
 
    // POST /api/tables/drop
    app.post('/api/tables/drop', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].dropTable(params);
+         await requireConnection(params.uid).dropTable(params);
          return { status: 'success' };
       }
       catch (err) {

@@ -26,9 +26,33 @@ async function initSidecar () {
       const existingPort = await invoke<number>('get_sidecar_port');
       if (existingPort > 0) setSidecarPort(existingPort);
 
-      // Listen for future sidecar-ready events
-      await listen<number>('sidecar-ready', (event) => {
+      let isFirstSidecarReady = existingPort === 0;
+
+      // Listen for future sidecar-ready events (also fires on sidecar restart)
+      await listen<number>('sidecar-ready', async (event) => {
          setSidecarPort(event.payload);
+
+         // Skip the very first ready event (handled by existingPort above)
+         if (isFirstSidecarReady) {
+            isFirstSidecarReady = false;
+            return;
+         }
+
+         // Sidecar restarted — reconnect any workspaces that were connected
+         const { useWorkspacesStore } = await import('@/stores/workspaces');
+         const { useConnectionsStore } = await import('@/stores/connections');
+         const workspacesStore = useWorkspacesStore();
+         const connectionsStore = useConnectionsStore();
+
+         const connectedUids = workspacesStore.workspaces
+            .filter((w: { connectionStatus: string }) => w.connectionStatus === 'connected')
+            .map((w: { uid: string }) => w.uid);
+
+         for (const uid of connectedUids) {
+            const connection = connectionsStore.getConnectionByUid(uid);
+            if (connection)
+               workspacesStore.connectWorkspace(connection);
+         }
       });
    }
    catch {
