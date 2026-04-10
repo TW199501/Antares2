@@ -143,7 +143,16 @@ export class SQLServerClient extends BaseClient {
       }
       /* eslint-enable camelcase */
 
-      const { rows: databases } = await this.raw<antares.QueryResult<{ schema_name: string }>>('SELECT schema_name FROM information_schema.schemata ORDER BY schema_name');
+      const { rows: databases } = await this.raw<antares.QueryResult<{ schema_name: string }>>(`
+         SELECT s.name AS schema_name
+         FROM sys.schemas s
+         INNER JOIN sys.tables t ON t.schema_id = s.schema_id
+         UNION
+         SELECT s.name AS schema_name
+         FROM sys.schemas s
+         INNER JOIN sys.views v ON v.schema_id = s.schema_id
+         ORDER BY schema_name
+      `);
       const { rows: functions } = await this.raw<antares.QueryResult>(`
          SELECT routine_name, routine_schema, routine_type
          FROM information_schema.routines
