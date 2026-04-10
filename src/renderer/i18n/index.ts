@@ -51,7 +51,8 @@ type NestedPartial<T> = {
 export type MessageSchema = typeof enUS
 export type AvailableLocale = keyof typeof messages
 
-const i18n = createI18n<[NestedPartial<MessageSchema>], AvailableLocale>({
+const i18n = createI18n<[NestedPartial<MessageSchema>], AvailableLocale, false>({
+   legacy: false,
    fallbackLocale: 'en-US',
    silentTranslationWarn: true,
    silentFallbackWarn: true,
