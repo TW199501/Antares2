@@ -13,18 +13,6 @@ export class SQLServerClient extends BaseClient {
    private _connectionsToCommit: Map<string, mssql.Transaction>;
    protected _connection?: mssql.ConnectionPool;
 
-   _params: {
-      host: string;
-      port: number;
-      user: string;
-      password: string;
-      database?: string;
-      schema?: string;
-      ssl?: boolean;
-      ssh?: SSHConfig;
-      readonly: boolean;
-   };
-
    constructor (args: antares.ClientParams) {
       super(args);
 
