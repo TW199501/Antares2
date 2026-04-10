@@ -48,6 +48,7 @@ import { createApp } from 'vue';
 import App from '@/App.vue';
 import { i18n } from '@/i18n';
 import { useApplicationStore } from '@/stores/application';
+import { useConnectionsStore } from '@/stores/connections';
 import { QueryLog, useConsoleStore } from '@/stores/console';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
@@ -63,17 +64,25 @@ const vMaskV3 = {
 // Initialize sidecar, then mount app
 const pinia = createPinia();
 
-function mountApp () {
+async function mountApp () {
    const app = createApp(App);
    app.directive('mask', vMaskV3);
    app.use(pinia);
    app.use(i18n);
    app.use(FloatingVue);
+
+   // Load persisted data before mounting
+   const connectionsStore = useConnectionsStore();
+   const settingsStore = useSettingsStore();
+   await Promise.all([
+      connectionsStore.init(),
+      settingsStore.init()
+   ]);
+
    app.mount('#app');
 
    // Set locale from persisted settings
-   const { locale } = useSettingsStore();
-   i18n.global.locale = locale;
+   i18n.global.locale = settingsStore.locale;
 }
 
 initSidecar()
