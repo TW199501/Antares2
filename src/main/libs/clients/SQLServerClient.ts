@@ -1134,16 +1134,18 @@ export class SQLServerClient extends BaseClient {
    async getProcesses () {
       const sql = `
          SELECT
-            session_id AS pid,
-            login_name AS usename,
-            client_net_address AS client_addr,
-            DB_NAME(database_id) AS datname,
-            program_name AS application_name,
-            DATEDIFF(SECOND, last_request_start_time, GETDATE()) AS elapsed_seconds,
-            status,
-            (SELECT text FROM sys.dm_exec_sql_text(most_recent_sql_handle)) AS query
-         FROM sys.dm_exec_sessions
-         WHERE is_user_process = 1
+            s.session_id AS pid,
+            s.login_name AS usename,
+            c.client_net_address AS client_addr,
+            DB_NAME(s.database_id) AS datname,
+            s.program_name AS application_name,
+            DATEDIFF(SECOND, s.last_request_start_time, GETDATE()) AS elapsed_seconds,
+            s.status,
+            t.text AS query
+         FROM sys.dm_exec_sessions s
+         LEFT JOIN sys.dm_exec_connections c ON s.session_id = c.session_id
+         OUTER APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t
+         WHERE s.is_user_process = 1
       `;
 
       const { rows } = await this.raw(sql);

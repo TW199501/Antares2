@@ -72,7 +72,8 @@ export default async function schemaRoutes (app: FastifyInstance) {
       const params = request.body as any;
 
       try {
-         const structure: unknown = await connections[params.uid].getStructure(params.schemas);
+         const schemas = new Set(params.schemas as string[]);
+         const structure: unknown = await connections[params.uid].getStructure(schemas);
          return { status: 'success', response: structure };
       }
       catch (err) {

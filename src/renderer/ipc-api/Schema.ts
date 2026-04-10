@@ -21,16 +21,9 @@ export default class {
       return apiCall('/api/schema/delete', params);
    }
 
-   static getStructure (params: { uid: string; schemas: Set<string> }): Promise<IpcResponse/* <{
-      name: string;
-      size: number;
-      tables: TableInfos[];
-      functions: RoutineInfos[];
-      procedures: RoutineInfos[];
-      triggers: TriggerInfos[];
-      schedulers: EventInfos[];
-   }[]> */> {
-      return apiCall('/api/schema/getStructure', params);
+   static getStructure (params: { uid: string; schemas: Set<string> }): Promise<IpcResponse> {
+      // Convert Set to Array for JSON serialization
+      return apiCall('/api/schema/getStructure', { ...params, schemas: Array.from(params.schemas) });
    }
 
    static getCollations (uid: string): Promise<IpcResponse/* <{
