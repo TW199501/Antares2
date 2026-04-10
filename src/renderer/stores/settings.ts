@@ -1,103 +1,147 @@
 import { ShortcutRecord } from 'common/shortcuts';
-import { ipcRenderer } from 'electron';
-import * as Store from 'electron-store';
 import { defineStore } from 'pinia';
 
 import { AvailableLocale, i18n } from '@/i18n';
-
-const settingsStore = new Store({ name: 'settings' });
-const shortcutsStore = new Store({ name: 'shortcuts' });
-const isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)');
-const defaultAppTheme = isDarkTheme.matches ? 'dark' : 'light';
-const defaultEditorTheme = isDarkTheme.matches ? 'twilight' : 'sqlserver';
+import { loadStore, saveStore } from '@/libs/persistStore';
 
 export type EditorFontSize = 'xsmall' | 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 export type ApplicationTheme = 'light' | 'dark';
 
+const isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)');
+const defaultAppTheme = isDarkTheme.matches ? 'dark' : 'light';
+const defaultEditorTheme = isDarkTheme.matches ? 'twilight' : 'sqlserver';
+
 export const useSettingsStore = defineStore('settings', {
    state: () => ({
-      locale: settingsStore.get('locale', 'en-US') as AvailableLocale,
-      allowPrerelease: settingsStore.get('allow_prerelease', false) as boolean,
-      explorebarSize: settingsStore.get('explorebar_size', null) as number,
-      notificationsTimeout: settingsStore.get('notifications_timeout', 5) as number,
-      showTableSize: settingsStore.get('show_table_size', false) as boolean,
-      dataTabLimit: settingsStore.get('data_tab_limit', 1000) as number,
-      autoComplete: settingsStore.get('auto_complete', true) as boolean,
-      lineWrap: settingsStore.get('line_wrap', true) as boolean,
-      executeSelected: settingsStore.get('execute_selected', true) as boolean,
-      applicationTheme: settingsStore.get('application_theme', defaultAppTheme) as ApplicationTheme,
-      editorTheme: settingsStore.get('editor_theme', defaultEditorTheme) as string,
-      editorFontSize: settingsStore.get('editor_font_size', 'medium') as EditorFontSize,
-      restoreTabs: settingsStore.get('restore_tabs', true) as boolean,
-      disableBlur: settingsStore.get('disable_blur', false) as boolean,
-      shortcuts: shortcutsStore.get('shortcuts', []) as ShortcutRecord[],
-      defaultCopyType: settingsStore.get('default_copy_type', 'cell') as string
+      locale: 'en-US' as AvailableLocale,
+      allowPrerelease: false as boolean,
+      explorebarSize: null as number,
+      notificationsTimeout: 5 as number,
+      showTableSize: false as boolean,
+      dataTabLimit: 1000 as number,
+      autoComplete: true as boolean,
+      lineWrap: true as boolean,
+      executeSelected: true as boolean,
+      applicationTheme: defaultAppTheme as ApplicationTheme,
+      editorTheme: defaultEditorTheme as string,
+      editorFontSize: 'medium' as EditorFontSize,
+      restoreTabs: true as boolean,
+      disableBlur: false as boolean,
+      shortcuts: [] as ShortcutRecord[],
+      defaultCopyType: 'cell' as string,
+      _loaded: false
    }),
    actions: {
+      async init () {
+         const settings = await loadStore('settings', {}) as Record<string, any>;
+         const shortcuts = await loadStore('shortcuts', {}) as Record<string, any>;
+
+         if (settings.locale !== undefined) this.locale = settings.locale;
+         if (settings.allow_prerelease !== undefined) this.allowPrerelease = settings.allow_prerelease;
+         if (settings.explorebar_size !== undefined) this.explorebarSize = settings.explorebar_size;
+         if (settings.notifications_timeout !== undefined) this.notificationsTimeout = settings.notifications_timeout;
+         if (settings.show_table_size !== undefined) this.showTableSize = settings.show_table_size;
+         if (settings.data_tab_limit !== undefined) this.dataTabLimit = settings.data_tab_limit;
+         if (settings.auto_complete !== undefined) this.autoComplete = settings.auto_complete;
+         if (settings.line_wrap !== undefined) this.lineWrap = settings.line_wrap;
+         if (settings.execute_selected !== undefined) this.executeSelected = settings.execute_selected;
+         if (settings.application_theme !== undefined) this.applicationTheme = settings.application_theme;
+         if (settings.editor_theme !== undefined) this.editorTheme = settings.editor_theme;
+         if (settings.editor_font_size !== undefined) this.editorFontSize = settings.editor_font_size;
+         if (settings.restore_tabs !== undefined) this.restoreTabs = settings.restore_tabs;
+         if (settings.disable_blur !== undefined) this.disableBlur = settings.disable_blur;
+         if (settings.default_copy_type !== undefined) this.defaultCopyType = settings.default_copy_type;
+         if (shortcuts.shortcuts !== undefined) this.shortcuts = shortcuts.shortcuts;
+
+         this._loaded = true;
+      },
+      async persistSettings () {
+         await saveStore('settings', {
+            locale: this.locale,
+            allow_prerelease: this.allowPrerelease,
+            explorebar_size: this.explorebarSize,
+            notifications_timeout: this.notificationsTimeout,
+            show_table_size: this.showTableSize,
+            data_tab_limit: this.dataTabLimit,
+            auto_complete: this.autoComplete,
+            line_wrap: this.lineWrap,
+            execute_selected: this.executeSelected,
+            application_theme: this.applicationTheme,
+            editor_theme: this.editorTheme,
+            editor_font_size: this.editorFontSize,
+            restore_tabs: this.restoreTabs,
+            disable_blur: this.disableBlur,
+            default_copy_type: this.defaultCopyType
+         });
+      },
+      async persistShortcuts () {
+         await saveStore('shortcuts', { shortcuts: this.shortcuts });
+      },
       changeLocale (locale: AvailableLocale) {
          this.locale = locale;
          i18n.global.locale = locale;
-         settingsStore.set('locale', this.locale);
+         this.persistSettings();
       },
       changePageSize (limit: number) {
          this.dataTabLimit = limit;
-         settingsStore.set('data_tab_limit', this.dataTabLimit);
+         this.persistSettings();
       },
       changeAllowPrerelease (allow: boolean) {
          this.allowPrerelease = allow;
-         settingsStore.set('allow_prerelease', this.allowPrerelease);
+         this.persistSettings();
       },
       updateNotificationsTimeout (timeout: number) {
          this.notificationsTimeout = timeout;
-         settingsStore.set('notifications_timeout', this.notificationsTimeout);
+         this.persistSettings();
       },
       changeShowTableSize (show: boolean) {
          this.showTableSize = show;
-         settingsStore.set('show_table_size', this.showTableSize);
+         this.persistSettings();
       },
       changeExplorebarSize (size: number) {
          this.explorebarSize = size;
-         settingsStore.set('explorebar_size', this.explorebarSize);
+         this.persistSettings();
       },
       changeAutoComplete (val: boolean) {
          this.autoComplete = val;
-         settingsStore.set('auto_complete', this.autoComplete);
+         this.persistSettings();
       },
       changeLineWrap (val: boolean) {
          this.lineWrap = val;
-         settingsStore.set('line_wrap', this.lineWrap);
+         this.persistSettings();
       },
       changeExecuteSelected (val: boolean) {
          this.executeSelected = val;
-         settingsStore.set('execute_selected', this.executeSelected);
+         this.persistSettings();
       },
       changeApplicationTheme (theme: string) {
          this.applicationTheme = theme;
-         settingsStore.set('application_theme', this.applicationTheme);
-         ipcRenderer.send('refresh-theme-settings');
+         this.persistSettings();
+         // NOTE: ipcRenderer.send('refresh-theme-settings') removed — Electron-only
       },
       changeEditorTheme (theme: string) {
          this.editorTheme = theme;
-         settingsStore.set('editor_theme', this.editorTheme);
+         this.persistSettings();
       },
       changeEditorFontSize (size: EditorFontSize) {
          this.editorFontSize = size;
-         settingsStore.set('editor_font_size', this.editorFontSize);
+         this.persistSettings();
       },
       changeRestoreTabs (val: boolean) {
          this.restoreTabs = val;
-         settingsStore.set('restore_tabs', this.restoreTabs);
+         this.persistSettings();
       },
       changeDisableBlur (val: boolean) {
          this.disableBlur = val;
-         settingsStore.set('disable_blur', this.disableBlur);
+         this.persistSettings();
       },
       updateShortcuts (shortcuts: ShortcutRecord[]) {
          this.shortcuts = shortcuts;
+         this.persistShortcuts();
       },
       changeDefaultCopyType (type: string) {
          this.defaultCopyType = type;
-         settingsStore.set('default_copy_type', this.defaultCopyType);
+         this.persistSettings();
       }
    }
 });

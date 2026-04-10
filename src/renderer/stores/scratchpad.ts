@@ -1,5 +1,6 @@
-import * as Store from 'electron-store';
 import { defineStore } from 'pinia';
+
+import { loadStore, saveStore } from '@/libs/persistStore';
 
 export type TagCode = 'all' | 'note' | 'todo' | 'query'
 
@@ -13,43 +14,54 @@ export interface ConnectionNote {
    date: Date;
 }
 
-const persistentStore = new Store({ name: 'notes' });
-
-// Migrate old scratchpad on new notes TODO: remove in future releases
-const oldNotes = persistentStore.get('notes') as string;
-if (oldNotes) {
-   const newNotes = persistentStore.get('connectionNotes', []) as ConnectionNote[];
-   newNotes.unshift({
-      uid: 'N:LEGACY',
-      cUid: null,
-      isArchived: false,
-      type: 'note',
-      note: oldNotes,
-      date: new Date()
-   });
-
-   persistentStore.delete('notes');
-
-   persistentStore.set('connectionNotes', newNotes);
-}
-
 export const useScratchpadStore = defineStore('scratchpad', {
    state: () => ({
       selectedTag: 'all',
       /** Connection specific notes */
-      connectionNotes: persistentStore.get('connectionNotes', []) as ConnectionNote[]
+      connectionNotes: [] as ConnectionNote[],
+      _loaded: false
    }),
    actions: {
+      async init () {
+         const data = await loadStore('notes', {}) as Record<string, any>;
+
+         // Migrate old scratchpad (plain string) to new connectionNotes format
+         // TODO: remove in future releases
+         if (data.notes && typeof data.notes === 'string') {
+            const legacyNote: ConnectionNote = {
+               uid: 'N:LEGACY',
+               cUid: null,
+               isArchived: false,
+               type: 'note',
+               note: data.notes,
+               date: new Date()
+            };
+            const notes: ConnectionNote[] = data.connectionNotes ? [legacyNote, ...data.connectionNotes] : [legacyNote];
+            this.connectionNotes = notes;
+            // Save migrated state (without the old 'notes' key)
+            await saveStore('notes', { connectionNotes: notes });
+         }
+         else {
+            this.connectionNotes = data.connectionNotes ?? [];
+         }
+
+         this._loaded = true;
+      },
+      async persist () {
+         await saveStore('notes', {
+            connectionNotes: this.connectionNotes
+         });
+      },
       changeNotes (notes: ConnectionNote[]) {
          this.connectionNotes = notes;
-         persistentStore.set('connectionNotes', this.connectionNotes);
+         this.persist();
       },
       addNote (note: ConnectionNote) {
          this.connectionNotes = [
             note,
             ...this.connectionNotes
          ];
-         persistentStore.set('connectionNotes', this.connectionNotes);
+         this.persist();
       },
       editNote (note: ConnectionNote) {
          this.connectionNotes = (this.connectionNotes as ConnectionNote[]).map(n => {
@@ -58,7 +70,7 @@ export const useScratchpadStore = defineStore('scratchpad', {
 
             return n;
          });
-         persistentStore.set('connectionNotes', this.connectionNotes);
+         this.persist();
       }
    }
 });

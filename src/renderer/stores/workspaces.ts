@@ -13,12 +13,12 @@ import {
 } from 'common/interfaces/antares';
 import { Customizations } from 'common/interfaces/customizations';
 import { uidGen } from 'common/libs/uidGen';
-import * as Store from 'electron-store';
 import { defineStore } from 'pinia';
 
 import Connection from '@/ipc-api/Connection';
 import Schema from '@/ipc-api/Schema';
 import Users from '@/ipc-api/Users';
+import { loadStore, saveStore } from '@/libs/persistStore';
 import { useConnectionsStore } from '@/stores/connections';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
@@ -90,8 +90,15 @@ export interface Workspace {
    engines?: Record<string, string | boolean | number>[];
 }
 
-const persistentStore = new Store({ name: 'tabs' });
 const tabIndex: Record<string, number> = {};
+
+async function saveTabsForConnection (uid: string, tabs: WorkspaceTab[]) {
+   await saveStore(`tabs_${uid}`, tabs);
+}
+
+async function loadTabsForConnection (uid: string): Promise<WorkspaceTab[]> {
+   return await loadStore(`tabs_${uid}`, []) as WorkspaceTab[];
+}
 
 export const useWorkspacesStore = defineStore('workspaces', {
    state: () => ({
@@ -240,7 +247,7 @@ export const useWorkspacesStore = defineStore('workspaces', {
                         connectionsStore.editConnection(connProxy);
                      }
 
-                     const cachedTabs: WorkspaceTab[] = settingsStore.restoreTabs ? persistentStore.get(connection.uid, []) as WorkspaceTab[] : [];
+                     const cachedTabs: WorkspaceTab[] = settingsStore.restoreTabs ? await loadTabsForConnection(connection.uid) : [];
 
                      if (cachedTabs.length) {
                         tabIndex[connection.uid] = cachedTabs.reduce((acc: number, curr) => {
@@ -544,7 +551,8 @@ export const useWorkspacesStore = defineStore('workspaces', {
                return workspace;
          });
 
-         persistentStore.set(uid, (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs);
+         const tabs = (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs;
+         saveTabsForConnection(uid, tabs);
       },
       _replaceTab ({ uid, tab: tUid, type, schema, content, elementName, elementType, filePath }: WorkspaceTab) {
          this.workspaces = (this.workspaces as Workspace[]).map(workspace => {
@@ -572,7 +580,8 @@ export const useWorkspacesStore = defineStore('workspaces', {
                return workspace;
          });
 
-         persistentStore.set(uid, (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs);
+         const tabs = (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs;
+         saveTabsForConnection(uid, tabs);
       },
       newTab ({ uid, content, type, autorun, schema, elementName, elementType, filePath }: WorkspaceTab) {
          let tabUid;
@@ -785,7 +794,8 @@ export const useWorkspacesStore = defineStore('workspaces', {
                return workspace;
          });
 
-         persistentStore.set(uid, (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs);
+         const tabs = (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs;
+         saveTabsForConnection(uid, tabs);
       },
       removeTab ({ uid, tab: tUid }: {uid: string; tab: string}) {
          this.workspaces = (this.workspaces as Workspace[]).map(workspace => {
@@ -799,7 +809,8 @@ export const useWorkspacesStore = defineStore('workspaces', {
                return workspace;
          });
 
-         persistentStore.set(uid, (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs);
+         const tabs = (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs;
+         saveTabsForConnection(uid, tabs);
          this.checkSelectedTabExists(uid);
       },
       removeTabs ({ uid, schema, elementName, elementType }: WorkspaceTab) { // Multiple tabs based on schema and element name
@@ -820,7 +831,8 @@ export const useWorkspacesStore = defineStore('workspaces', {
                return workspace;
          });
 
-         persistentStore.set(uid, (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs);
+         const tabs = (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs;
+         saveTabsForConnection(uid, tabs);
          this.checkSelectedTabExists(uid);
       },
       selectTab ({ uid, tab }: {uid: string; tab: string}) {
@@ -854,7 +866,8 @@ export const useWorkspacesStore = defineStore('workspaces', {
             ? { ...workspace, tabs }
             : workspace
          );
-         persistentStore.set(uid, (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs);
+         const updatedTabs = (this.workspaces as Workspace[]).find(workspace => workspace.uid === uid).tabs;
+         saveTabsForConnection(uid, updatedTabs);
       },
       setUnsavedChanges ({ uid, tUid, isChanged }: { uid: string; tUid: string; isChanged: boolean }) {
          this.workspaces = (this.workspaces as Workspace[]).map(workspace => {

@@ -1,17 +1,18 @@
 import { Ace } from 'ace-builds';
-import * as Store from 'electron-store';
 import { defineStore, storeToRefs } from 'pinia';
+
+import { loadStore, saveStore } from '@/libs/persistStore';
 
 import { useScratchpadStore } from './scratchpad';
 
-const persistentStore = new Store({ name: 'settings' });
 export type UpdateStatus = 'noupdate' | 'available' | 'checking' | 'nocheck' | 'downloading' | 'downloaded' | 'disabled' | 'link';
 
 export const useApplicationStore = defineStore('application', {
    state: () => ({
       appName: 'Antares - SQL Client',
       appVersion: process.env.PACKAGE_VERSION || '0',
-      cachedVersion: persistentStore.get('cached_version', '0') as string,
+      cachedVersion: '0' as string,
+      // Non-persisted state (UI/runtime only)
       isLoading: false,
       isNewModal: false,
       isSettingModal: false,
@@ -26,11 +27,21 @@ export const useApplicationStore = defineStore('application', {
       getDownloadProgress: state => Number(state.downloadProgress.toFixed(1))
    },
    actions: {
+      async init () {
+         // Only persist cachedVersion — all other state is runtime/UI only
+         const data = await loadStore('settings', {}) as Record<string, any>;
+         if (data.cached_version !== undefined) this.cachedVersion = data.cached_version;
+      },
+      async persistCachedVersion () {
+         // Merge into settings store file (same store name as settings.ts uses)
+         const existing = await loadStore('settings', {}) as Record<string, any>;
+         await saveStore('settings', { ...existing, cached_version: this.cachedVersion });
+      },
       checkVersionUpdate () {
          if (this.appVersion !== this.cachedVersion) {
             this.showSettingModal('changelog');
             this.cachedVersion = this.appVersion;
-            persistentStore.set('cached_version', this.cachedVersion);
+            this.persistCachedVersion();
          }
       },
       setLoadingStatus (payload: boolean) {

@@ -1,16 +1,16 @@
 import { ConnectionParams } from 'common/interfaces/antares';
 import { uidGen } from 'common/libs/uidGen';
-import * as crypto from 'crypto';
-import { ipcRenderer } from 'electron';
-import * as Store from 'electron-store';
 import { defineStore } from 'pinia';
 
 import { i18n } from '@/i18n';
+import { loadStore, saveStore } from '@/libs/persistStore';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 import { useNotificationsStore } from './notifications';
 
-let key = localStorage.getItem('key');
+// TODO: Add encryption via sidecar endpoint
+// NOTE: electron.safeStorage encryption has been removed for Tauri migration.
+// Connections are currently stored in plaintext in localStorage / AppData file.
 
 export interface SidebarElement {
    isFolder: boolean;
@@ -25,35 +25,13 @@ export interface SidebarElement {
 
 export interface CustomIcon {base64: string; uid: string}
 
-if (!key) { // If no key in local storage
-   const storedKey = ipcRenderer.sendSync('get-key');// Ask for key stored on disk
-
-   if (!storedKey) { // If not stored key on disk
-      const newKey = crypto.randomBytes(16).toString('hex');
-      localStorage.setItem('key', newKey);
-      ipcRenderer.send('set-key', newKey);
-      key = newKey;
-   }
-   else {
-      localStorage.setItem('key', storedKey);
-      key = storedKey;
-   }
-}
-else
-   ipcRenderer.send('set-key', key);
-
-const persistentStore = new Store({
-   name: 'connections',
-   encryptionKey: key,
-   clearInvalidConfig: true
-});
-
 export const useConnectionsStore = defineStore('connections', {
    state: () => ({
-      connections: persistentStore.get('connections', []) as ConnectionParams[],
-      lastConnections: persistentStore.get('lastConnections', []) as {uid: string; time: number}[],
-      connectionsOrder: persistentStore.get('connectionsOrder', []) as SidebarElement[],
-      customIcons: persistentStore.get('custom_icons', []) as CustomIcon[]
+      connections: [] as ConnectionParams[],
+      lastConnections: [] as {uid: string; time: number}[],
+      connectionsOrder: [] as SidebarElement[],
+      customIcons: [] as CustomIcon[],
+      _loaded: false
    }),
    getters: {
       getConnectionByUid: state => (uid:string) => state.connections.find(connection => connection.uid === uid),
@@ -87,9 +65,24 @@ export const useConnectionsStore = defineStore('connections', {
       getIconByUid: state => (uid:string) => state.customIcons.find(i => i.uid === uid)
    },
    actions: {
+      async init () {
+         const data = await loadStore('connections', {}) as Record<string, any>;
+         if (data.connections !== undefined) this.connections = data.connections;
+         if (data.lastConnections !== undefined) this.lastConnections = data.lastConnections;
+         if (data.connectionsOrder !== undefined) this.connectionsOrder = data.connectionsOrder;
+         if (data.custom_icons !== undefined) this.customIcons = data.custom_icons;
+         this._loaded = true;
+      },
+      async persist () {
+         await saveStore('connections', {
+            connections: this.connections,
+            lastConnections: this.lastConnections,
+            connectionsOrder: this.connectionsOrder,
+            custom_icons: this.customIcons
+         });
+      },
       addConnection (connection: ConnectionParams) {
          this.connections.push(connection);
-         persistentStore.set('connections', this.connections);
 
          this.connectionsOrder.push({
             isFolder: false,
@@ -98,7 +91,7 @@ export const useConnectionsStore = defineStore('connections', {
             icon: null,
             name: null
          });
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       addFolder (params: {after?: string; connections: [string, string?]}) {
          const index = params.after
@@ -114,7 +107,7 @@ export const useConnectionsStore = defineStore('connections', {
             color: '#E36929',
             connections: params.connections
          });
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       removeFromFolders (...connections: string[]) { // Removes connections from folders
          this.connectionsOrder = (this.connectionsOrder as SidebarElement[]).map(el => {
@@ -134,7 +127,7 @@ export const useConnectionsStore = defineStore('connections', {
 
             return conn;
          });
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
          this.clearEmptyFolders();
       },
       deleteConnection (connection: SidebarElement | ConnectionParams) {
@@ -143,7 +136,7 @@ export const useConnectionsStore = defineStore('connections', {
          this.lastConnections = (this.lastConnections as SidebarElement[]).filter(el => el.uid !== connection.uid);
 
          this.connections = (this.connections as SidebarElement[]).filter(el => el.uid !== connection.uid);
-         persistentStore.set('connections', this.connections);
+         this.persist();
          this.clearEmptyFolders();
          useWorkspacesStore().removeWorkspace(connection.uid);
       },
@@ -154,7 +147,6 @@ export const useConnectionsStore = defineStore('connections', {
          });
 
          this.connections = editedConnections;
-         persistentStore.set('connections', this.connections);
 
          const editedConnectionsOrder = (this.connectionsOrder as SidebarElement[]).map(conn => {
             if (conn.uid === connection.uid) {
@@ -171,11 +163,11 @@ export const useConnectionsStore = defineStore('connections', {
          });
 
          this.connectionsOrder = editedConnectionsOrder;
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       updateConnections (connections: ConnectionParams[]) {
          this.connections = connections;
-         persistentStore.set('connections', this.connections);
+         this.persist();
       },
       initConnectionsOrder () {
          this.connectionsOrder = (this.connections as ConnectionParams[]).map<SidebarElement>(conn => {
@@ -187,7 +179,7 @@ export const useConnectionsStore = defineStore('connections', {
                name: null
             };
          });
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       updateConnectionsOrder (connections: SidebarElement[]) {
          const invalidElements = connections.reduce<{index: number; uid: string}[]>((acc, curr, i) => {
@@ -228,7 +220,7 @@ export const useConnectionsStore = defineStore('connections', {
          connections = connections.filter(el => !emptyFolders.includes(el.uid));
 
          this.connectionsOrder = connections;
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       updateConnectionOrder (element: SidebarElement) {
          this.connectionsOrder = (this.connectionsOrder as SidebarElement[]).map(el => {
@@ -236,7 +228,7 @@ export const useConnectionsStore = defineStore('connections', {
                el = element;
             return el;
          });
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       updateLastConnection (uid: string) {
          const cIndex = (this.lastConnections as {uid: string; time: number}[]).findIndex((c) => c.uid === uid);
@@ -246,7 +238,7 @@ export const useConnectionsStore = defineStore('connections', {
          else
             this.lastConnections.push({ uid, time: new Date().getTime() });
 
-         persistentStore.set('lastConnections', this.lastConnections);
+         this.persist();
       },
       clearEmptyFolders () {
          // Clear empty folders
@@ -257,7 +249,7 @@ export const useConnectionsStore = defineStore('connections', {
          }, []);
 
          this.connectionsOrder = (this.connectionsOrder as SidebarElement[]).filter(el => !emptyFolders.includes(el.uid));
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
+         this.persist();
       },
       // Custom Icons
       addIcon (svg: string) {
@@ -276,11 +268,11 @@ export const useConnectionsStore = defineStore('connections', {
          };
 
          this.customIcons.push(icon);
-         persistentStore.set('custom_icons', this.customIcons);
+         this.persist();
       },
       removeIcon (uid: string) {
          this.customIcons = this.customIcons.filter((i: CustomIcon) => i.uid !== uid);
-         persistentStore.set('custom_icons', this.customIcons);
+         this.persist();
       },
       importConnections (importObj: {
          connections: ConnectionParams[];
@@ -291,9 +283,7 @@ export const useConnectionsStore = defineStore('connections', {
          this.connectionsOrder = [...this.connectionsOrder, ...importObj.connectionsOrder];
          this.customIcons = [...this.customIcons, ...importObj.customIcons];
 
-         persistentStore.set('connections', this.connections);
-         persistentStore.set('connectionsOrder', this.connectionsOrder);
-         persistentStore.set('customIcons', this.customIcons);
+         this.persist();
       }
    }
 });
