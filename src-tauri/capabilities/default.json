@@ -1,0 +1,15 @@
+{
+   "identifier": "default",
+   "description": "Default capabilities for Antares SQL",
+   "windows": ["main"],
+   "permissions": [
+      "core:default",
+      "dialog:default",
+      "fs:default",
+      "shell:default",
+      "window-state:default",
+      "os:default",
+      "global-shortcut:default",
+      "clipboard-manager:default"
+   ]
+}
