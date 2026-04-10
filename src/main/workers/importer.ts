@@ -1,7 +1,7 @@
 import SSHConfig from '@fabio286/ssh2-promise/lib/sshConfig';
 import * as antares from 'common/interfaces/antares';
 import { ImportOptions } from 'common/interfaces/importer';
-import * as log from 'electron-log/main';
+const log = { info: console.log, warn: console.warn, error: console.error };
 import * as mysql from 'mysql2';
 import * as pg from 'pg';
 import { parentPort } from 'worker_threads';

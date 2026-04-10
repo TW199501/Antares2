@@ -1,5 +1,5 @@
 import * as antares from 'common/interfaces/antares';
-import * as log from 'electron-log/main';
+const log = { info: console.log, warn: console.warn, error: console.error };
 import * as fs from 'fs';
 import { parentPort } from 'worker_threads';
 

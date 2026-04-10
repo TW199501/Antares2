@@ -1,53 +1,84 @@
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter};
-use tauri_plugin_shell::ShellExt;
-use tauri_plugin_shell::process::{CommandChild, CommandEvent};
+use std::process::{Command as StdCommand, Stdio};
+use std::io::{BufRead, BufReader};
+use tauri::{AppHandle, Emitter, Manager};
 
 static SIDECAR_PORT: Mutex<u16> = Mutex::new(0);
-static SIDECAR_CHILD: Mutex<Option<CommandChild>> = Mutex::new(None);
+static SIDECAR_PID: Mutex<Option<u32>> = Mutex::new(None);
 
 pub fn get_port() -> u16 {
     *SIDECAR_PORT.lock().unwrap()
 }
 
 pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let sidecar = app.shell().sidecar("antares-server")?;
-    let (mut rx, child) = sidecar.spawn()?;
+    let resource_dir = app.path().resource_dir()?;
+    let server_js = resource_dir.join("sidecar").join("antares-server.cjs");
 
-    *SIDECAR_CHILD.lock().unwrap() = Some(child);
+    if !server_js.exists() {
+        return Err(format!("Server bundle not found at {:?}", server_js).into());
+    }
 
+    // Set NODE_PATH so external requires can find modules
+    let node_modules = resource_dir.join("node_modules");
+
+    let mut child = StdCommand::new("node")
+        .arg(server_js.to_string_lossy().to_string())
+        .env("NODE_PATH", node_modules.to_string_lossy().to_string())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    let pid = child.id();
+    *SIDECAR_PID.lock().unwrap() = Some(pid);
+
+    let stdout = child.stdout.take().expect("Failed to capture stdout");
     let app_handle = app.clone();
-    tauri::async_runtime::spawn(async move {
-        while let Some(event) = rx.recv().await {
-            match event {
-                CommandEvent::Stdout(line) => {
-                    let line_str = String::from_utf8_lossy(&line);
-                    if line_str.starts_with("READY:") {
-                        if let Ok(port) = line_str.trim_start_matches("READY:").trim().parse::<u16>() {
-                            *SIDECAR_PORT.lock().unwrap() = port;
-                            let _ = app_handle.emit("sidecar-ready", port);
-                        }
+
+    std::thread::spawn(move || {
+        let reader = BufReader::new(stdout);
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                if line.starts_with("READY:") {
+                    if let Ok(port) = line.trim_start_matches("READY:").trim().parse::<u16>() {
+                        *SIDECAR_PORT.lock().unwrap() = port;
+                        let _ = app_handle.emit("sidecar-ready", port);
                     }
                 }
-                CommandEvent::Stderr(line) => {
-                    eprintln!("sidecar stderr: {}", String::from_utf8_lossy(&line));
-                }
-                CommandEvent::Error(err) => {
-                    eprintln!("sidecar error: {}", err);
-                }
-                CommandEvent::Terminated(status) => {
-                    eprintln!("sidecar terminated: {:?}", status);
-                }
-                _ => {}
             }
         }
+    });
+
+    if let Some(stderr) = child.stderr.take() {
+        std::thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    eprintln!("sidecar: {}", line);
+                }
+            }
+        });
+    }
+
+    std::thread::spawn(move || {
+        let _ = child.wait();
     });
 
     Ok(())
 }
 
 pub fn kill_server() {
-    if let Some(child) = SIDECAR_CHILD.lock().unwrap().take() {
-        let _ = child.kill();
+    if let Some(pid) = SIDECAR_PID.lock().unwrap().take() {
+        #[cfg(windows)]
+        {
+            let _ = StdCommand::new("taskkill")
+                .args(["/PID", &pid.to_string(), "/F", "/T"])
+                .output();
+        }
+        #[cfg(not(windows))]
+        {
+            unsafe {
+                libc::kill(pid as i32, libc::SIGTERM);
+            }
+        }
     }
 }
