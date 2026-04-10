@@ -1131,6 +1131,11 @@ export class SQLServerClient extends BaseClient {
       return await this.raw(sql, { split: false });
    }
 
+   async getUsers () {
+      const { rows } = await this.raw('SELECT name AS user FROM sys.database_principals WHERE type IN (\'S\',\'U\',\'G\') ORDER BY name');
+      return rows.map((row: any) => ({ user: row.user }));
+   }
+
    async getProcesses () {
       const sql = `
          SELECT
