@@ -403,4 +403,95 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'error', response: err.toString() };
       }
    });
+
+   // WebSocket channels for export/import progress streaming
+   app.register(async function wsRoutes (fastify) {
+      // GET /ws/export — streams export progress from worker thread
+      fastify.get('/ws/export', { websocket: true }, (socket) => {
+         socket.on('message', async (rawMsg: Buffer) => {
+            const msg = JSON.parse(rawMsg.toString());
+            if (msg.type === 'start') {
+               try {
+                  const { Worker } = await import('worker_threads');
+                  const workerPath = require.resolve('../workers/exporter');
+                  const exportWorker = new Worker(workerPath);
+
+                  exportWorker.postMessage({
+                     type: 'init',
+                     ...msg.params
+                  });
+
+                  exportWorker.on('message', (workerMsg: any) => {
+                     if (socket.readyState === 1) {
+                        socket.send(JSON.stringify(workerMsg));
+                     }
+                  });
+
+                  exportWorker.on('error', (err: Error) => {
+                     if (socket.readyState === 1) {
+                        socket.send(JSON.stringify({ type: 'error', payload: err.message }));
+                     }
+                  });
+
+                  socket.on('message', (controlMsg: Buffer) => {
+                     const parsed = JSON.parse(controlMsg.toString());
+                     if (parsed.type === 'abort') {
+                        exportWorker.terminate();
+                        if (socket.readyState === 1) {
+                           socket.send(JSON.stringify({ type: 'aborted' }));
+                        }
+                     }
+                  });
+               }
+               catch (err) {
+                  socket.send(JSON.stringify({ type: 'error', payload: (err as Error).message }));
+               }
+            }
+         });
+      });
+
+      // GET /ws/import — streams import progress from worker thread
+      fastify.get('/ws/import', { websocket: true }, (socket) => {
+         socket.on('message', async (rawMsg: Buffer) => {
+            const msg = JSON.parse(rawMsg.toString());
+            if (msg.type === 'start') {
+               try {
+                  const { Worker } = await import('worker_threads');
+                  const workerPath = require.resolve('../workers/importer');
+                  const importWorker = new Worker(workerPath);
+
+                  importWorker.postMessage({
+                     type: 'init',
+                     ...msg.params
+                  });
+
+                  importWorker.on('message', (workerMsg: any) => {
+                     if (socket.readyState === 1) {
+                        socket.send(JSON.stringify(workerMsg));
+                     }
+                  });
+
+                  importWorker.on('error', (err: Error) => {
+                     if (socket.readyState === 1) {
+                        socket.send(JSON.stringify({ type: 'error', payload: err.message }));
+                     }
+                  });
+
+                  socket.on('message', (controlMsg: Buffer) => {
+                     const parsed = JSON.parse(controlMsg.toString());
+                     if (parsed.type === 'abort') {
+                        importWorker.terminate();
+                        if (socket.readyState === 1) {
+                           socket.send(JSON.stringify({ type: 'aborted' }));
+                        }
+                     }
+                  });
+               }
+               catch (err) {
+                  socket.send(JSON.stringify({ type: 'error', payload: (err as Error).message }));
+               }
+            }
+         });
+      });
+   });
 }
