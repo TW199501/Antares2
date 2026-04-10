@@ -94,7 +94,7 @@ const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 
 const { getWorkspace } = workspacesStore;
 
-const appIcon = require('@/images/logo.svg');
+const appIcon = new URL('@/images/logo.svg', import.meta.url).href;
 const w = ref(getCurrentWindow());
 const isMaximized = ref(getCurrentWindow().isMaximized());
 // TODO: Replace with import.meta.env.DEV when Vite is configured

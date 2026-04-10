@@ -32,8 +32,8 @@ const { t } = useI18n();
 const emit = defineEmits(['new-tab']);
 
 const logos = {
-   light: require('../images/logo-light.svg') as string,
-   dark: require('../images/logo-dark.svg') as string
+   light: new URL('../images/logo-light.svg', import.meta.url).href,
+   dark: new URL('../images/logo-dark.svg', import.meta.url).href
 };
 
 const settingsStore = useSettingsStore();

@@ -14,7 +14,9 @@ export default defineConfig({
    resolve: {
       alias: {
          '@': path.resolve(__dirname, 'src/renderer'),
-         'common': path.resolve(__dirname, 'src/common')
+         'common': path.resolve(__dirname, 'src/common'),
+         '~spectre.css': path.resolve(__dirname, 'node_modules/spectre.css'),
+         '~': path.resolve(__dirname, 'node_modules')
       }
    },
    define: {
@@ -29,7 +31,8 @@ export default defineConfig({
    css: {
       preprocessorOptions: {
          scss: {
-            additionalData: `@use "@/scss/_variables.scss" as *;`
+            silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin'],
+            additionalData: `@import "@/scss/_variables.scss";`
          }
       }
    },

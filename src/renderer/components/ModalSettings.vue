@@ -518,9 +518,9 @@ const pageSizes = [30, 40, 100, 250, 500, 1000];
 // TODO: Replace with build-time constant or app metadata API when Tauri is set up
 // const contributors = process.env.APP_CONTRIBUTORS;
 const contributors = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_CONTRIBUTORS) || '';
-const appLogo = require('../images/logo.svg');
-const darkPreview = require('../images/dark.png');
-const lightPreview = require('../images/light.png');
+const appLogo = new URL('../images/logo.svg', import.meta.url).href;
+const darkPreview = new URL('../images/dark.png', import.meta.url).href;
+const lightPreview = new URL('../images/light.png', import.meta.url).href;
 const exampleQuery = `-- This is an example
 SELECT
     employee.id,

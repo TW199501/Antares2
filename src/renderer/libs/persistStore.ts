@@ -1,14 +1,6 @@
 let useTauri = false;
 let tauriFs: any = null;
 
-// Try to detect Tauri environment
-try {
-   if ((window as any).__TAURI_INTERNALS__) {
-      useTauri = true;
-   }
-}
-catch {}
-
 const STORE_PREFIX = 'antares_';
 
 export async function loadStore<T> (name: string, defaults: T): Promise<T> {
@@ -19,7 +11,6 @@ export async function loadStore<T> (name: string, defaults: T): Promise<T> {
          return { ...defaults, ...JSON.parse(text) };
       }
       else {
-         // Fallback: localStorage
          const stored = localStorage.getItem(`${STORE_PREFIX}${name}`);
          if (stored) return { ...defaults, ...JSON.parse(stored) };
          return defaults;
@@ -48,6 +39,12 @@ export async function saveStore (name: string, data: unknown): Promise<void> {
 }
 
 export async function initTauriFs (): Promise<void> {
+   // Only import Tauri fs if we're inside a Tauri webview
+   if (!(window as any).__TAURI_INTERNALS__) {
+      useTauri = false;
+      return;
+   }
+
    try {
       tauriFs = await import('@tauri-apps/plugin-fs');
       useTauri = true;

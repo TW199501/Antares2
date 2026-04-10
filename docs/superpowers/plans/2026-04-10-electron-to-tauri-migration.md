@@ -17,7 +17,7 @@
 ### New Files
 
 | File | Responsibility |
-|---|---|
+| --- | --- |
 | `src-tauri/src/main.rs` | Tauri entry: plugins, sidecar spawn, window config |
 | `src-tauri/src/sidecar.rs` | Sidecar lifecycle: spawn, health check, kill |
 | `src-tauri/Cargo.toml` | Rust dependencies |
@@ -46,7 +46,7 @@
 ### Modified Files
 
 | File | Change |
-|---|---|
+| --- | --- |
 | `src/renderer/ipc-api/*.ts` (11 files) | `ipcRenderer.invoke` → `httpClient.apiCall` |
 | `src/renderer/stores/*.ts` (6 stores) | `electron-store` → `persistStore` |
 | `src/renderer/components/TheTitleBar.vue` | `@electron/remote` → `@tauri-apps/api/window` |
@@ -59,7 +59,7 @@
 ### Files to Delete (after migration complete)
 
 | File | Reason |
-|---|---|
+| --- | --- |
 | `webpack.main.config.js` | Replaced by esbuild |
 | `webpack.renderer.config.js` | Replaced by Vite |
 | `webpack.workers.config.js` | Workers bundled into sidecar |
@@ -73,16 +73,17 @@
 ### Task 1: Initialize Fastify Server
 
 **Files:**
-- Create: `src/main/server.ts`
 
-- [ ] **Step 1: Install Fastify**
+Create: `src/main/server.ts`
 
-```bash
+ **Step 1: Install Fastify**
+
+```
 cd E:/source/antares
 npm install fastify @fastify/websocket @fastify/cors
 ```
 
-- [ ] **Step 2: Create server entry point**
+*   **Step 2: Create server entry point**
 
 Create `src/main/server.ts`:
 
@@ -127,9 +128,9 @@ start().catch((err) => {
 });
 ```
 
-- [ ] **Step 3: Test the server starts**
+*   **Step 3: Test the server starts**
 
-```bash
+```
 npx tsx src/main/server.ts --port 5555
 # Expected output: READY:5555
 # In another terminal:
@@ -137,9 +138,9 @@ curl http://localhost:5555/health
 # Expected: {"status":"ok","port":5555}
 ```
 
-- [ ] **Step 4: Commit**
+*   **Step 4: Commit**
 
-```bash
+```
 git add src/main/server.ts package.json package-lock.json
 git commit -m "feat: add Fastify HTTP server entry point for Tauri sidecar"
 ```
@@ -149,11 +150,14 @@ git commit -m "feat: add Fastify HTTP server entry point for Tauri sidecar"
 ### Task 2: Connection Routes
 
 **Files:**
-- Create: `src/main/routes/connection.ts`
-- Modify: `src/main/server.ts`
-- Reference: `src/main/ipc-handlers/connection.ts`
 
-- [ ] **Step 1: Create connection routes**
+Create: `src/main/routes/connection.ts`
+
+Modify: `src/main/server.ts`
+
+Reference: `src/main/ipc-handlers/connection.ts`
+
+ **Step 1: Create connection routes**
 
 Create `src/main/routes/connection.ts`:
 
@@ -303,7 +307,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
 }
 ```
 
-- [ ] **Step 2: Register routes in server.ts**
+*   **Step 2: Register routes in server.ts**
 
 Add to `src/main/server.ts` before `app.listen`:
 
@@ -314,9 +318,9 @@ import connectionRoutes from './routes/connection';
 await app.register(connectionRoutes);
 ```
 
-- [ ] **Step 3: Test connection route**
+*   **Step 3: Test connection route**
 
-```bash
+```
 npx tsx src/main/server.ts --port 5555
 # In another terminal:
 curl -X POST http://localhost:5555/api/connection/check \
@@ -325,9 +329,9 @@ curl -X POST http://localhost:5555/api/connection/check \
 # Expected: {"status":"success","response":false}
 ```
 
-- [ ] **Step 4: Commit**
+*   **Step 4: Commit**
 
-```bash
+```
 git add src/main/routes/connection.ts src/main/server.ts
 git commit -m "feat: add connection HTTP routes for sidecar"
 ```
@@ -337,11 +341,14 @@ git commit -m "feat: add connection HTTP routes for sidecar"
 ### Task 3: Table Routes
 
 **Files:**
-- Create: `src/main/routes/tables.ts`
-- Modify: `src/main/server.ts`
-- Reference: `src/main/ipc-handlers/tables.ts`
 
-- [ ] **Step 1: Create table routes**
+Create: `src/main/routes/tables.ts`
+
+Modify: `src/main/server.ts`
+
+Reference: `src/main/ipc-handlers/tables.ts`
+
+ **Step 1: Create table routes**
 
 Create `src/main/routes/tables.ts`. This file follows the same pattern as connection routes — each IPC handler becomes a POST route. The `connections` object is imported from the connection routes module.
 
@@ -566,7 +573,7 @@ export default async function tableRoutes (app: FastifyInstance) {
 }
 ```
 
-- [ ] **Step 2: Register table routes in server.ts**
+*   **Step 2: Register table routes in server.ts**
 
 Add to `src/main/server.ts`:
 
@@ -576,9 +583,9 @@ import tableRoutes from './routes/tables';
 await app.register(tableRoutes);
 ```
 
-- [ ] **Step 3: Commit**
+*   **Step 3: Commit**
 
-```bash
+```
 git add src/main/routes/tables.ts src/main/server.ts
 git commit -m "feat: add table HTTP routes for sidecar"
 ```
@@ -588,34 +595,38 @@ git commit -m "feat: add table HTTP routes for sidecar"
 ### Task 4: Remaining Routes (schema, views, triggers, routines, functions, schedulers, databases, users, application)
 
 **Files:**
-- Create: `src/main/routes/schema.ts`
-- Create: `src/main/routes/views.ts`
-- Create: `src/main/routes/triggers.ts`
-- Create: `src/main/routes/routines.ts`
-- Create: `src/main/routes/functions.ts`
-- Create: `src/main/routes/schedulers.ts`
-- Create: `src/main/routes/databases.ts`
-- Create: `src/main/routes/users.ts`
-- Create: `src/main/routes/application.ts`
-- Modify: `src/main/server.ts`
-- Reference: `src/main/ipc-handlers/schema.ts`, `views.ts`, `triggers.ts`, `routines.ts`, `functions.ts`, `schedulers.ts`, `database.ts`, `users.ts`, `application.ts`
+
+*   Create: `src/main/routes/schema.ts`
+*   Create: `src/main/routes/views.ts`
+*   Create: `src/main/routes/triggers.ts`
+*   Create: `src/main/routes/routines.ts`
+*   Create: `src/main/routes/functions.ts`
+*   Create: `src/main/routes/schedulers.ts`
+*   Create: `src/main/routes/databases.ts`
+*   Create: `src/main/routes/users.ts`
+*   Create: `src/main/routes/application.ts`
+*   Modify: `src/main/server.ts`
+*   Reference: `src/main/ipc-handlers/schema.ts`, `views.ts`, `triggers.ts`, `routines.ts`, `functions.ts`, `schedulers.ts`, `database.ts`, `users.ts`, `application.ts`
 
 Each file follows the exact same pattern as Task 2-3: read the corresponding `ipc-handlers/*.ts`, replace `ipcMain.handle('channel-name', handler)` with `app.post('/api/{group}/{action}', handler)`, import `getConnections()` from `./connection`, wrap responses in `{ status, response }`.
 
-- [ ] **Step 1: Create all remaining route files**
+*   **Step 1: Create all remaining route files**
 
 Follow the pattern established in Tasks 2-3. For each IPC handler file:
-1. Read the original `src/main/ipc-handlers/{name}.ts`
-2. Convert each `ipcMain.handle(...)` to `app.post('/api/{group}/{action}', ...)`
-3. Replace `connections[uid]` references with `getConnections()[uid]`
-4. Remove `validateSender` checks (not needed for localhost HTTP)
-5. Keep all `try/catch` blocks, return `{ status: 'error', response: err.message }` on error
+
+1.  Read the original `src/main/ipc-handlers/{name}.ts`
+2.  Convert each `ipcMain.handle(...)` to `app.post('/api/{group}/{action}', ...)`
+3.  Replace `connections[uid]` references with `getConnections()[uid]`
+4.  Remove `validateSender` checks (not needed for localhost HTTP)
+5.  Keep all `try/catch` blocks, return `{ status: 'error', response: err.message }` on error
 
 Key differences by route file:
-- **schema.ts** (21 routes): Includes `raw-query` → `POST /api/schema/raw-query` which is the most heavily used endpoint. Also includes export/import which will need WebSocket (Task 5).
-- **application.ts** (4 routes): Only file I/O and shortcuts. Dialog routes (`show-open-dialog`, `show-save-dialog`) and `close-app` are NOT converted — they move to Tauri Rust side.
 
-- [ ] **Step 2: Register all routes in server.ts**
+**schema.ts** (21 routes): Includes `raw-query` → `POST /api/schema/raw-query` which is the most heavily used endpoint. Also includes export/import which will need WebSocket (Task 5).
+
+**application.ts** (4 routes): Only file I/O and shortcuts. Dialog routes (`show-open-dialog`, `show-save-dialog`) and `close-app` are NOT converted — they move to Tauri Rust side.
+
+ **Step 2: Register all routes in server.ts**
 
 ```typescript
 import connectionRoutes from './routes/connection';
@@ -644,17 +655,17 @@ await app.register(userRoutes);
 await app.register(applicationRoutes);
 ```
 
-- [ ] **Step 3: Test server starts with all routes**
+*   **Step 3: Test server starts with all routes**
 
-```bash
+```
 npx tsx src/main/server.ts --port 5555
 curl http://localhost:5555/health
 # Expected: {"status":"ok","port":5555}
 ```
 
-- [ ] **Step 4: Commit**
+*   **Step 4: Commit**
 
-```bash
+```
 git add src/main/routes/ src/main/server.ts
 git commit -m "feat: add all remaining HTTP routes for sidecar"
 ```
@@ -664,11 +675,14 @@ git commit -m "feat: add all remaining HTTP routes for sidecar"
 ### Task 5: WebSocket Channels for Export/Import
 
 **Files:**
-- Modify: `src/main/routes/schema.ts`
-- Reference: `src/main/ipc-handlers/schema.ts` (export/import handlers)
-- Reference: `src/main/workers/exporter.ts`, `src/main/workers/importer.ts`
 
-- [ ] **Step 1: Add WebSocket export endpoint**
+Modify: `src/main/routes/schema.ts`
+
+Reference: `src/main/ipc-handlers/schema.ts` (export/import handlers)
+
+Reference: `src/main/workers/exporter.ts`, `src/main/workers/importer.ts`
+
+ **Step 1: Add WebSocket export endpoint**
 
 In `src/main/routes/schema.ts`, add WebSocket route for export progress:
 
@@ -743,9 +757,9 @@ app.register(async function wsRoutes (app) {
 });
 ```
 
-- [ ] **Step 2: Commit**
+*   **Step 2: Commit**
 
-```bash
+```
 git add src/main/routes/schema.ts
 git commit -m "feat: add WebSocket channels for export/import progress"
 ```
@@ -757,9 +771,10 @@ git commit -m "feat: add WebSocket channels for export/import progress"
 ### Task 6: HTTP Client Utility
 
 **Files:**
-- Create: `src/renderer/ipc-api/httpClient.ts`
 
-- [ ] **Step 1: Create the HTTP client**
+Create: `src/renderer/ipc-api/httpClient.ts`
+
+ **Step 1: Create the HTTP client**
 
 ```typescript
 import { ref } from 'vue';
@@ -796,9 +811,9 @@ export function createWebSocket (path: string): WebSocket {
 }
 ```
 
-- [ ] **Step 2: Commit**
+*   **Step 2: Commit**
 
-```bash
+```
 git add src/renderer/ipc-api/httpClient.ts
 git commit -m "feat: add HTTP client utility for sidecar communication"
 ```
@@ -808,9 +823,10 @@ git commit -m "feat: add HTTP client utility for sidecar communication"
 ### Task 7: Convert IPC API Modules to HTTP
 
 **Files:**
-- Modify: `src/renderer/ipc-api/Tables.ts` (and all 10 other ipc-api files)
 
-- [ ] **Step 1: Convert Tables.ts**
+Modify: `src/renderer/ipc-api/Tables.ts` (and all 10 other ipc-api files)
+
+ **Step 1: Convert Tables.ts**
 
 Replace the entire file:
 
@@ -913,29 +929,30 @@ export default class {
 }
 ```
 
-- [ ] **Step 2: Convert all other IPC API modules**
+*   **Step 2: Convert all other IPC API modules**
 
 Apply the same pattern to all remaining files in `src/renderer/ipc-api/`:
-- `Connection.ts` → `apiCall('/api/connection/{action}', params)`
-- `Schema.ts` → `apiCall('/api/schema/{action}', params)`
-- `Views.ts` → `apiCall('/api/views/{action}', params)`
-- `Triggers.ts` → `apiCall('/api/triggers/{action}', params)`
-- `Routines.ts` → `apiCall('/api/routines/{action}', params)`
-- `Functions.ts` → `apiCall('/api/functions/{action}', params)`
-- `Schedulers.ts` → `apiCall('/api/schedulers/{action}', params)`
-- `Databases.ts` → `apiCall('/api/databases/{action}', params)`
-- `Users.ts` → `apiCall('/api/users/{action}', params)`
-- `Application.ts` → split: file I/O goes to `apiCall`, dialogs go to `@tauri-apps/plugin-dialog`
+
+*   `Connection.ts` → `apiCall('/api/connection/{action}', params)`
+*   `Schema.ts` → `apiCall('/api/schema/{action}', params)`
+*   `Views.ts` → `apiCall('/api/views/{action}', params)`
+*   `Triggers.ts` → `apiCall('/api/triggers/{action}', params)`
+*   `Routines.ts` → `apiCall('/api/routines/{action}', params)`
+*   `Functions.ts` → `apiCall('/api/functions/{action}', params)`
+*   `Schedulers.ts` → `apiCall('/api/schedulers/{action}', params)`
+*   `Databases.ts` → `apiCall('/api/databases/{action}', params)`
+*   `Users.ts` → `apiCall('/api/users/{action}', params)`
+*   `Application.ts` → split: file I/O goes to `apiCall`, dialogs go to `@tauri-apps/plugin-dialog`
 
 For each file: remove `import { ipcRenderer } from 'electron'` and `import { unproxify }`, add `import { apiCall } from './httpClient'`, replace `ipcRenderer.invoke('channel', unproxify(params))` with `apiCall('/api/group/action', params)`.
 
-- [ ] **Step 3: Remove unproxify dependency**
+*   **Step 3: Remove unproxify dependency**
 
 `unproxify` was needed to strip Vue Proxy objects before Electron IPC serialization. `JSON.stringify` (used by `fetch`) handles this automatically, so `unproxify` calls are no longer needed.
 
-- [ ] **Step 4: Commit**
+*   **Step 4: Commit**
 
-```bash
+```
 git add src/renderer/ipc-api/
 git commit -m "feat: convert all IPC API modules from ipcRenderer to HTTP fetch"
 ```
@@ -945,15 +962,16 @@ git commit -m "feat: convert all IPC API modules from ipcRenderer to HTTP fetch"
 ### Task 8: Persist Store Utility
 
 **Files:**
-- Create: `src/renderer/libs/persistStore.ts`
 
-- [ ] **Step 1: Install Tauri plugins**
+Create: `src/renderer/libs/persistStore.ts`
 
-```bash
+ **Step 1: Install Tauri plugins**
+
+```
 npm install @tauri-apps/api @tauri-apps/plugin-fs @tauri-apps/plugin-dialog @tauri-apps/plugin-os @tauri-apps/plugin-window-state
 ```
 
-- [ ] **Step 2: Create persistStore utility**
+*   **Step 2: Create persistStore utility**
 
 ```typescript
 import { BaseDirectory, exists, mkdir, readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
@@ -991,9 +1009,9 @@ export function loadStoreValue<T> (storeData: Record<string, unknown>, key: stri
 }
 ```
 
-- [ ] **Step 3: Commit**
+*   **Step 3: Commit**
 
-```bash
+```
 git add src/renderer/libs/persistStore.ts package.json package-lock.json
 git commit -m "feat: add Tauri fs-based persistence utility"
 ```
@@ -1003,21 +1021,28 @@ git commit -m "feat: add Tauri fs-based persistence utility"
 ### Task 9: Convert Pinia Stores
 
 **Files:**
-- Modify: `src/renderer/stores/settings.ts`
-- Modify: `src/renderer/stores/connections.ts`
-- Modify: `src/renderer/stores/workspaces.ts`
-- Modify: `src/renderer/stores/history.ts`
-- Modify: `src/renderer/stores/scratchpad.ts`
-- Modify: `src/renderer/stores/application.ts`
 
-- [ ] **Step 1: Convert settings store**
+Modify: `src/renderer/stores/settings.ts`
+
+Modify: `src/renderer/stores/connections.ts`
+
+Modify: `src/renderer/stores/workspaces.ts`
+
+Modify: `src/renderer/stores/history.ts`
+
+Modify: `src/renderer/stores/scratchpad.ts`
+
+Modify: `src/renderer/stores/application.ts`
+
+ **Step 1: Convert settings store**
 
 In `src/renderer/stores/settings.ts`:
-1. Remove `import * as Store from 'electron-store'` and the two `new Store(...)` lines
-2. Add `import { loadStore, saveStore } from '../libs/persistStore'`
-3. Change state initialization to use defaults (loaded async in `actions.init()`)
-4. Add an `init` action that calls `loadStore('settings', defaults)` and populates state
-5. Add a `persist` action that calls `saveStore('settings', this.$state)` — call it in each mutation
+
+1.  Remove `import * as Store from 'electron-store'` and the two `new Store(...)` lines
+2.  Add `import { loadStore, saveStore } from '../libs/persistStore'`
+3.  Change state initialization to use defaults (loaded async in `actions.init()`)
+4.  Add an `init` action that calls `loadStore('settings', defaults)` and populates state
+5.  Add a `persist` action that calls `saveStore('settings', this.$state)` — call it in each mutation
 
 Pattern for each store:
 
@@ -1038,17 +1063,17 @@ const settingsStore = new Store({ name: 'settings' });
 // }
 ```
 
-- [ ] **Step 2: Convert all 6 stores following the same pattern**
+*   **Step 2: Convert all 6 stores following the same pattern**
 
 For `connections.ts`: the encryption key handling changes — instead of `electron.safeStorage`, use a key stored by the sidecar. For now, store connections without encryption (add encryption in a follow-up task via sidecar endpoint `POST /api/app/encrypt`).
 
-- [ ] **Step 3: Update app initialization to call store.init()**
+*   **Step 3: Update app initialization to call store.init()**
 
 In `src/renderer/index.ts`, after creating the Pinia instance, call `init()` on each store that uses persistence.
 
-- [ ] **Step 4: Commit**
+*   **Step 4: Commit**
 
-```bash
+```
 git add src/renderer/stores/ src/renderer/index.ts
 git commit -m "feat: convert Pinia stores from electron-store to Tauri fs persistence"
 ```
@@ -1058,12 +1083,15 @@ git commit -m "feat: convert Pinia stores from electron-store to Tauri fs persis
 ### Task 10: Replace @electron/remote in Components
 
 **Files:**
-- Modify: `src/renderer/components/TheTitleBar.vue`
-- Modify: all components using `@electron/remote` (~11 files)
 
-- [ ] **Step 1: Convert TheTitleBar.vue window controls**
+Modify: `src/renderer/components/TheTitleBar.vue`
+
+Modify: all components using `@electron/remote` (~11 files)
+
+ **Step 1: Convert TheTitleBar.vue window controls**
 
 Replace:
+
 ```typescript
 import { getCurrentWindow } from '@electron/remote';
 const mainWindow = getCurrentWindow();
@@ -1071,6 +1099,7 @@ const mainWindow = getCurrentWindow();
 ```
 
 With:
+
 ```typescript
 import { getCurrentWindow } from '@tauri-apps/api/window';
 const appWindow = getCurrentWindow();
@@ -1078,13 +1107,17 @@ const appWindow = getCurrentWindow();
 ```
 
 The API is nearly identical. Key differences:
-- Tauri's `maximize()` is async (returns Promise)
-- `isMaximized()` is async in Tauri
-- Use `appWindow.onResized()` instead of listening to window events
 
-- [ ] **Step 2: Replace process.platform checks**
+Tauri's `maximize()` is async (returns Promise)
+
+`isMaximized()` is async in Tauri
+
+Use `appWindow.onResized()` instead of listening to window events
+
+ **Step 2: Replace process.platform checks**
 
 In all files using `process.platform`:
+
 ```typescript
 // Before:
 const isMacOS = process.platform === 'darwin';
@@ -1094,7 +1127,7 @@ import { platform } from '@tauri-apps/plugin-os';
 const isMacOS = platform() === 'macos';  // Note: Tauri uses 'macos' not 'darwin'
 ```
 
-- [ ] **Step 3: Replace process.env references**
+*   **Step 3: Replace process.env references**
 
 ```typescript
 // Before:
@@ -1106,16 +1139,19 @@ import.meta.env.MODE !== 'production'
 import.meta.env.PACKAGE_VERSION  // defined in vite.config.ts
 ```
 
-- [ ] **Step 4: Remove all remaining electron imports from renderer**
+*   **Step 4: Remove all remaining electron imports from renderer**
 
 Search for and remove:
-- `import { ipcRenderer } from 'electron'` (should be gone after Task 7)
-- `import ... from '@electron/remote'`
-- `const { ... } = require('electron')`
 
-- [ ] **Step 5: Commit**
+`import { ipcRenderer } from 'electron'` (should be gone after Task 7)
 
-```bash
+`import ... from '@electron/remote'`
+
+`const { ... } = require('electron')`
+
+ **Step 5: Commit**
+
+```
 git add src/renderer/
 git commit -m "feat: replace @electron/remote and process globals with Tauri APIs"
 ```
@@ -1127,18 +1163,22 @@ git commit -m "feat: replace @electron/remote and process globals with Tauri API
 ### Task 11: Vite Configuration
 
 **Files:**
-- Create: `vite.config.ts`
-- Create: `index.html`
-- Modify: `tsconfig.json`
-- Modify: `package.json`
 
-- [ ] **Step 1: Install Vite and plugins**
+Create: `vite.config.ts`
 
-```bash
+Create: `index.html`
+
+Modify: `tsconfig.json`
+
+Modify: `package.json`
+
+ **Step 1: Install Vite and plugins**
+
+```
 npm install -D vite @vitejs/plugin-vue @tauri-apps/cli
 ```
 
-- [ ] **Step 2: Create vite.config.ts**
+*   **Step 2: Create vite.config.ts**
 
 ```typescript
 import vue from '@vitejs/plugin-vue';
@@ -1178,7 +1218,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Create index.html**
+*   **Step 3: Create index.html**
 
 ```html
 <!DOCTYPE html>
@@ -1195,9 +1235,9 @@ export default defineConfig({
 </html>
 ```
 
-- [ ] **Step 4: Update tsconfig.json for Vite**
+*   **Step 4: Update tsconfig.json for Vite**
 
-```jsonc
+```
 {
    "compilerOptions": {
       "target": "ESNext",
@@ -1221,7 +1261,7 @@ export default defineConfig({
 
 Add a separate `tsconfig.server.json` for the sidecar:
 
-```jsonc
+```
 {
    "compilerOptions": {
       "target": "ES2021",
@@ -1241,9 +1281,9 @@ Add a separate `tsconfig.server.json` for the sidecar:
 }
 ```
 
-- [ ] **Step 5: Update package.json scripts**
+*   **Step 5: Update package.json scripts**
 
-```jsonc
+```
 {
    "scripts": {
       "vite:dev": "vite",
@@ -1258,17 +1298,17 @@ Add a separate `tsconfig.server.json` for the sidecar:
 }
 ```
 
-- [ ] **Step 6: Test Vite dev server starts**
+*   **Step 6: Test Vite dev server starts**
 
-```bash
+```
 npm run vite:dev
 # Expected: Vite dev server on http://localhost:5173
 # May have import errors — that's expected, we fix them in subsequent tasks
 ```
 
-- [ ] **Step 7: Commit**
+*   **Step 7: Commit**
 
-```bash
+```
 git add vite.config.ts index.html tsconfig.json tsconfig.server.json package.json
 git commit -m "feat: add Vite build config replacing Webpack"
 ```
@@ -1280,15 +1320,20 @@ git commit -m "feat: add Vite build config replacing Webpack"
 ### Task 12: Initialize Tauri Project
 
 **Files:**
-- Create: `src-tauri/Cargo.toml`
-- Create: `src-tauri/src/main.rs`
-- Create: `src-tauri/src/sidecar.rs`
-- Create: `src-tauri/tauri.conf.json`
-- Create: `src-tauri/capabilities/default.json`
 
-- [ ] **Step 1: Initialize Tauri**
+Create: `src-tauri/Cargo.toml`
 
-```bash
+Create: `src-tauri/src/main.rs`
+
+Create: `src-tauri/src/sidecar.rs`
+
+Create: `src-tauri/tauri.conf.json`
+
+Create: `src-tauri/capabilities/default.json`
+
+ **Step 1: Initialize Tauri**
+
+```
 cd E:/source/antares
 npm install -D @tauri-apps/cli
 npx tauri init
@@ -1301,11 +1346,11 @@ npx tauri init
 # Frontend build command: npm run vite:build
 ```
 
-- [ ] **Step 2: Add Tauri plugins to Cargo.toml**
+*   **Step 2: Add Tauri plugins to Cargo.toml**
 
 Edit `src-tauri/Cargo.toml` dependencies:
 
-```toml
+```
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
@@ -1321,11 +1366,11 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 ```
 
-- [ ] **Step 3: Write sidecar.rs**
+*   **Step 3: Write sidecar.rs**
 
 Create `src-tauri/src/sidecar.rs`:
 
-```rust
+```
 use std::sync::Mutex;
 use tauri::AppHandle;
 use tauri_plugin_shell::ShellExt;
@@ -1381,11 +1426,11 @@ pub fn kill_server() {
 }
 ```
 
-- [ ] **Step 4: Write main.rs**
+*   **Step 4: Write main.rs**
 
 Create `src-tauri/src/main.rs`:
 
-```rust
+```
 mod sidecar;
 
 use tauri::Manager;
@@ -1420,11 +1465,11 @@ fn main() {
 }
 ```
 
-- [ ] **Step 5: Configure tauri.conf.json**
+*   **Step 5: Configure tauri.conf.json**
 
 Ensure `src-tauri/tauri.conf.json` contains:
 
-```jsonc
+```
 {
    "productName": "Antares SQL",
    "version": "0.8.0",
@@ -1456,9 +1501,9 @@ Ensure `src-tauri/tauri.conf.json` contains:
 }
 ```
 
-- [ ] **Step 6: Create capabilities/default.json**
+*   **Step 6: Create capabilities/default.json**
 
-```json
+```
 {
    "identifier": "default",
    "description": "Default capabilities for Antares SQL",
@@ -1476,16 +1521,16 @@ Ensure `src-tauri/tauri.conf.json` contains:
 }
 ```
 
-- [ ] **Step 7: Test Tauri compiles**
+*   **Step 7: Test Tauri compiles**
 
-```bash
+```
 cd src-tauri && cargo check
 # Expected: compiles without errors (warnings OK)
 ```
 
-- [ ] **Step 8: Commit**
+*   **Step 8: Commit**
 
-```bash
+```
 git add src-tauri/
 git commit -m "feat: add Tauri v2 Rust shell with sidecar management"
 ```
@@ -1495,9 +1540,10 @@ git commit -m "feat: add Tauri v2 Rust shell with sidecar management"
 ### Task 13: Frontend Sidecar Integration
 
 **Files:**
-- Modify: `src/renderer/index.ts`
 
-- [ ] **Step 1: Add sidecar port listener**
+Modify: `src/renderer/index.ts`
+
+ **Step 1: Add sidecar port listener**
 
 In `src/renderer/index.ts`, add initialization that waits for the sidecar to be ready:
 
@@ -1520,9 +1566,9 @@ await listen<number>('sidecar-ready', (event) => {
 
 This code should run before the Vue app mounts, so that all API calls have the correct port.
 
-- [ ] **Step 2: Commit**
+*   **Step 2: Commit**
 
-```bash
+```
 git add src/renderer/index.ts
 git commit -m "feat: integrate sidecar port discovery in frontend"
 ```
@@ -1534,9 +1580,10 @@ git commit -m "feat: integrate sidecar port discovery in frontend"
 ### Task 14: SQL Server Type Definitions
 
 **Files:**
-- Create: `src/common/data-types/sqlserver.ts`
 
-- [ ] **Step 1: Create type definitions**
+Create: `src/common/data-types/sqlserver.ts`
+
+ **Step 1: Create type definitions**
 
 ```typescript
 import { TypesGroup } from 'common/interfaces/antares';
@@ -1607,9 +1654,9 @@ export default [
 ] as TypesGroup[];
 ```
 
-- [ ] **Step 2: Commit**
+*   **Step 2: Commit**
 
-```bash
+```
 git add src/common/data-types/sqlserver.ts
 git commit -m "feat: add SQL Server data type definitions"
 ```
@@ -1619,9 +1666,10 @@ git commit -m "feat: add SQL Server data type definitions"
 ### Task 15: SQL Server Customizations
 
 **Files:**
-- Create: `src/common/customizations/sqlserver.ts`
 
-- [ ] **Step 1: Create feature flags**
+Create: `src/common/customizations/sqlserver.ts`
+
+ **Step 1: Create feature flags**
 
 ```typescript
 import { Customizations } from 'common/interfaces/customizations';
@@ -1690,9 +1738,9 @@ export const customizations: Customizations = {
 };
 ```
 
-- [ ] **Step 2: Commit**
+*   **Step 2: Commit**
 
-```bash
+```
 git add src/common/customizations/sqlserver.ts
 git commit -m "feat: add SQL Server feature flags"
 ```
@@ -1702,41 +1750,42 @@ git commit -m "feat: add SQL Server feature flags"
 ### Task 16: SQL Server Client
 
 **Files:**
-- Create: `src/main/libs/clients/SQLServerClient.ts`
-- Modify: `src/main/libs/ClientsFactory.ts`
-- Modify: `src/common/interfaces/antares.ts`
+
+*   Create: `src/main/libs/clients/SQLServerClient.ts`
+*   Modify: `src/main/libs/ClientsFactory.ts`
+*   Modify: `src/common/interfaces/antares.ts`
 
 This is the largest single task. The `SQLServerClient` extends `BaseClient` and implements all required methods using the `mssql` npm package.
 
-- [ ] **Step 1: Install mssql**
+*   **Step 1: Install mssql**
 
-```bash
+```
 npm install mssql
 npm install -D @types/mssql
 ```
 
-- [ ] **Step 2: Create SQLServerClient.ts**
+*   **Step 2: Create SQLServerClient.ts**
 
 Create `src/main/libs/clients/SQLServerClient.ts`. This file implements the BaseClient interface for SQL Server. Key methods:
 
-- `connect()` / `destroy()`: Use `mssql.ConnectionPool`
-- `raw(sql)`: Execute raw T-SQL via `pool.request().query(sql)`
-- `getSQL()`: Generate T-SQL from the query builder state
-- `getDatabases()`: `SELECT name FROM sys.databases`
-- `getTableColumns()`: Query `INFORMATION_SCHEMA.COLUMNS` + `sys.extended_properties` for comments
-- `getTableData()`: Standard SELECT with TOP/OFFSET-FETCH pagination
-- `getTableIndexes()`: Query `sys.indexes` + `sys.index_columns`
-- `getTableChecks()`: Query `sys.check_constraints`
-- `getKeyUsage()`: Query `INFORMATION_SCHEMA.KEY_COLUMN_USAGE` + `REFERENTIAL_CONSTRAINTS`
-- `getTableDll()`: Build CREATE TABLE DDL from column/index/FK metadata
-- `createTable()` / `alterTable()` / `dropTable()`: T-SQL DDL generation
-- `getCollations()`: `SELECT name FROM sys.fn_helpcollations()`
-- `getRoutineInformations()` / `getFunctionInformations()`: Query `sys.procedures` / `sys.objects`
-- Schema operations: `sys.schemas` queries
+*   `connect()` / `destroy()`: Use `mssql.ConnectionPool`
+*   `raw(sql)`: Execute raw T-SQL via `pool.request().query(sql)`
+*   `getSQL()`: Generate T-SQL from the query builder state
+*   `getDatabases()`: `SELECT name FROM sys.databases`
+*   `getTableColumns()`: Query `INFORMATION_SCHEMA.COLUMNS` + `sys.extended_properties` for comments
+*   `getTableData()`: Standard SELECT with TOP/OFFSET-FETCH pagination
+*   `getTableIndexes()`: Query `sys.indexes` + `sys.index_columns`
+*   `getTableChecks()`: Query `sys.check_constraints`
+*   `getKeyUsage()`: Query `INFORMATION_SCHEMA.KEY_COLUMN_USAGE` + `REFERENTIAL_CONSTRAINTS`
+*   `getTableDll()`: Build CREATE TABLE DDL from column/index/FK metadata
+*   `createTable()` / `alterTable()` / `dropTable()`: T-SQL DDL generation
+*   `getCollations()`: `SELECT name FROM sys.fn_helpcollations()`
+*   `getRoutineInformations()` / `getFunctionInformations()`: Query `sys.procedures` / `sys.objects`
+*   Schema operations: `sys.schemas` queries
 
 The full implementation (~1,500 lines) follows the pattern of `PostgreSQLClient.ts` but with T-SQL syntax. The worker implementing this should reference `PostgreSQLClient.ts` as the template and adapt SQL queries for SQL Server's system catalog views.
 
-- [ ] **Step 3: Register in ClientsFactory**
+*   **Step 3: Register in ClientsFactory**
 
 In `src/main/libs/ClientsFactory.ts`, add:
 
@@ -1748,13 +1797,13 @@ case 'mssql':
    return new SQLServerClient(args);
 ```
 
-- [ ] **Step 4: Add to interface types**
+*   **Step 4: Add to interface types**
 
 In `src/common/interfaces/antares.ts`, add `'mssql'` to the client type union wherever `'mysql'`, `'pg'`, `'sqlite'`, `'firebird'` appear.
 
-- [ ] **Step 5: Commit**
+*   **Step 5: Commit**
 
-```bash
+```
 git add src/main/libs/clients/SQLServerClient.ts src/main/libs/ClientsFactory.ts src/common/interfaces/antares.ts package.json package-lock.json
 git commit -m "feat: add SQL Server client implementation"
 ```
@@ -1765,36 +1814,40 @@ git commit -m "feat: add SQL Server client implementation"
 
 ### Task 17: End-to-End Test
 
-- [ ] **Step 1: Start sidecar in dev mode**
+*   **Step 1: Start sidecar in dev mode**
 
-```bash
+```
 npx tsx src/main/server.ts --port 5555
 ```
 
-- [ ] **Step 2: Test health check**
+*   **Step 2: Test health check**
 
-```bash
+```
 curl http://localhost:5555/health
 # Expected: {"status":"ok","port":5555}
 ```
 
-- [ ] **Step 3: Start Tauri dev**
+*   **Step 3: Start Tauri dev**
 
-```bash
+```
 npm run tauri:dev
 # Expected: Vite dev server starts, Tauri window opens
 # Frontend should connect to sidecar and display the connection screen
 ```
 
-- [ ] **Step 4: Test database connection through the UI**
+*   **Step 4: Test database connection through the UI**
 
 Connect to a local MySQL/PostgreSQL/SQLite/SQL Server database through the Antares UI. Verify:
-- Connection form shows all 5 DB types
-- Can connect and see tables
-- Can query data
-- Can view table structure
 
-- [ ] **Step 5: Document any issues found**
+Connection form shows all 5 DB types
+
+Can connect and see tables
+
+Can query data
+
+Can view table structure
+
+ **Step 5: Document any issues found**
 
 Create `docs/superpowers/migration-issues.md` with any bugs or incomplete features found during testing.
 
@@ -1805,42 +1858,44 @@ Create `docs/superpowers/migration-issues.md` with any bugs or incomplete featur
 Only after Task 17 confirms everything works.
 
 **Files to delete:**
-- `webpack.main.config.js`
-- `webpack.renderer.config.js`
-- `webpack.workers.config.js`
-- `scripts/devRunner.js`
-- `scripts/devtoolsInstaller.js`
+
+*   `webpack.main.config.js`
+*   `webpack.renderer.config.js`
+*   `webpack.workers.config.js`
+*   `scripts/devRunner.js`
+*   `scripts/devtoolsInstaller.js`
 
 **Dependencies to remove from package.json:**
-- `electron`, `@electron/remote`, `electron-store`, `electron-updater`, `electron-window-state`, `electron-builder`, `electron-log`
 
-- [ ] **Step 1: Delete webpack configs and scripts**
+`electron`, `@electron/remote`, `electron-store`, `electron-updater`, `electron-window-state`, `electron-builder`, `electron-log`
 
-```bash
+ **Step 1: Delete webpack configs and scripts**
+
+```
 rm webpack.main.config.js webpack.renderer.config.js webpack.workers.config.js
 rm scripts/devRunner.js scripts/devtoolsInstaller.js
 ```
 
-- [ ] **Step 2: Remove Electron dependencies**
+*   **Step 2: Remove Electron dependencies**
 
-```bash
+```
 npm uninstall electron @electron/remote electron-store electron-updater electron-window-state electron-builder electron-log
 ```
 
-- [ ] **Step 3: Clean up package.json**
+*   **Step 3: Clean up package.json**
 
 Remove the `"build"` section (electron-builder config) and old scripts (`debug`, `compile:*`, `build`, `rebuild:electron`, `devtools:install`, `postinstall`).
 
-- [ ] **Step 4: Verify Tauri dev still works**
+*   **Step 4: Verify Tauri dev still works**
 
-```bash
+```
 npm run tauri:dev
 # Expected: still works without Electron dependencies
 ```
 
-- [ ] **Step 5: Commit**
+*   **Step 5: Commit**
 
-```bash
+```
 git add -A
 git commit -m "chore: remove Electron files and dependencies"
 ```
@@ -1850,7 +1905,7 @@ git commit -m "chore: remove Electron files and dependencies"
 ## Summary
 
 | Phase | Tasks | Description |
-|---|---|---|
+| --- | --- | --- |
 | Phase 1 | Tasks 1-5 | Node.js sidecar HTTP server |
 | Phase 2 | Tasks 6-10 | Frontend migration (IPC → HTTP, stores, components) |
 | Phase 3 | Task 11 | Vite build system |

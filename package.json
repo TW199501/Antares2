@@ -173,7 +173,7 @@
     "postcss-html": "~1.5.0",
     "progress-webpack-plugin": "~1.0.12",
     "rimraf": "~3.0.2",
-    "sass": "~1.42.1",
+    "sass": "^1.99.0",
     "sass-loader": "~12.3.0",
     "source-map-support": "~0.5.20",
     "spectre.css": "~0.5.9",
