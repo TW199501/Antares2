@@ -436,7 +436,13 @@
 </template>
 
 <script setup lang="ts">
-import { shell } from 'electron';
+// TODO: Replace with @tauri-apps/api/shell when Tauri is set up
+// import { shell } from 'electron';
+
+// Stub shell for Tauri migration
+const shell = {
+   openExternal: (_url: string) => { window.open(_url, '_blank'); }
+};
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -509,7 +515,9 @@ const { getWorkspace } = workspacesStore;
 
 const appAuthor = 'Fabio Di Stasio';
 const pageSizes = [30, 40, 100, 250, 500, 1000];
-const contributors = process.env.APP_CONTRIBUTORS;
+// TODO: Replace with build-time constant or app metadata API when Tauri is set up
+// const contributors = process.env.APP_CONTRIBUTORS;
+const contributors = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_CONTRIBUTORS) || '';
 const appLogo = require('../images/logo.svg');
 const darkPreview = require('../images/dark.png');
 const lightPreview = require('../images/light.png');

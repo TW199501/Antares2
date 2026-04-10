@@ -3,7 +3,20 @@ import 'floating-vue/dist/style.css';
 import 'leaflet/dist/leaflet.css';
 import '@/scss/main.scss';
 
-import { ipcRenderer } from 'electron';
+// TODO: Replace with Tauri event system when Tauri is set up
+// import { ipcRenderer } from 'electron';
+
+// Stub ipcRenderer for Tauri migration
+const ipcRenderer = {
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   on: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   send: (_channel: string, ..._args: any[]) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   off: (_channel: string, _listener: (...args: any[]) => void) => {}
+};
 import * as FloatingVue from 'floating-vue';
 import { createPinia } from 'pinia';
 import { VueMaskDirective } from 'v-mask';

@@ -27,10 +27,12 @@ const { t } = useI18n();
 
 const emit = defineEmits(['update:modelValue']);
 
-const isMacOS = process.platform === 'darwin';
+// Platform detection using browser-compatible navigator API
+const isMacOS = navigator.platform.startsWith('Mac');
 
 const props = defineProps({
-   modelValue: String as PropType<string | Electron.Accelerator>
+   // TODO: Was PropType<string | Electron.Accelerator> — Electron.Accelerator is just a string alias
+   modelValue: String as PropType<string>
 });
 
 const isFocus = ref(false);

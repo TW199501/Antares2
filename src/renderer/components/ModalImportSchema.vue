@@ -55,7 +55,22 @@
 
 <script setup lang="ts">
 import { ImportState } from 'common/interfaces/importer';
-import { ipcRenderer, IpcRendererEvent } from 'electron';
+// TODO: Replace with Tauri event system when Tauri is set up
+// import { ipcRenderer, IpcRendererEvent } from 'electron';
+
+// Stub ipcRenderer for Tauri migration
+const ipcRenderer = {
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   on: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   send: (_channel: string, ..._args: any[]) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   off: (_channel: string, _listener: (...args: any[]) => void) => {}
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IpcRendererEvent = any;
 import * as moment from 'moment';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, Ref, ref } from 'vue';

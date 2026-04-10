@@ -29,7 +29,8 @@ export function useFilters () {
    };
 
    const parseKeys = (keys: Record<number, string>[]) => {
-      const isMacOS = process.platform === 'darwin';
+      // Platform detection using browser-compatible navigator API
+      const isMacOS = navigator.platform.startsWith('Mac');
       return (keys as string[]).map(k => (
          k.split('+')
             .map(sk => (

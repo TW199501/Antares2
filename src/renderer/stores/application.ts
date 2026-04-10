@@ -10,7 +10,9 @@ export type UpdateStatus = 'noupdate' | 'available' | 'checking' | 'nocheck' | '
 export const useApplicationStore = defineStore('application', {
    state: () => ({
       appName: 'Antares - SQL Client',
-      appVersion: process.env.PACKAGE_VERSION || '0',
+      // TODO: Replace with Tauri app version API when Tauri is set up
+      // appVersion: process.env.PACKAGE_VERSION || '0',
+      appVersion: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_VERSION) || '0',
       cachedVersion: '0' as string,
       // Non-persisted state (UI/runtime only)
       isLoading: false,

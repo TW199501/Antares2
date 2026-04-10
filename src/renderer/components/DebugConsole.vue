@@ -87,7 +87,23 @@
    </BaseContextMenu>
 </template>
 <script setup lang="ts">
-import { getCurrentWindow } from '@electron/remote';
+// TODO: Replace with @tauri-apps/api/window when Tauri is set up
+// import { getCurrentWindow } from '@electron/remote';
+
+// Stub getCurrentWindow for Tauri migration
+const getCurrentWindow = () => ({
+   minimize: () => {},
+   maximize: () => {},
+   unmaximize: () => {},
+   close: () => {},
+   isMaximized: () => false,
+   isFullScreen: () => false,
+   setFullScreen: (_flag: boolean) => {},
+   on: (_event: string, _cb: Function) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   webContents: { openDevTools: () => {} } as any,
+   reload: () => {}
+});
 import * as moment from 'moment';
 import { storeToRefs } from 'pinia';
 import { highlight } from 'sql-highlight';
@@ -130,7 +146,8 @@ const isContext = ref(false);
 const contextContent: Ref<string> = ref(null);
 const contextEvent: Ref<MouseEvent> = ref(null);
 const w = ref(getCurrentWindow());
-const isDevelopment = ref(process.env.NODE_ENV === 'development');
+// TODO: Replace with import.meta.env.DEV when Vite is configured
+const isDevelopment = ref(typeof import.meta !== 'undefined' ? import.meta.env?.MODE === 'development' : false);
 
 const resize = (e: MouseEvent) => {
    const el = queryConsole.value;

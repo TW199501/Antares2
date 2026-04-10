@@ -32,8 +32,42 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentWindow, Menu } from '@electron/remote';
-import { ipcRenderer } from 'electron';
+// TODO: Replace with @tauri-apps/api/window when Tauri is set up
+// import { getCurrentWindow, Menu } from '@electron/remote';
+// TODO: Replace with Tauri event system when Tauri is set up
+// import { ipcRenderer } from 'electron';
+
+// Stub getCurrentWindow for Tauri migration
+const getCurrentWindow = () => ({
+   minimize: () => {},
+   maximize: () => {},
+   unmaximize: () => {},
+   close: () => {},
+   isMaximized: () => false,
+   isFullScreen: () => false,
+   setFullScreen: (_flag: boolean) => {},
+   on: (_event: string, _cb: Function) => {},
+});
+
+// Stub Menu for Tauri migration
+// TODO: Replace with custom Vue context menu or @tauri-apps/api/menu
+const Menu = {
+   buildFromTemplate: (_template: object[]) => ({
+      popup: (_options?: object) => {}
+   })
+};
+
+// Stub ipcRenderer for Tauri migration
+const ipcRenderer = {
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   on: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   send: (_channel: string, ..._args: any[]) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   off: (_channel: string, _listener: (...args: any[]) => void) => {}
+};
 import { storeToRefs } from 'pinia';
 import { defineAsyncComponent, onMounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

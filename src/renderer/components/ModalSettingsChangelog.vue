@@ -14,7 +14,13 @@
    </div>
 </template>
 <script setup lang="ts">
-import { shell } from 'electron';
+// TODO: Replace with @tauri-apps/api/shell when Tauri is set up
+// import { shell } from 'electron';
+
+// Stub shell for Tauri migration
+const shell = {
+   openExternal: (_url: string) => { window.open(_url, '_blank'); }
+};
 import { marked } from 'marked';
 import { ref } from 'vue';
 

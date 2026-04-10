@@ -215,14 +215,17 @@ const { parseKeys } = useFilters();
 
 const { t } = useI18n();
 
-const isMacOS = process.platform === 'darwin';
+// Platform detection using browser-compatible navigator API
+const isMacOS = navigator.platform.startsWith('Mac');
+// Derive platform string for shortcut records
+const currentPlatform = isMacOS ? 'darwin' : (navigator.platform.startsWith('Win') ? 'win32' : 'linux');
 
 const isConfirmRestoreModal = ref(false);
 const isConfirmAddModal = ref(false);
 const isConfirmEditModal = ref(false);
 const isConfirmDeleteModal = ref(false);
 const doesShortcutExists = ref(false);
-const shortcutToAdd: Ref<ShortcutRecord> = ref({ event: undefined, keys: [], os: [process.platform] });
+const shortcutToAdd: Ref<ShortcutRecord> = ref({ event: undefined, keys: [], os: [currentPlatform] });
 const shortcutToEdit: Ref<ShortcutRecord & { index: number }> = ref(null);
 const shortcutToDelete: Ref<ShortcutRecord> = ref(null);
 const typedShortcut = ref('');
@@ -255,7 +258,7 @@ const showAddModal = () => {
 const closeAddModal = () => {
    typedShortcut.value = '';
    doesShortcutExists.value = false;
-   shortcutToAdd.value = { event: undefined, keys: [], os: [process.platform] };
+   shortcutToAdd.value = { event: undefined, keys: [], os: [currentPlatform] };
    isConfirmAddModal.value = false;
 };
 

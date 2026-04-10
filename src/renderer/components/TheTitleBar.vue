@@ -46,8 +46,37 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentWindow } from '@electron/remote';
-import { ipcRenderer } from 'electron';
+// TODO: Replace with @tauri-apps/api/window when Tauri is set up
+// import { getCurrentWindow } from '@electron/remote';
+// TODO: Replace with Tauri event system when Tauri is set up
+// import { ipcRenderer } from 'electron';
+
+// Stub getCurrentWindow for Tauri migration
+const getCurrentWindow = () => ({
+   minimize: () => {},
+   maximize: () => {},
+   unmaximize: () => {},
+   close: () => {},
+   isMaximized: () => false,
+   isFullScreen: () => false,
+   setFullScreen: (_flag: boolean) => {},
+   on: (_event: string, _cb: Function) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   webContents: { openDevTools: () => {} } as any,
+   reload: () => {}
+});
+
+// Stub ipcRenderer for Tauri migration
+const ipcRenderer = {
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   on: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   send: (_channel: string, ..._args: any[]) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   off: (_channel: string, _listener: (...args: any[]) => void) => {}
+};
 import { storeToRefs } from 'pinia';
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -68,10 +97,12 @@ const { getWorkspace } = workspacesStore;
 const appIcon = require('@/images/logo.svg');
 const w = ref(getCurrentWindow());
 const isMaximized = ref(getCurrentWindow().isMaximized());
-const isDevelopment = ref(process.env.NODE_ENV === 'development');
-const isMacOS = process.platform === 'darwin';
-const isWindows = process.platform === 'win32';
-const isLinux = process.platform === 'linux';
+// TODO: Replace with import.meta.env.DEV when Vite is configured
+const isDevelopment = ref(typeof import.meta !== 'undefined' ? import.meta.env?.MODE === 'development' : false);
+// Platform detection using browser-compatible navigator API
+const isMacOS = navigator.platform.startsWith('Mac');
+const isWindows = navigator.platform.startsWith('Win');
+const isLinux = navigator.platform.startsWith('Linux');
 
 const windowTitle = computed(() => {
    if (!selectedWorkspace.value) return '';

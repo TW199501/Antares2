@@ -53,7 +53,25 @@
 </template>
 
 <script setup lang="ts">
-import { ipcRenderer, shell } from 'electron';
+// TODO: Replace with Tauri event system and @tauri-apps/api/shell when Tauri is set up
+// import { ipcRenderer, shell } from 'electron';
+
+// Stub ipcRenderer for Tauri migration
+const ipcRenderer = {
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   on: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   send: (_channel: string, ..._args: any[]) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   off: (_channel: string, _listener: (...args: any[]) => void) => {}
+};
+
+// Stub shell for Tauri migration
+const shell = {
+   openExternal: (_url: string) => { window.open(_url, '_blank'); }
+};
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
