@@ -112,10 +112,8 @@ onMounted(() => {
    });
 
    editor.setOptions({
-      enableBasicAutocompletion: false,
       wrap: lineWrap,
-      enableSnippets: false,
-      enableLiveAutocompletion: false
+      enableSnippets: false
    });
 
    (editor.session as unknown as ace.Ace.Editor).on('change', () => {
