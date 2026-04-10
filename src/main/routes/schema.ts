@@ -1,0 +1,406 @@
+import * as antares from 'common/interfaces/antares';
+import * as workers from 'common/interfaces/workers';
+import { FastifyInstance } from 'fastify';
+import * as fs from 'fs';
+import { Worker } from 'worker_threads';
+
+import { getConnections } from './connection';
+
+export default async function schemaRoutes (app: FastifyInstance) {
+   let exporter: Worker = null;
+   let importer: Worker = null;
+
+   // POST /api/schema/create
+   app.post('/api/schema/create', async (request) => {
+      const connections = getConnections();
+      const params = request.body as any;
+
+      try {
+         await connections[params.uid].createSchema(params);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/update
+   app.post('/api/schema/update', async (request) => {
+      const connections = getConnections();
+      const params = request.body as any;
+
+      try {
+         await connections[params.uid].alterSchema(params);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/delete
+   app.post('/api/schema/delete', async (request) => {
+      const connections = getConnections();
+      const params = request.body as any;
+
+      try {
+         await connections[params.uid].dropSchema(params);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getCollation
+   app.post('/api/schema/getCollation', async (request) => {
+      const connections = getConnections();
+      const params = request.body as any;
+
+      try {
+         const collation = await connections[params.uid].getDatabaseCollation(params);
+         return { status: 'success', response: collation };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getStructure
+   app.post('/api/schema/getStructure', async (request) => {
+      const connections = getConnections();
+      const params = request.body as any;
+
+      try {
+         const structure: unknown = await connections[params.uid].getStructure(params.schemas);
+         return { status: 'success', response: structure };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getCollations
+   app.post('/api/schema/getCollations', async (request) => {
+      const connections = getConnections();
+      const { uid } = request.body as any;
+
+      try {
+         const result = await connections[uid].getCollations();
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getVariables
+   app.post('/api/schema/getVariables', async (request) => {
+      const connections = getConnections();
+      const { uid } = request.body as any;
+
+      try {
+         const result = await connections[uid].getVariables();
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getEngines
+   app.post('/api/schema/getEngines', async (request) => {
+      const connections = getConnections();
+      const { uid } = request.body as any;
+
+      try {
+         const result: unknown = await connections[uid].getEngines();
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getVersion
+   app.post('/api/schema/getVersion', async (request) => {
+      const connections = getConnections();
+      const { uid } = request.body as any;
+
+      try {
+         const result = await connections[uid].getVersion();
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/getProcesses
+   app.post('/api/schema/getProcesses', async (request) => {
+      const connections = getConnections();
+      const { uid } = request.body as any;
+
+      try {
+         const result = await connections[uid].getProcesses();
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/killProcess
+   app.post('/api/schema/killProcess', async (request) => {
+      const connections = getConnections();
+      const { uid, pid } = request.body as any;
+
+      try {
+         const result = await connections[uid].killProcess(pid);
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/useSchema
+   app.post('/api/schema/useSchema', async (request) => {
+      const connections = getConnections();
+      const { uid, schema } = request.body as any;
+
+      if (!schema) return;
+
+      try {
+         await connections[uid].use(schema);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/rawQuery
+   app.post('/api/schema/rawQuery', async (request) => {
+      const connections = getConnections();
+      const { uid, query, schema, tabUid, autocommit } = request.body as any;
+
+      if (!query) return;
+
+      try {
+         const result = await connections[uid].raw(query, {
+            nest: true,
+            details: true,
+            comments: false,
+            schema,
+            tabUid,
+            autocommit
+         });
+
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/export
+   app.post('/api/schema/export', async (request) => {
+      const connections = getConnections();
+      const { uid, type, tables, ...rest } = request.body as any;
+
+      if (exporter !== null) {
+         exporter.terminate();
+         return { status: 'error', response: 'Exporter already running, terminated' };
+      }
+
+      return new Promise((resolve) => {
+         (async () => {
+            // @ts-ignore
+            exporter = new Worker(new URL('../workers/exporter', import.meta.url));
+
+            exporter.postMessage({
+               type: 'init',
+               client: {
+                  name: type,
+                  config: await connections[uid].getDbConfig()
+               },
+               tables,
+               options: rest
+            });
+
+            exporter.on('message', (message: workers.WorkerIpcMessage) => {
+               const { type, payload } = message;
+
+               switch (type) {
+                  case 'end':
+                     setTimeout(() => {
+                        exporter?.terminate();
+                        exporter = null;
+                     }, 500);
+                     resolve({ status: 'success', response: payload });
+                     break;
+                  case 'cancel':
+                     exporter?.terminate();
+                     exporter = null;
+                     resolve({ status: 'error', response: 'Operation cancelled' });
+                     break;
+                  case 'error':
+                     exporter?.terminate();
+                     exporter = null;
+                     resolve({ status: 'error', response: payload });
+                     break;
+               }
+            });
+
+            exporter.on('close', code => {
+               exporter = null;
+               resolve({ status: 'error', response: `Operation ended with code: ${code}` });
+            });
+         })();
+      });
+   });
+
+   // POST /api/schema/abortExport
+   app.post('/api/schema/abortExport', async () => {
+      let willAbort = false;
+
+      if (exporter) {
+         willAbort = true;
+         exporter.postMessage({ type: 'cancel' });
+      }
+
+      return { status: 'success', response: { willAbort } };
+   });
+
+   // POST /api/schema/importSql
+   app.post('/api/schema/importSql', async (request) => {
+      const connections = getConnections();
+      const options = request.body as any;
+
+      if (importer !== null) {
+         importer.terminate();
+         return { status: 'error', response: 'Importer already running, terminated' };
+      }
+
+      return new Promise((resolve) => {
+         (async () => {
+            const dbConfig = await connections[options.uid].getDbConfig();
+
+            // @ts-ignore
+            importer = new Worker(new URL('../workers/importer', import.meta.url));
+
+            importer.postMessage({
+               type: 'init',
+               dbConfig,
+               options
+            });
+
+            importer.on('message', (message: workers.WorkerIpcMessage) => {
+               const { type, payload } = message;
+
+               switch (type) {
+                  case 'end':
+                     setTimeout(() => {
+                        importer?.terminate();
+                        importer = null;
+                     }, 2000);
+                     resolve({ status: 'success', response: payload });
+                     break;
+                  case 'cancel':
+                     importer.terminate();
+                     importer = null;
+                     resolve({ status: 'error', response: 'Operation cancelled' });
+                     break;
+                  case 'error':
+                     importer.terminate();
+                     importer = null;
+                     resolve({ status: 'error', response: payload });
+                     break;
+               }
+            });
+
+            importer.on('close', code => {
+               importer = null;
+               resolve({ status: 'error', response: `Operation ended with code: ${code}` });
+            });
+         })();
+      });
+   });
+
+   // POST /api/schema/abortImportSql
+   app.post('/api/schema/abortImportSql', async () => {
+      let willAbort = false;
+
+      if (importer) {
+         willAbort = true;
+         importer.postMessage({ type: 'cancel' });
+      }
+
+      return { status: 'success', response: { willAbort } };
+   });
+
+   // POST /api/schema/killTabQuery
+   app.post('/api/schema/killTabQuery', async (request) => {
+      const connections = getConnections();
+      const { uid, tabUid } = request.body as any;
+
+      if (!tabUid) return;
+
+      try {
+         await connections[uid].killTabQuery(tabUid);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/commitTab
+   app.post('/api/schema/commitTab', async (request) => {
+      const connections = getConnections();
+      const { uid, tabUid } = request.body as any;
+
+      if (!tabUid) return;
+
+      try {
+         await connections[uid].commitTab(tabUid);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/rollbackTab
+   app.post('/api/schema/rollbackTab', async (request) => {
+      const connections = getConnections();
+      const { uid, tabUid } = request.body as any;
+
+      if (!tabUid) return;
+
+      try {
+         await connections[uid].rollbackTab(tabUid);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+
+   // POST /api/schema/destroyConnectionToCommit
+   app.post('/api/schema/destroyConnectionToCommit', async (request) => {
+      const connections = getConnections();
+      const { uid, tabUid } = request.body as any;
+
+      if (!tabUid) return;
+
+      try {
+         await connections[uid].destroyConnectionToCommit(tabUid);
+         return { status: 'success' };
+      }
+      catch (err) {
+         return { status: 'error', response: err.toString() };
+      }
+   });
+}
