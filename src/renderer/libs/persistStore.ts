@@ -4,10 +4,16 @@ let tauriFs: any = null;
 const STORE_PREFIX = 'antares_';
 
 export async function loadStore<T> (name: string, defaults: T): Promise<T> {
-   // Always try localStorage (works in both browser and Tauri)
    try {
       const stored = localStorage.getItem(`${STORE_PREFIX}${name}`);
-      if (stored) return { ...defaults, ...JSON.parse(stored) };
+      if (stored) {
+         const parsed = JSON.parse(stored);
+         // If defaults is an array, return parsed directly (don't spread)
+         if (Array.isArray(defaults)) return parsed as T;
+         // If defaults is an object, merge
+         if (typeof defaults === 'object' && defaults !== null) return { ...defaults, ...parsed };
+         return parsed as T;
+      }
       return defaults;
    }
    catch {
