@@ -13,7 +13,7 @@
 /* eslint-disable simple-import-sort/imports */
 import * as ace from 'ace-builds';
 import '../libs/ext-language_tools';
-import 'ace-builds/webpack-resolver';
+import 'ace-builds/esm-resolver';
 /* eslint-enable simple-import-sort/imports */
 
 import { uidGen } from 'common/libs/uidGen';
