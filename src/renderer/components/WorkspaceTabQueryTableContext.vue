@@ -165,15 +165,15 @@ const props = defineProps({
    mode: String as Prop<'table' | 'query'>
 });
 
-const emit = defineEmits([
-   'show-delete-modal',
-   'close-context',
-   'set-null',
-   'copy-cell',
-   'copy-row',
-   'duplicate-row',
-   'fill-cell'
-]);
+const emit = defineEmits<{
+   'show-delete-modal': [e?: any];
+   'close-context': [];
+   'set-null': [];
+   'copy-cell': [];
+   'copy-row': [format: string];
+   'duplicate-row': [];
+   'fill-cell': [method: { name: string; group: string; type: string | boolean }];
+}>();
 
 const fakerMethods = {
    string: [

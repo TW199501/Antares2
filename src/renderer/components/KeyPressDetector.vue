@@ -25,7 +25,9 @@ import Application from '@/ipc-api/Application';
 
 const { t } = useI18n();
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+   'update:modelValue': [value: string];
+}>();
 
 // Platform detection using browser-compatible navigator API
 const isMacOS = navigator.platform.startsWith('Mac');

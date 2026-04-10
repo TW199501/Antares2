@@ -301,12 +301,12 @@ const props = defineProps({
    elementType: { type: String, default: 'table' }
 });
 
-const emit = defineEmits([
-   'update-field',
-   'delete-selected',
-   'hard-sort',
-   'duplicate-row'
-]);
+const emit = defineEmits<{
+   'update-field': [params: Record<string, any>];
+   'delete-selected': [params: Record<string, any>];
+   'hard-sort': [sort: { field: string; dir: string }];
+   'duplicate-row': [row: Record<string, any>];
+}>();
 
 const resultTable: Ref<Component & { updateWindow: () => void }> = ref(null);
 const tableWrapper: Ref<HTMLDivElement> = ref(null);

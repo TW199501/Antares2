@@ -191,7 +191,9 @@ const props = defineProps({
    connection: Object as Prop<ConnectionParams>
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 
 const tableWrapper: Ref<HTMLDivElement> = ref(null);
 const table: Ref<HTMLDivElement> = ref(null);

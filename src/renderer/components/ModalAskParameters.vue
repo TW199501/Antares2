@@ -70,7 +70,10 @@ const props = defineProps({
    client: String
 });
 
-const emit = defineEmits(['confirm', 'close']);
+const emit = defineEmits<{
+   'confirm': [params: string[]];
+   'close': [];
+}>();
 
 const firstInput: Ref<HTMLInputElement[]> = ref(null);
 const values: Ref<Record<string, string>> = ref({});

@@ -77,7 +77,9 @@ import { ConnectionNote, TagCode, useScratchpadStore } from '@/stores/scratchpad
 const { t } = useI18n();
 const { addNote } = useScratchpadStore();
 
-const emit = defineEmits(['hide']);
+const emit = defineEmits<{
+   'hide': [];
+}>();
 
 const noteTags = inject<{code: TagCode; name: string}[]>('noteTags');
 const selectedConnection = inject<Ref<null | string>>('selectedConnection');

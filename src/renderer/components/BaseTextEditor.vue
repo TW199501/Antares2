@@ -36,7 +36,9 @@ const props = defineProps({
    height: { type: Number, default: 200 },
    width: { type: [Number, Boolean] as PropType<number|false>, default: false }
 });
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+   'update:modelValue': [value: string];
+}>();
 const settingsStore = useSettingsStore();
 
 const {

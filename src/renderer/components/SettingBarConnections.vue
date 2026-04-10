@@ -114,7 +114,13 @@ const props = defineProps({
    }
 });
 
-const emit = defineEmits(['start', 'end', 'move', 'context', 'update:modelValue']);
+const emit = defineEmits<{
+   'start': [event: any];
+   'end': [event: any];
+   'move': [];
+   'context': [event: MouseEvent, element: SidebarElement];
+   'update:modelValue': [list: SidebarElement[]];
+}>();
 
 const localList = ref(props.modelValue);
 const dummyNested = ref([]);

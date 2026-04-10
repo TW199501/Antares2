@@ -313,7 +313,9 @@ const ipcRenderer = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IpcRendererEvent = any;
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 const { t } = useI18n();
 
 const { addNotification } = useNotificationsStore();

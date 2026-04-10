@@ -161,7 +161,10 @@ const props = defineProps({
    connection: Object as Prop<ConnectionParams>
 });
 
-const emit = defineEmits(['select-query', 'close']);
+const emit = defineEmits<{
+   'select-query': [sql: string];
+   'close': [];
+}>();
 
 const table: Ref<HTMLDivElement> = ref(null);
 const resultTable: Ref<Component & { updateWindow: () => void }> = ref(null);

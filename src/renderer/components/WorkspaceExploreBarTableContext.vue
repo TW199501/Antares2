@@ -168,7 +168,12 @@ const props = defineProps({
    selectedSchema: String
 });
 
-const emit = defineEmits(['close-context', 'duplicate-table', 'reload', 'delete-table']);
+const emit = defineEmits<{
+   'close-context': [];
+   'duplicate-table': [payload: { schema: string; table: any }];
+   'reload': [];
+   'delete-table': [payload: { schema: string; table: any }];
+}>();
 
 const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();

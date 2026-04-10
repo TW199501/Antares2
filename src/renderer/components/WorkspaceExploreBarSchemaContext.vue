@@ -231,18 +231,18 @@ const props = defineProps({
    selectedSchema: String
 });
 
-const emit = defineEmits([
-   'open-create-table-tab',
-   'open-create-view-tab',
-   'open-create-materialized-view-tab',
-   'open-create-trigger-tab',
-   'open-create-routine-tab',
-   'open-create-function-tab',
-   'open-create-trigger-function-tab',
-   'open-create-scheduler-tab',
-   'close-context',
-   'reload'
-]);
+const emit = defineEmits<{
+   'open-create-table-tab': [];
+   'open-create-view-tab': [];
+   'open-create-materialized-view-tab': [];
+   'open-create-trigger-tab': [];
+   'open-create-routine-tab': [];
+   'open-create-function-tab': [];
+   'open-create-trigger-function-tab': [];
+   'open-create-scheduler-tab': [];
+   'close-context': [];
+   'reload': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();

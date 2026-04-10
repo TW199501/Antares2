@@ -54,13 +54,13 @@ const props = defineProps({
    selectedTab: Object
 });
 
-const emit = defineEmits([
-   'close-context',
-   'close-all-tabs',
-   'close-other-tabs',
-   'close-to-left',
-   'close-to-right'
-]);
+const emit = defineEmits<{
+   'close-context': [];
+   'close-all-tabs': [];
+   'close-other-tabs': [];
+   'close-to-left': [];
+   'close-to-right': [];
+}>();
 
 const closeContext = () => {
    emit('close-context');

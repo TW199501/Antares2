@@ -150,13 +150,13 @@ const props = defineProps({
    mode: String
 });
 
-const emit = defineEmits([
-   'add-new-index',
-   'add-to-index',
-   'rename-field',
-   'duplicate-field',
-   'remove-field'
-]);
+const emit = defineEmits<{
+   'add-new-index': [index: any];
+   'add-to-index': [index: any];
+   'rename-field': [field: any];
+   'duplicate-field': [id: string];
+   'remove-field': [id: string];
+}>();
 
 const workspacesStore = useWorkspacesStore();
 const consoleStore = useConsoleStore();

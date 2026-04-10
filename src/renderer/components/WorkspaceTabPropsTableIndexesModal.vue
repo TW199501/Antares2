@@ -179,7 +179,10 @@ const props = defineProps({
    indexTypes: Array
 });
 
-const emit = defineEmits(['hide', 'indexes-update']);
+const emit = defineEmits<{
+   'hide': [];
+   'indexes-update': [indexes: any[]];
+}>();
 
 const indexesPanel: Ref<HTMLDivElement> = ref(null);
 const indexesProxy = ref([]);

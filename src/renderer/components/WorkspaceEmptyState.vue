@@ -29,7 +29,9 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
 
-const emit = defineEmits(['new-tab']);
+const emit = defineEmits<{
+   'new-tab': [];
+}>();
 
 const logos = {
    light: new URL('../images/logo-light.svg', import.meta.url).href,

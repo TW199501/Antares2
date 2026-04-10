@@ -101,13 +101,13 @@ const props = defineProps({
    selectedField: Object
 });
 
-const emit = defineEmits([
-   'close-context',
-   'duplicate-selected',
-   'delete-selected',
-   'add-new-index',
-   'add-to-index'
-]);
+const emit = defineEmits<{
+   'close-context': [];
+   'duplicate-selected': [];
+   'delete-selected': [];
+   'add-new-index': [payload: { field: string; index: string }];
+   'add-to-index': [payload: { field: string; index: string }];
+}>();
 
 const hasPrimary = computed(() => props.indexes.some(index => index.type === 'PRIMARY'));
 

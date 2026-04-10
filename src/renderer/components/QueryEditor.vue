@@ -59,7 +59,9 @@ const props = defineProps({
    editorClasses: { type: String, default: '' }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+   'update:modelValue': [value: string];
+}>();
 
 const cursorPosition = ref(0);
 const lastTableFields = ref([]);

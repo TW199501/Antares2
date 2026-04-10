@@ -52,7 +52,10 @@ defineProps({
    }
 });
 
-const emit = defineEmits(['change', 'clear']);
+const emit = defineEmits<{
+   'change': [event: Event];
+   'clear': [];
+}>();
 
 const id = uidGen();
 

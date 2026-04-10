@@ -51,7 +51,9 @@ const props = defineProps({
 
 const createDdl = ref('');
 
-defineEmits(['hide']);
+defineEmits<{
+   'hide': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 

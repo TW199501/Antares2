@@ -23,7 +23,9 @@ const contextSize: Ref<{height: number; width: number; subHeight?: number; subWi
 const isBottom: Ref<boolean> = ref(false);
 const isRight: Ref<boolean> = ref(false);
 const props = defineProps<{ contextEvent: MouseEvent }>();
-const emit = defineEmits(['close-context']);
+const emit = defineEmits<{
+   'close-context': [];
+}>();
 
 const position = computed(() => {
    let topCord = '0px';

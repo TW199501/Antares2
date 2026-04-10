@@ -135,7 +135,14 @@ const props = defineProps({
    }
 });
 
-const emit = defineEmits(['context', 'covered', 'uncovered', 'select-workspace', 'folder-sort', 'folder-drag']);
+const emit = defineEmits<{
+   'context': [payload: { event: MouseEvent; content: SidebarElement }];
+   'covered': [];
+   'uncovered': [];
+   'select-workspace': [uid: string];
+   'folder-sort': [];
+   'folder-drag': [value: boolean];
+}>();
 
 const isOpen = ref(foldersOpened.includes(props.folder.uid));
 const localList = ref(props.folder.connections);

@@ -95,7 +95,9 @@ const props = defineProps({
    selectedSchema: String
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 
 const sqlFile = ref('');
 const isImporting = ref(false);

@@ -106,7 +106,9 @@ const props = defineProps({
    fieldLength: Number,
    fieldObj: Object
 });
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+   'update:modelValue': [value: { group: string; method: string; params: Record<string, string>; value: string; length: number }];
+}>();
 
 const localType: Ref<string> = ref(null);
 const selectedGroup: Ref<string> = ref('manual');
@@ -190,7 +192,8 @@ const getKeyUsage = (keyName: string) => {
    return props.keyUsage.find(key => key.field === keyName);
 };
 
-const filesChange = ({ target } : {target: HTMLInputElement }) => {
+const filesChange = (event: Event) => {
+   const { target } = event as Event & { target: HTMLInputElement };
    const { files } = target;
    if (!files.length) return;
 

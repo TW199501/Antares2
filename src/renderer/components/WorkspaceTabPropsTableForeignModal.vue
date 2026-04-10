@@ -250,7 +250,10 @@ const props = defineProps({
    workspace: Object
 });
 
-const emit = defineEmits(['foreigns-update', 'hide']);
+const emit = defineEmits<{
+   'foreigns-update': [foreigns: any[]];
+   'hide': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 

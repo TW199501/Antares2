@@ -271,7 +271,13 @@ const props = defineProps({
    selectedCell: { type: String, default: null }
 });
 
-const emit = defineEmits(['update-field', 'select-row', 'contextmenu', 'start-editing', 'stop-editing']);
+const emit = defineEmits<{
+   'update-field': [payload: { field: string; type: string; content: any }];
+   'select-row': [event: Event, row: any, field: any];
+   'contextmenu': [event: MouseEvent, payload: any];
+   'start-editing': [field: any];
+   'stop-editing': [field: any];
+}>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isInlineEditor: Ref<any> = ref({});

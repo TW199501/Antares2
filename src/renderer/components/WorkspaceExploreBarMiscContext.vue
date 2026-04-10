@@ -133,7 +133,10 @@ const props = defineProps({
    selectedSchema: String
 });
 
-const emit = defineEmits(['close-context', 'reload']);
+const emit = defineEmits<{
+   'close-context': [];
+   'reload': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();

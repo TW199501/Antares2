@@ -33,7 +33,10 @@ const props = defineProps({
    }
 });
 
-const emit = defineEmits(['update:modelValue', 'blur']);
+const emit = defineEmits<{
+   'update:modelValue': [value: string];
+   'blur': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();

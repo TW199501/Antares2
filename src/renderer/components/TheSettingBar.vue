@@ -127,7 +127,9 @@ const { showSettingModal, showScratchpad } = applicationStore;
 const { updateConnectionsOrder, initConnectionsOrder } = connectionsStore;
 const { selectWorkspace } = workspacesStore;
 
-const emit = defineEmits(['show-connections-modal']);
+const emit = defineEmits<{
+   'show-connections-modal': [];
+}>();
 
 const sidebarConnections: Ref<HTMLDivElement> = ref(null);
 const isContext: Ref<boolean> = ref(false);

@@ -167,7 +167,10 @@ const props = defineProps({
    workspace: Object
 });
 
-const emit = defineEmits(['hide', 'options-update']);
+const emit = defineEmits<{
+   'hide': [];
+   'options-update': [options: EventInfos];
+}>();
 
 const optionsProxy: Ref<EventInfos> = ref({} as EventInfos);
 const hasStart = ref(false);

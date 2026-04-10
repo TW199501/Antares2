@@ -158,7 +158,10 @@ const props = defineProps({
    workspace: Object
 });
 
-const emit = defineEmits(['hide', 'checks-update']);
+const emit = defineEmits<{
+   'hide': [];
+   'checks-update': [checks: TableCheck[]];
+}>();
 
 const checksPanel: Ref<HTMLDivElement> = ref(null);
 const checksProxy: Ref<TableCheck[]> = ref([]);

@@ -164,7 +164,9 @@ import { unproxify } from '@/libs/unproxify';
 import { SidebarElement, useConnectionsStore } from '@/stores/connections';
 
 const { t } = useI18n();
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 
 const { trapRef } = useFocusTrap();
 

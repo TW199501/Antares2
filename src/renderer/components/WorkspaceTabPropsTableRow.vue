@@ -370,7 +370,10 @@ const props = defineProps({
    customizations: Object
 });
 
-const emit = defineEmits(['contextmenu', 'rename-field']);
+const emit = defineEmits<{
+   'contextmenu': [event: MouseEvent, id: string];
+   'rename-field': [payload: { old: string; new: string | number }];
+}>();
 
 const workspacesStore = useWorkspacesStore();
 

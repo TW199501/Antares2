@@ -35,7 +35,9 @@ const props = defineProps({
    }
 });
 const isExpanded = ref(false);
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 
 const notificationStatus = computed(() => {
    let className = '';

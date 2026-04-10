@@ -169,7 +169,9 @@ const props = defineProps({
    contextConnection: Object as Prop<SidebarElement>
 });
 
-const emit = defineEmits(['close-context']);
+const emit = defineEmits<{
+   'close-context': [];
+}>();
 
 const isConfirmModal = ref(false);
 const isFolderEdit = ref(false);

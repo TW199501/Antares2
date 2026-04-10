@@ -76,7 +76,9 @@ import { ConnectionNote, TagCode, useScratchpadStore } from '@/stores/scratchpad
 const { t } = useI18n();
 const { editNote } = useScratchpadStore();
 
-const emit = defineEmits(['hide']);
+const emit = defineEmits<{
+   'hide': [];
+}>();
 
 const props = defineProps({
    note: {

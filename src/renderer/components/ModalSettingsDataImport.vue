@@ -107,7 +107,9 @@ import { CustomIcon, SidebarElement, useConnectionsStore } from '@/stores/connec
 import { useNotificationsStore } from '@/stores/notifications';
 
 const { t } = useI18n();
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 

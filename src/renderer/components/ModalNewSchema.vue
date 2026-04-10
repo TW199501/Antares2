@@ -93,7 +93,10 @@ const { getWorkspace, getDatabaseVariable } = workspacesStore;
 
 const { trapRef } = useFocusTrap();
 
-const emit = defineEmits(['reload', 'close']);
+const emit = defineEmits<{
+   'reload': [];
+   'close': [];
+}>();
 
 const firstInput: Ref<HTMLInputElement> = ref(null);
 const isLoading = ref(false);

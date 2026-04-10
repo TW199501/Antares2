@@ -65,7 +65,11 @@ const props = defineProps({
    row: Object
 });
 
-const emit = defineEmits(['select-row', 'contextmenu', 'stop-refresh']);
+const emit = defineEmits<{
+   'select-row': [];
+   'contextmenu': [event: MouseEvent, payload: { id: number; field: string }];
+   'stop-refresh': [];
+}>();
 
 const isInlineEditor: Ref<Record<string, boolean>> = ref({});
 const isInfoModal = ref(false);

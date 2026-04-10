@@ -209,7 +209,10 @@ const props = defineProps({
    workspace: Object
 });
 
-const emit = defineEmits(['hide', 'parameters-update']);
+const emit = defineEmits<{
+   'hide': [];
+   'parameters-update': [parameters: any[]];
+}>();
 
 const parametersPanel: Ref<HTMLDivElement> = ref(null);
 const parametersProxy = ref([]);

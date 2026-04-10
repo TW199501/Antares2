@@ -447,12 +447,12 @@ const props = defineProps({
    searchMethod: String as Prop<'elements' | 'schemas'>
 });
 
-const emit = defineEmits([
-   'show-schema-context',
-   'show-table-context',
-   'show-misc-context',
-   'show-misc-folder-context'
-]);
+const emit = defineEmits<{
+   'show-schema-context': [payload: { event: MouseEvent; schema: string }];
+   'show-table-context': [payload: { event: any; schema: string; table: any }];
+   'show-misc-context': [payload: { event: any; schema: string; misc: any }];
+   'show-misc-folder-context': [payload: { event: MouseEvent; schema: string; type: string }];
+}>();
 
 const settingsStore = useSettingsStore();
 const workspacesStore = useWorkspacesStore();

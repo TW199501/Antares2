@@ -96,7 +96,10 @@ const props = defineProps({
    isQuering: Boolean
 });
 
-const emit = defineEmits(['filter-change', 'filter']);
+const emit = defineEmits<{
+   'filter-change': [rows: TableFilterClausole[]];
+   'filter': [clausoles: any[]];
+}>();
 
 const rows = ref([]);
 const operators: TableFilterOperator[] = customizations[props.connClient].operators;

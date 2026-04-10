@@ -129,15 +129,15 @@ const { t } = useI18n();
 const { formatDate } = useFilters();
 const { getConnectionName } = useConnectionsStore();
 
-defineEmits([
-   'edit-note',
-   'delete-note',
-   'select-note',
-   'toggle-note',
-   'archive-note',
-   'restore-note',
-   'select-query'
-]);
+defineEmits<{
+   'edit-note': [];
+   'delete-note': [uid: string];
+   'select-note': [uid: string];
+   'toggle-note': [uid: string];
+   'archive-note': [uid: string];
+   'restore-note': [uid: string];
+   'select-query': [note: string];
+}>();
 
 const noteParagraph: Ref<HTMLDivElement> = ref(null);
 const noteHeight = ref(useElementBounding(noteParagraph)?.height);

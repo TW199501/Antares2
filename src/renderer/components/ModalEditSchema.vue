@@ -85,7 +85,9 @@ const props = defineProps({
    selectedSchema: String
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+   'close': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();

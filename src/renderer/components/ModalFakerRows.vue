@@ -132,7 +132,10 @@ const props = defineProps({
    keyUsage: Array as Prop<TableForeign[]>
 });
 
-const emit = defineEmits(['reload', 'hide']);
+const emit = defineEmits<{
+   'reload': [];
+   'hide': [];
+}>();
 
 const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();

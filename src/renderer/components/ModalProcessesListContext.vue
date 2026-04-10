@@ -74,7 +74,12 @@ const props = defineProps({
    selectedCell: Object
 });
 
-const emit = defineEmits(['close-context', 'copy-cell', 'copy-row', 'kill-process']);
+const emit = defineEmits<{
+   'close-context': [];
+   'copy-cell': [];
+   'copy-row': [];
+   'kill-process': [];
+}>();
 
 const closeContext = () => {
    emit('close-context');

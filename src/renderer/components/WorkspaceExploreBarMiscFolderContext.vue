@@ -104,16 +104,16 @@ const props = defineProps({
    selectedSchema: String
 });
 
-const emit = defineEmits([
-   'open-create-view-tab',
-   'open-create-materializedView-tab',
-   'open-create-trigger-tab',
-   'open-create-routine-tab',
-   'open-create-function-tab',
-   'open-create-trigger-function-tab',
-   'open-create-scheduler-tab',
-   'close-context'
-]);
+const emit = defineEmits<{
+   'open-create-view-tab': [];
+   'open-create-materializedView-tab': [];
+   'open-create-trigger-tab': [];
+   'open-create-routine-tab': [];
+   'open-create-function-tab': [];
+   'open-create-trigger-function-tab': [];
+   'open-create-scheduler-tab': [];
+   'close-context': [];
+}>();
 
 const closeContext = () => {
    emit('close-context');

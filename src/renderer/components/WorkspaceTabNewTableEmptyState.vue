@@ -22,7 +22,9 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 
 const { t } = useI18n();
-const emit = defineEmits(['new-field']);
+const emit = defineEmits<{
+   'new-field': [];
+}>();
 </script>
 
 <style scoped>

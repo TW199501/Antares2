@@ -75,7 +75,10 @@ const credentials = ref({
    password: ''
 });
 const firstInput: Ref<HTMLInputElement> = ref(null);
-const emit = defineEmits(['close-asking', 'credentials']);
+const emit = defineEmits<{
+   'close-asking': [];
+   'credentials': [credentials: { user: string; password: string }];
+}>();
 
 const closeModal = () => {
    emit('close-asking');

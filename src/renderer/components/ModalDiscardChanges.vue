@@ -31,7 +31,10 @@ import BaseIcon from '@/components/BaseIcon.vue';
 
 const { t } = useI18n();
 
-const emit = defineEmits(['confirm', 'close']);
+const emit = defineEmits<{
+   'confirm': [];
+   'close': [];
+}>();
 
 const onKey = (e: KeyboardEvent) => {
    e.stopPropagation();
