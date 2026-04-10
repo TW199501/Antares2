@@ -101,6 +101,10 @@ export class SQLServerClient extends BaseClient {
       this._connection = await new mssql.ConnectionPool(dbConfig).connect();
    }
 
+   async ping () {
+      await this._connection.request().query('SELECT 1');
+   }
+
    destroy () {
       if (this._connection)
          this._connection.close();

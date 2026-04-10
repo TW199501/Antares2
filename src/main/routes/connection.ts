@@ -77,13 +77,11 @@ export default async function connectionRoutes (app: FastifyInstance) {
       }
 
       try {
-         console.log('[test-connection] client:', conn.client, 'host:', params.host, 'port:', params.port);
          const connection = ClientsFactory.getClient({
             uid: conn.uid,
             client: conn.client,
             params
          });
-         console.log('[test-connection] client created, _params:', JSON.stringify((connection as any)._params?.host));
 
          await connection.connect();
          if (isLocalAborted) {
