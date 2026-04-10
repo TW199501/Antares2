@@ -8,13 +8,15 @@
   "exclude": ["./src/renderer/libs/ext-language_tools.js"],
   "compilerOptions": {
     "baseUrl": "./",
-    "target": "es2021",
+    "target": "ESNext",
     "allowJs": true,
-    "module": "CommonJS",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "noImplicitAny": true,
     "jsx": "preserve",
     "types": [
-      "node"
+      "node",
+      "vite/client"
     ],
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
