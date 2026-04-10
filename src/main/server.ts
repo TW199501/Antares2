@@ -3,6 +3,8 @@ import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import * as net from 'net';
 
+import connectionRoutes from './routes/connection';
+
 const findFreePort = (): Promise<number> => {
    return new Promise((resolve, reject) => {
       const server = net.createServer();
@@ -25,6 +27,8 @@ const start = async () => {
    await app.register(websocket);
 
    app.get('/health', async () => ({ status: 'ok', port }));
+
+   await app.register(connectionRoutes);
 
    await app.listen({ port, host: '127.0.0.1' });
 
