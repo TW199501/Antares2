@@ -60,101 +60,25 @@ const vMaskV3 = {
    unmounted: vMaskV2.unbind
 };
 
-// Initialize sidecar connection before mounting
-initSidecar().then(() => {
-   createApp(App)
-      .directive('mask', vMaskV3)
-      .use(createPinia())
-      .use(i18n)
-      .use(FloatingVue)
-      .mount('#app');
-}).catch((err) => {
-   console.error('Failed to initialize sidecar:', err);
-   // Mount app anyway so UI is visible
-   createApp(App)
-      .directive('mask', vMaskV3)
-      .use(createPinia())
-      .use(i18n)
-      .use(FloatingVue)
-      .mount('#app');
-});
+// Initialize sidecar, then mount app
+const pinia = createPinia();
 
-const { locale } = useSettingsStore();
-i18n.global.locale = locale;
+function mountApp () {
+   const app = createApp(App);
+   app.directive('mask', vMaskV3);
+   app.use(pinia);
+   app.use(i18n);
+   app.use(FloatingVue);
+   app.mount('#app');
 
-// IPC exceptions
-ipcRenderer.on('unhandled-exception', (event, error) => {
-   useNotificationsStore().addNotification({ status: 'error', message: error.message });
-   useConsoleStore().putLog('debug', {
-      level: 'error',
-      process: 'main',
-      message: error.message,
-      date: new Date()
+   // Set locale from persisted settings
+   const { locale } = useSettingsStore();
+   i18n.global.locale = locale;
+}
+
+initSidecar()
+   .then(() => mountApp())
+   .catch((err) => {
+      console.error('Failed to initialize sidecar:', err);
+      mountApp(); // Mount anyway so UI is visible
    });
-});
-ipcRenderer.on('non-blocking-exception', (event, error) => {
-   useNotificationsStore().addNotification({ status: 'error', message: error.message });
-   useConsoleStore().putLog('debug', {
-      level: 'error',
-      process: 'main',
-      message: error.message,
-      date: new Date()
-   });
-});
-
-// IPC query logs
-ipcRenderer.on('query-log', (event, logRecord: QueryLog) => {
-   useConsoleStore().putLog('query', logRecord);
-});
-
-ipcRenderer.on('toggle-console', () => {
-   useConsoleStore().toggleConsole();
-});
-
-// IPC app updates
-ipcRenderer.on('checking-for-update', () => {
-   useApplicationStore().updateStatus = 'checking';
-});
-
-ipcRenderer.on('update-available', () => {
-   useApplicationStore().updateStatus = 'available';
-});
-
-ipcRenderer.on('update-not-available', () => {
-   useApplicationStore().updateStatus = 'noupdate';
-});
-
-ipcRenderer.on('check-failed', () => {
-   useApplicationStore().updateStatus = 'nocheck';
-});
-
-ipcRenderer.on('no-auto-update', () => {
-   useApplicationStore().updateStatus = 'disabled';
-});
-
-ipcRenderer.on('download-progress', (event, data) => {
-   useApplicationStore().updateStatus = 'downloading';
-   useApplicationStore().downloadProgress = data.percent;
-});
-
-ipcRenderer.on('update-downloaded', () => {
-   useApplicationStore().updateStatus = 'downloaded';
-});
-
-ipcRenderer.on('link-to-download', () => {
-   useApplicationStore().updateStatus = 'link';
-});
-
-// IPC shortcuts
-ipcRenderer.on('toggle-preferences', () => {
-   useApplicationStore().showSettingModal('general');
-});
-
-ipcRenderer.on('open-updates-preferences', () => {
-   useApplicationStore().showSettingModal('update');
-   ipcRenderer.send('check-for-updates');
-});
-
-ipcRenderer.on('update-shortcuts', (event, shortcuts) => {
-   useSettingsStore().updateShortcuts(shortcuts);
-});
