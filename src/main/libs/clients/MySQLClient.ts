@@ -5,9 +5,15 @@ import * as antares from 'common/interfaces/antares';
 import { removeComments } from 'common/libs/sqlUtils';
 import * as mysql from 'mysql2/promise';
 
-import * as EncodingToCharset from '../../../../node_modules/mysql2/lib/constants/encoding_charset.js';
 import { BaseClient } from './BaseClient';
-EncodingToCharset.utf8mb3 = 192; // To fix https://github.com/sidorares/node-mysql2/issues/1398 until not included in mysql2
+
+// Fix https://github.com/sidorares/node-mysql2/issues/1398
+try {
+   const EncodingToCharset = require('mysql2/lib/constants/encoding_charset');
+   EncodingToCharset.utf8mb3 = 192;
+}
+catch {}
+
 
 export class MySQLClient extends BaseClient {
    private _schema?: string;
@@ -389,15 +395,11 @@ export class MySQLClient extends BaseClient {
       const triggersArr: ShowTriggersResult[] = [];
       let schemaSize = 0;
 
-      const Store = require('electron-store');
-
-      Store.initRenderer();
-      const settingsStore = new Store({ name: 'settings' });
-
       for (const db of filteredDatabases) {
          if (!schemas.has(db.Database)) continue;
 
-         const showTableSize = settingsStore.get('show_table_size', false);
+         // TODO: Read show_table_size from sidecar config instead of electron-store
+         const showTableSize = false;
 
          if (showTableSize) {
             let { rows: tables } = await this.raw<antares.QueryResult<ShowTableResult>>(`

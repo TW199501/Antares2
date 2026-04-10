@@ -217,7 +217,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
       return new Promise((resolve) => {
          (async () => {
             // @ts-ignore
-            exporter = new Worker(new URL('../workers/exporter', import.meta.url));
+            exporter = new Worker(require.resolve('../workers/exporter'));
 
             exporter.postMessage({
                type: 'init',
@@ -288,7 +288,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
             const dbConfig = await connections[options.uid].getDbConfig();
 
             // @ts-ignore
-            importer = new Worker(new URL('../workers/importer', import.meta.url));
+            importer = new Worker(require.resolve('../workers/importer'));
 
             importer.postMessage({
                type: 'init',
