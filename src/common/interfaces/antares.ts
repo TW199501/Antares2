@@ -12,7 +12,7 @@ import { PostgreSQLClient } from '../../main/libs/clients/PostgreSQLClient';
 import { SQLiteClient } from '../../main/libs/clients/SQLiteClient';
 
 export type Client = MySQLClient | PostgreSQLClient | SQLiteClient | FirebirdSQLClient
-export type ClientCode = 'mysql' | 'maria' | 'pg' | 'sqlite' | 'firebird'
+export type ClientCode = 'mysql' | 'maria' | 'pg' | 'sqlite' | 'firebird' | 'mssql'
 export type Exporter = MysqlExporter | PostgreSQLExporter
 export type Importer = MySQLImporter | PostgreSQLImporter
 

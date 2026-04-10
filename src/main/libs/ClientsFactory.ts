@@ -17,6 +17,7 @@ export class ClientsFactory {
             return new SQLiteClient(args);
          case 'firebird':
             return new FirebirdSQLClient(args);
+         // case 'mssql': return new SQLServerClient(args); // TODO: Task 16
          default:
             throw new Error(`Unknown database client: ${args.client}`);
       }
