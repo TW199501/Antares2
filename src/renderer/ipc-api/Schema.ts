@@ -1,25 +1,24 @@
 import { ClientCode, IpcResponse/*, EventInfos, QueryResult, RoutineInfos, TableInfos, TriggerInfos */ } from 'common/interfaces/antares';
 import { ExportOptions } from 'common/interfaces/exporter';
 import { ImportOptions } from 'common/interfaces/importer';
-import { ipcRenderer } from 'electron';
 
-import { unproxify } from '../libs/unproxify';
+import { apiCall } from './httpClient';
 
 export default class {
    static createSchema (params: { uid: string; name: string; collation?: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('create-schema', unproxify(params));
+      return apiCall('/api/schema/create', params);
    }
 
    static updateSchema (params: { uid: string; name: string; collation?: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('update-schema', unproxify(params));
+      return apiCall('/api/schema/update', params);
    }
 
    static getDatabaseCollation (params: { uid: string; database: string }) {
-      return ipcRenderer.invoke('get-schema-collation', unproxify(params));
+      return apiCall('/api/schema/getCollation', params);
    }
 
    static deleteSchema (params: { uid: string; database: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('delete-schema', unproxify(params));
+      return apiCall('/api/schema/delete', params);
    }
 
    static getStructure (params: { uid: string; schemas: Set<string> }): Promise<IpcResponse/* <{
@@ -31,7 +30,7 @@ export default class {
       triggers: TriggerInfos[];
       schedulers: EventInfos[];
    }[]> */> {
-      return ipcRenderer.invoke('get-structure', unproxify(params, false));
+      return apiCall('/api/schema/getStructure', params);
    }
 
    static getCollations (uid: string): Promise<IpcResponse/* <{
@@ -42,11 +41,11 @@ export default class {
       id: number;
       sortLen: number;
    }[]> */> {
-      return ipcRenderer.invoke('get-collations', uid);
+      return apiCall('/api/schema/getCollations', { uid });
    }
 
    static getVariables (uid: string): Promise<IpcResponse/* <{ name: string; value: string }[]> */> {
-      return ipcRenderer.invoke('get-variables', uid);
+      return apiCall('/api/schema/getVariables', { uid });
    }
 
    static getEngines (uid: string): Promise<IpcResponse/* <{
@@ -58,7 +57,7 @@ export default class {
       savepoints: string;
       isDefault: boolean;
    }[]> */> {
-      return ipcRenderer.invoke('get-engines', uid);
+      return apiCall('/api/schema/getEngines', { uid });
    }
 
    static getVersion (uid: string): Promise<IpcResponse/* <{
@@ -67,7 +66,7 @@ export default class {
       arch: string;
       os: string;
    }> */> {
-      return ipcRenderer.invoke('get-version', uid);
+      return apiCall('/api/schema/getVersion', { uid });
    }
 
    static getProcesses (uid: string): Promise<IpcResponse/* <{
@@ -80,50 +79,50 @@ export default class {
       state: string;
       info: string;
    }[]> */> {
-      return ipcRenderer.invoke('get-processes', uid);
+      return apiCall('/api/schema/getProcesses', { uid });
    }
 
    static killProcess (params: { uid: string; pid: number }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('kill-process', unproxify(params));
+      return apiCall('/api/schema/killProcess', params);
    }
 
    static killTabQuery (params: { uid: string; tabUid: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('kill-tab-query', unproxify(params));
+      return apiCall('/api/schema/killTabQuery', params);
    }
 
    static commitTab (params: { uid: string; tabUid: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('commit-tab', unproxify(params));
+      return apiCall('/api/schema/commitTab', params);
    }
 
    static rollbackTab (params: { uid: string; tabUid: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('rollback-tab', unproxify(params));
+      return apiCall('/api/schema/rollbackTab', params);
    }
 
    static destroyConnectionToCommit (params: { uid: string; tabUid: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('destroy-connection-to-commit', unproxify(params));
+      return apiCall('/api/schema/destroyConnectionToCommit', params);
    }
 
    static useSchema (params: { uid: string; schema: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('use-schema', unproxify(params));
+      return apiCall('/api/schema/useSchema', params);
    }
 
    static rawQuery (params: { uid: string; query: string; schema: string; tabUid: string; autocommit?: boolean }): Promise<IpcResponse/* <QueryResult> */> {
-      return ipcRenderer.invoke('raw-query', unproxify(params));
+      return apiCall('/api/schema/rawQuery', params);
    }
 
    static export (params: ExportOptions & {uid: string; type: ClientCode}): Promise<IpcResponse> {
-      return ipcRenderer.invoke('export', unproxify(params));
+      return apiCall('/api/schema/export', params);
    }
 
    static abortExport (): Promise<IpcResponse> {
-      return ipcRenderer.invoke('abort-export');
+      return apiCall('/api/schema/abortExport');
    }
 
    static import (params: ImportOptions): Promise<IpcResponse> {
-      return ipcRenderer.invoke('import-sql', unproxify(params));
+      return apiCall('/api/schema/importSql', params);
    }
 
    static abortImport (): Promise<IpcResponse> {
-      return ipcRenderer.invoke('abort-import-sql');
+      return apiCall('/api/schema/abortImportSql');
    }
 }

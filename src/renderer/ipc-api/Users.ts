@@ -1,10 +1,9 @@
 import { IpcResponse } from 'common/interfaces/antares';
-import { ipcRenderer } from 'electron';
 
-import { unproxify } from '../libs/unproxify';
+import { apiCall } from './httpClient';
 
 export default class {
    static getUsers (params: string): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-users', unproxify(params));
+      return apiCall('/api/users/getUsers', params);
    }
 }

@@ -1,42 +1,51 @@
-import { ShortcutRecord } from 'common/shortcuts';
-import { ipcRenderer, OpenDialogOptions, OpenDialogReturnValue } from 'electron';
-
-import { unproxify } from '../libs/unproxify';
+import { apiCall } from './httpClient';
 
 export default class {
-   static showOpenDialog (options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
-      return ipcRenderer.invoke('show-open-dialog', unproxify(options));
-   }
+   // TODO: Replace with @tauri-apps/plugin-dialog
+   // static showOpenDialog (options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
+   //    return ipcRenderer.invoke('show-open-dialog', options);
+   // }
 
-   static showSaveDialog (options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
-      return ipcRenderer.invoke('show-save-dialog', unproxify(options));
-   }
+   // TODO: Replace with @tauri-apps/plugin-dialog
+   // static showSaveDialog (options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
+   //    return ipcRenderer.invoke('show-save-dialog', options);
+   // }
 
-   static getDownloadPathDirectory (): Promise<string> {
-      return ipcRenderer.invoke('get-download-dir-path');
-   }
+   // TODO: Replace with Tauri implementation (no backend route available)
+   // static getDownloadPathDirectory (): Promise<string> {
+   //    return ipcRenderer.invoke('get-download-dir-path');
+   // }
 
-   static reloadShortcuts () {
-      return ipcRenderer.invoke('reload-shortcuts');
-   }
+   // TODO: Replace with Tauri implementation
+   // static reloadShortcuts () {
+   //    return ipcRenderer.invoke('reload-shortcuts');
+   // }
 
-   static updateShortcuts (shortcuts: ShortcutRecord[]) {
-      return ipcRenderer.invoke('update-shortcuts', unproxify(shortcuts));
-   }
+   // TODO: Replace with Tauri implementation
+   // static updateShortcuts (shortcuts: ShortcutRecord[]) {
+   //    return ipcRenderer.invoke('update-shortcuts', shortcuts);
+   // }
 
-   static restoreDefaultShortcuts () {
-      return ipcRenderer.invoke('resotre-default-shortcuts');
-   }
+   // TODO: Replace with Tauri implementation
+   // static restoreDefaultShortcuts () {
+   //    return ipcRenderer.invoke('resotre-default-shortcuts');
+   // }
 
-   static unregisterShortcuts () {
-      return ipcRenderer.invoke('unregister-shortcuts');
-   }
+   // TODO: Replace with Tauri implementation
+   // static unregisterShortcuts () {
+   //    return ipcRenderer.invoke('unregister-shortcuts');
+   // }
 
    static readFile (params: {filePath: string; encoding: string}): Promise<string> {
-      return ipcRenderer.invoke('read-file', params);
+      return apiCall('/api/app/readFile', params);
    }
 
-   static writeFile (path: string, content: unknown) {
-      return ipcRenderer.invoke('write-file', path, content);
+   static writeFile (filePath: string, content: unknown) {
+      return apiCall('/api/app/writeFile', { filePath, content });
    }
+
+   // TODO: Replace with @tauri-apps/api/window
+   // static closeApp () {
+   //    return ipcRenderer.invoke('close-app');
+   // }
 }

@@ -1,11 +1,10 @@
 import { AlterTableParams, CreateTableParams, IpcResponse } from 'common/interfaces/antares';
-import { ipcRenderer } from 'electron';
 
-import { unproxify } from '../libs/unproxify';
+import { apiCall } from './httpClient';
 
 export default class {
    static getTableColumns (params: {schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-table-columns', unproxify(params));
+      return apiCall('/api/tables/getColumns', params);
    }
 
    static getTableData (params: {
@@ -21,31 +20,31 @@ export default class {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       where: any;
    }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-table-data', unproxify(params));
+      return apiCall('/api/tables/getData', params);
    }
 
    static getTableApproximateCount (params: { uid: string; schema: string; table: string }): Promise<IpcResponse<number>> {
-      return ipcRenderer.invoke('get-table-count', unproxify(params));
+      return apiCall('/api/tables/getCount', params);
    }
 
    static getTableOptions (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-table-options', unproxify(params));
+      return apiCall('/api/tables/getOptions', params);
    }
 
    static getTableIndexes (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-table-indexes', unproxify(params));
+      return apiCall('/api/tables/getIndexes', params);
    }
 
    static getTableChecks (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-table-checks', unproxify(params));
+      return apiCall('/api/tables/getChecks', params);
    }
 
    static getTableDll (params: { uid: string; schema: string; table: string }): Promise<IpcResponse<string>> {
-      return ipcRenderer.invoke('get-table-ddl', unproxify(params));
+      return apiCall('/api/tables/getDdl', params);
    }
 
    static getKeyUsage (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-key-usage', unproxify(params));
+      return apiCall('/api/tables/getKeyUsage', params);
    }
 
    static updateTableCell (params: {
@@ -58,7 +57,7 @@ export default class {
       type: string;
       field: string;
    }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('update-table-cell', unproxify(params));
+      return apiCall('/api/tables/updateCell', params);
    }
 
    static deleteTableRows (params: {
@@ -70,7 +69,7 @@ export default class {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rows: Record<string, any>;
    }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('delete-table-rows', unproxify(params));
+      return apiCall('/api/tables/deleteRows', params);
    }
 
    static insertTableFakeRows (params: {
@@ -82,7 +81,7 @@ export default class {
       fields: Record<string, string>;
       locale: string;
    }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('insert-table-fake-rows', unproxify(params));
+      return apiCall('/api/tables/insertFakeRows', params);
    }
 
    static getForeignList (params: {
@@ -92,26 +91,26 @@ export default class {
       column: string;
       description: string | false;
    }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-foreign-list', unproxify(params));
+      return apiCall('/api/tables/getForeignList', params);
    }
 
    static createTable (params: CreateTableParams): Promise<IpcResponse> {
-      return ipcRenderer.invoke('create-table', unproxify(params));
+      return apiCall('/api/tables/create', params);
    }
 
    static alterTable (params: AlterTableParams): Promise<IpcResponse> {
-      return ipcRenderer.invoke('alter-table', unproxify(params));
+      return apiCall('/api/tables/alter', params);
    }
 
    static duplicateTable (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('duplicate-table', unproxify(params));
+      return apiCall('/api/tables/duplicate', params);
    }
 
    static truncateTable (params: { uid: string; schema: string; table: string; force: boolean }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('truncate-table', unproxify(params));
+      return apiCall('/api/tables/truncate', params);
    }
 
    static dropTable (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('drop-table', unproxify(params));
+      return apiCall('/api/tables/drop', params);
    }
 }

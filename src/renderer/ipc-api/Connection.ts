@@ -1,26 +1,25 @@
 import { ConnectionParams, IpcResponse } from 'common/interfaces/antares';
-import { ipcRenderer } from 'electron';
 
-import { unproxify } from '../libs/unproxify';
+import { apiCall } from './httpClient';
 
 export default class {
    static makeTest (params: ConnectionParams & { connString?: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('test-connection', unproxify(params));
+      return apiCall('/api/connection/test', params);
    }
 
    static connect (params: ConnectionParams & { connString?: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('connect', unproxify(params));
+      return apiCall('/api/connection/connect', params);
    }
 
    static abortConnection (uid: string): void {
-      ipcRenderer.send('abort-connection', uid);
+      apiCall('/api/connection/abort', { uid });
    }
 
    static checkConnection (uid: string): Promise<boolean> {
-      return ipcRenderer.invoke('check-connection', uid);
+      return apiCall('/api/connection/check', { uid });
    }
 
    static disconnect (uid: string): Promise<void> {
-      return ipcRenderer.invoke('disconnect', uid);
+      return apiCall('/api/connection/disconnect', { uid });
    }
 }

@@ -1,26 +1,25 @@
 import { AlterEventParams, CreateEventParams, IpcResponse } from 'common/interfaces/antares';
-import { ipcRenderer } from 'electron';
 
-import { unproxify } from '../libs/unproxify';
+import { apiCall } from './httpClient';
 
 export default class {
    static getSchedulerInformations (params: { uid: string; schema: string; scheduler: string}): Promise<IpcResponse> {
-      return ipcRenderer.invoke('get-scheduler-informations', unproxify(params));
+      return apiCall('/api/schedulers/getInformations', params);
    }
 
    static dropScheduler (params: { uid: string; schema: string; scheduler: string}): Promise<IpcResponse> {
-      return ipcRenderer.invoke('drop-scheduler', unproxify(params));
+      return apiCall('/api/schedulers/drop', params);
    }
 
    static alterScheduler (params: { uid: string; scheduler: AlterEventParams }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('alter-scheduler', unproxify(params));
+      return apiCall('/api/schedulers/alter', params);
    }
 
    static createScheduler (params: CreateEventParams & { uid: string }): Promise<IpcResponse> {
-      return ipcRenderer.invoke('create-scheduler', unproxify(params));
+      return apiCall('/api/schedulers/create', params);
    }
 
    static toggleScheduler (params: { uid: string; schema: string; scheduler: string; enabled: boolean}): Promise<IpcResponse> {
-      return ipcRenderer.invoke('toggle-scheduler', unproxify(params));
+      return apiCall('/api/schedulers/toggle', params);
    }
 }
