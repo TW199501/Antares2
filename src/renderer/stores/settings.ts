@@ -79,7 +79,8 @@ export const useSettingsStore = defineStore('settings', {
       },
       changeLocale (locale: AvailableLocale) {
          this.locale = locale;
-         i18n.global.locale = locale;
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         (i18n.global as any).locale = locale;
          this.persistSettings();
       },
       changePageSize (limit: number) {

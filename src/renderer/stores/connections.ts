@@ -254,7 +254,8 @@ export const useConnectionsStore = defineStore('connections', {
       // Custom Icons
       addIcon (svg: string) {
          if (svg.length > 16384) {
-            const { t } = i18n.global;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { t } = i18n.global as any;
             useNotificationsStore().addNotification({
                status: 'error',
                message: t('application.sizeLimitError', { size: '16KB' })

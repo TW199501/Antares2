@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import * as moment from 'moment';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import moment from 'moment';
 
 export const fakerCustom = {
    seed: faker.seed,

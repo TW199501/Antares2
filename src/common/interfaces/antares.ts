@@ -1,21 +1,14 @@
 import SSHConfig from '@fabio286/ssh2-promise/lib/sshConfig';
 import * as mysql from 'mysql2/promise';
 import * as pg from 'pg';
-import { FirebirdSQLClient } from 'src/main/libs/clients/FirebirdSQLClient';
-import MysqlExporter from 'src/main/libs/exporters/sql/MysqlExporter';
-import PostgreSQLExporter from 'src/main/libs/exporters/sql/PostgreSQLExporter';
-import MySQLImporter from 'src/main/libs/importers/sql/MySQLlImporter';
-import PostgreSQLImporter from 'src/main/libs/importers/sql/PostgreSQLImporter';
 
-import { MySQLClient } from '../../main/libs/clients/MySQLClient';
-import { PostgreSQLClient } from '../../main/libs/clients/PostgreSQLClient';
-import { SQLiteClient } from '../../main/libs/clients/SQLiteClient';
-import { SQLServerClient } from '../../main/libs/clients/SQLServerClient';
-
-export type Client = MySQLClient | PostgreSQLClient | SQLiteClient | FirebirdSQLClient | SQLServerClient
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Client = any
 export type ClientCode = 'mysql' | 'maria' | 'pg' | 'sqlite' | 'firebird' | 'mssql'
-export type Exporter = MysqlExporter | PostgreSQLExporter
-export type Importer = MySQLImporter | PostgreSQLImporter
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Exporter = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Importer = any
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface IpcResponse<T = any> {

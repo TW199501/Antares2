@@ -29,7 +29,7 @@ export const shortcutEvents: Record<string, { i18n: string; i18nParam?: string |
 interface ShortcutRecord {
    event: string;
    isFunction?: boolean;
-   keys: Electron.Accelerator[] | string[];
+   keys: string[];
    /** Needed for default shortcuts */
    os: NodeJS.Platform[];
 }
