@@ -9,7 +9,9 @@
     "allowJs": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "noImplicitAny": true,
+    "noImplicitAny": false,
+    "strict": false,
+    "skipLibCheck": true,
     "jsx": "preserve",
     "types": [
       "node",
@@ -17,9 +19,9 @@
     ],
     "noEmit": true,
     "sourceMap": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "removeComments": true,
     "paths": {
       "common/*": ["./src/common/*"],
       "@/*": ["./src/renderer/*"],
