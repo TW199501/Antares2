@@ -4,6 +4,7 @@ import { FirebirdSQLClient } from './clients/FirebirdSQLClient';
 import { MySQLClient } from './clients/MySQLClient';
 import { PostgreSQLClient } from './clients/PostgreSQLClient';
 import { SQLiteClient } from './clients/SQLiteClient';
+import { SQLServerClient } from './clients/SQLServerClient';
 
 export class ClientsFactory {
    static getClient (args: antares.ClientParams) {
@@ -17,7 +18,8 @@ export class ClientsFactory {
             return new SQLiteClient(args);
          case 'firebird':
             return new FirebirdSQLClient(args);
-         // case 'mssql': return new SQLServerClient(args); // TODO: Task 16
+         case 'mssql':
+            return new SQLServerClient(args);
          default:
             throw new Error(`Unknown database client: ${args.client}`);
       }

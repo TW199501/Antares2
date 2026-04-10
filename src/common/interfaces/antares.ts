@@ -10,8 +10,9 @@ import PostgreSQLImporter from 'src/main/libs/importers/sql/PostgreSQLImporter';
 import { MySQLClient } from '../../main/libs/clients/MySQLClient';
 import { PostgreSQLClient } from '../../main/libs/clients/PostgreSQLClient';
 import { SQLiteClient } from '../../main/libs/clients/SQLiteClient';
+import { SQLServerClient } from '../../main/libs/clients/SQLServerClient';
 
-export type Client = MySQLClient | PostgreSQLClient | SQLiteClient | FirebirdSQLClient
+export type Client = MySQLClient | PostgreSQLClient | SQLiteClient | FirebirdSQLClient | SQLServerClient
 export type ClientCode = 'mysql' | 'maria' | 'pg' | 'sqlite' | 'firebird' | 'mssql'
 export type Exporter = MysqlExporter | PostgreSQLExporter
 export type Importer = MySQLImporter | PostgreSQLImporter
