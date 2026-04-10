@@ -223,6 +223,9 @@ export const useWorkspacesStore = defineStore('workspaces', {
                         case 'firebird':
                            clientCustomizations = customizations.firebird;
                            break;
+                        case 'mssql':
+                           clientCustomizations = customizations.mssql;
+                           break;
                      }
                      const dataTypes = clientCustomizations.dataTypes;
                      const indexTypes = clientCustomizations.indexTypes;
