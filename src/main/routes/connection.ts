@@ -188,14 +188,18 @@ export default async function connectionRoutes (app: FastifyInstance) {
             return { status: 'abort', response: 'Connection aborted' };
          }
 
-         const structure = await connection.getStructure(new Set());
-         if (isLocalAborted) {
-            connection.destroy();
-            return { status: 'abort', response: 'Connection aborted' };
-         }
-
+         // Store connection BEFORE getStructure so subsequent calls can find it
          connections[conn.uid] = connection;
          clearInterval(abortChecker);
+
+         let structure;
+         try {
+            structure = await connection.getStructure(new Set());
+         }
+         catch (structErr) {
+            console.error('[connect] getStructure failed:', structErr.toString());
+            structure = [];
+         }
 
          return { status: 'success', response: structure };
       }
