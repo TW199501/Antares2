@@ -3,18 +3,41 @@ import 'floating-vue/dist/style.css';
 import 'leaflet/dist/leaflet.css';
 import '@/scss/main.scss';
 
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
+import { setSidecarPort } from '@/ipc-api/httpClient';
+import { initTauriFs } from '@/libs/persistStore';
 
-// Stub ipcRenderer for Tauri migration
+// Sidecar port initialization
+async function initSidecar () {
+   try {
+      // Try Tauri environment
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { listen } = await import('@tauri-apps/api/event');
+
+      // Check if sidecar already started
+      const existingPort = await invoke<number>('get_sidecar_port');
+      if (existingPort > 0) setSidecarPort(existingPort);
+
+      // Listen for future sidecar-ready events
+      await listen<number>('sidecar-ready', (event) => {
+         setSidecarPort(event.payload);
+      });
+   }
+   catch {
+      // Not in Tauri — use dev mode port
+      const devPort = 5555;
+      setSidecarPort(devPort);
+      console.log(`Dev mode: using sidecar port ${devPort}`);
+   }
+
+   // Initialize Tauri fs for persistence
+   await initTauriFs();
+}
+
+// Stub ipcRenderer (will be removed once all listeners are migrated)
 const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
    on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
    send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
    removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
    off: (_channel: string, _listener: (...args: any[]) => void) => {}
 };
 import * as FloatingVue from 'floating-vue';
@@ -37,12 +60,24 @@ const vMaskV3 = {
    unmounted: vMaskV2.unbind
 };
 
-createApp(App)
-   .directive('mask', vMaskV3)
-   .use(createPinia())
-   .use(i18n)
-   .use(FloatingVue)
-   .mount('#app');
+// Initialize sidecar connection before mounting
+initSidecar().then(() => {
+   createApp(App)
+      .directive('mask', vMaskV3)
+      .use(createPinia())
+      .use(i18n)
+      .use(FloatingVue)
+      .mount('#app');
+}).catch((err) => {
+   console.error('Failed to initialize sidecar:', err);
+   // Mount app anyway so UI is visible
+   createApp(App)
+      .directive('mask', vMaskV3)
+      .use(createPinia())
+      .use(i18n)
+      .use(FloatingVue)
+      .mount('#app');
+});
 
 const { locale } = useSettingsStore();
 i18n.global.locale = locale;
