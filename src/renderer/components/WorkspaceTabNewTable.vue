@@ -211,20 +211,6 @@
 <script setup lang="ts">
 import { ConnectionParams, TableCheck, TableField, TableForeign, TableIndex, TableOptions } from 'common/interfaces/antares';
 import { uidGen } from 'common/libs/uidGen';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 import { storeToRefs } from 'pinia';
 import { Component, computed, onBeforeUnmount, onMounted, Prop, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -240,6 +226,20 @@ import WorkspaceTabPropsTableIndexesModal from '@/components/WorkspaceTabPropsTa
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';
+// TODO: Replace with Tauri event system when Tauri is set up
+// import { ipcRenderer } from 'electron';
+
+// Stub ipcRenderer for Tauri migration
+const ipcRenderer = {
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   on: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   send: (_channel: string, ..._args: any[]) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   off: (_channel: string, _listener: (...args: any[]) => void) => {}
+};
 
 const { t } = useI18n();
 

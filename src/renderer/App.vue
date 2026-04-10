@@ -38,6 +38,19 @@
 // import { ipcRenderer } from 'electron';
 
 // Stub getCurrentWindow for Tauri migration
+import { storeToRefs } from 'pinia';
+import { defineAsyncComponent, onMounted, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import ModalExportSchema from '@/components/ModalExportSchema.vue';
+import TheSettingBar from '@/components/TheSettingBar.vue';
+import { useApplicationStore } from '@/stores/application';
+import { useConnectionsStore } from '@/stores/connections';
+import { useSchemaExportStore } from '@/stores/schemaExport';
+import { useSettingsStore } from '@/stores/settings';
+import { useWorkspacesStore } from '@/stores/workspaces';
+
+import { useConsoleStore } from './stores/console';
 const getCurrentWindow = () => ({
    minimize: () => {},
    maximize: () => {},
@@ -46,7 +59,7 @@ const getCurrentWindow = () => ({
    isMaximized: () => false,
    isFullScreen: () => false,
    setFullScreen: (_flag: boolean) => {},
-   on: (_event: string, _cb: Function) => {},
+   on: (_event: string, _cb: Function) => {}
 });
 
 // Stub Menu for Tauri migration
@@ -68,19 +81,6 @@ const ipcRenderer = {
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    off: (_channel: string, _listener: (...args: any[]) => void) => {}
 };
-import { storeToRefs } from 'pinia';
-import { defineAsyncComponent, onMounted, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import ModalExportSchema from '@/components/ModalExportSchema.vue';
-import TheSettingBar from '@/components/TheSettingBar.vue';
-import { useApplicationStore } from '@/stores/application';
-import { useConnectionsStore } from '@/stores/connections';
-import { useSchemaExportStore } from '@/stores/schemaExport';
-import { useSettingsStore } from '@/stores/settings';
-import { useWorkspacesStore } from '@/stores/workspaces';
-
-import { useConsoleStore } from './stores/console';
 
 const { t } = useI18n();
 

@@ -169,8 +169,8 @@ export class SQLiteClient extends BaseClient {
             name: field.name,
             key: null as null,
             type: type.trim(),
-            schema: schema,
-            table: table,
+            schema,
+            table,
             numLength: [...NUMBER, ...FLOAT].includes(type) ? length : null,
             datePrecision: null as null,
             charLength: ![...NUMBER, ...FLOAT].includes(type) ? length : null,
@@ -264,8 +264,8 @@ export class SQLiteClient extends BaseClient {
 
       return rows.map(field => {
          return {
-            schema: schema,
-            table: table,
+            schema,
+            table,
             field: field.from,
             position: field.id + 1,
             constraintPosition: null as null,
@@ -373,7 +373,7 @@ export class SQLiteClient extends BaseClient {
          await this.dropTable(params);
 
          const createTableParams = {
-            schema: schema,
+            schema,
             fields: tableStructure.fields,
             foreigns: tableStructure.foreigns,
             indexes: tableStructure.indexes.filter(index => !index.name.includes('sqlite_autoindex')),
@@ -401,7 +401,7 @@ export class SQLiteClient extends BaseClient {
 
          await this.raw(`INSERT INTO "${createTableParams.options.name}" (${insertFields.join(',')}) SELECT ${selectFields.join(',')} FROM "${tmpName}"`);
 
-         await this.dropTable({ schema: schema, table: tmpName });
+         await this.dropTable({ schema, table: tmpName });
 
          // Recreates triggers
          for (const trigger of remappedTriggers)

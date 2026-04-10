@@ -1,4 +1,3 @@
-
 /**
  * [TRANSLATION UPDATE HELPER]
  * - Open a terminal in antares folder and run `npm run translation:check short-code` replacing short-code with the one you are updating.

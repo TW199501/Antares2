@@ -91,6 +91,16 @@
 // import { getCurrentWindow } from '@electron/remote';
 
 // Stub getCurrentWindow for Tauri migration
+import moment from 'moment';
+import { storeToRefs } from 'pinia';
+import { highlight } from 'sql-highlight';
+import { computed, nextTick, onMounted, Ref, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseContextMenu from '@/components/BaseContextMenu.vue';
+import BaseIcon from '@/components/BaseIcon.vue';
+import { copyText } from '@/libs/copyText';
+import { useConsoleStore } from '@/stores/console';
 const getCurrentWindow = () => ({
    minimize: () => {},
    maximize: () => {},
@@ -104,16 +114,6 @@ const getCurrentWindow = () => ({
    webContents: { openDevTools: () => {} } as any,
    reload: () => {}
 });
-import moment from 'moment';
-import { storeToRefs } from 'pinia';
-import { highlight } from 'sql-highlight';
-import { computed, nextTick, onMounted, Ref, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
-import BaseIcon from '@/components/BaseIcon.vue';
-import { copyText } from '@/libs/copyText';
-import { useConsoleStore } from '@/stores/console';
 
 const { t } = useI18n();
 

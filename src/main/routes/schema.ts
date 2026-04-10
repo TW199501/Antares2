@@ -1,7 +1,5 @@
-import * as antares from 'common/interfaces/antares';
 import * as workers from 'common/interfaces/workers';
 import { FastifyInstance } from 'fastify';
-import * as fs from 'fs';
 import { Worker } from 'worker_threads';
 
 import { getConnections } from './connection';
@@ -217,7 +215,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
       return new Promise((resolve) => {
          (async () => {
-            // @ts-ignore
+            // @ts-expect-error Worker path resolved at runtime via require.resolve
             exporter = new Worker(require.resolve('../workers/exporter'));
 
             exporter.postMessage({
@@ -288,7 +286,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          (async () => {
             const dbConfig = await connections[options.uid].getDbConfig();
 
-            // @ts-ignore
+            // @ts-expect-error Worker path resolved at runtime via require.resolve
             importer = new Worker(require.resolve('../workers/importer'));
 
             importer.postMessage({
@@ -423,24 +421,21 @@ export default async function schemaRoutes (app: FastifyInstance) {
                   });
 
                   exportWorker.on('message', (workerMsg: any) => {
-                     if (socket.readyState === 1) {
+                     if (socket.readyState === 1)
                         socket.send(JSON.stringify(workerMsg));
-                     }
                   });
 
                   exportWorker.on('error', (err: Error) => {
-                     if (socket.readyState === 1) {
+                     if (socket.readyState === 1)
                         socket.send(JSON.stringify({ type: 'error', payload: err.message }));
-                     }
                   });
 
                   socket.on('message', (controlMsg: Buffer) => {
                      const parsed = JSON.parse(controlMsg.toString());
                      if (parsed.type === 'abort') {
                         exportWorker.terminate();
-                        if (socket.readyState === 1) {
+                        if (socket.readyState === 1)
                            socket.send(JSON.stringify({ type: 'aborted' }));
-                        }
                      }
                   });
                }
@@ -467,24 +462,21 @@ export default async function schemaRoutes (app: FastifyInstance) {
                   });
 
                   importWorker.on('message', (workerMsg: any) => {
-                     if (socket.readyState === 1) {
+                     if (socket.readyState === 1)
                         socket.send(JSON.stringify(workerMsg));
-                     }
                   });
 
                   importWorker.on('error', (err: Error) => {
-                     if (socket.readyState === 1) {
+                     if (socket.readyState === 1)
                         socket.send(JSON.stringify({ type: 'error', payload: err.message }));
-                     }
                   });
 
                   socket.on('message', (controlMsg: Buffer) => {
                      const parsed = JSON.parse(controlMsg.toString());
                      if (parsed.type === 'abort') {
                         importWorker.terminate();
-                        if (socket.readyState === 1) {
+                        if (socket.readyState === 1)
                            socket.send(JSON.stringify({ type: 'aborted' }));
-                        }
                      }
                   });
                }

@@ -1,5 +1,4 @@
 import SSH2Promise = require('@fabio286/ssh2-promise');
-import SSHConfig from '@fabio286/ssh2-promise/lib/sshConfig';
 import dataTypes from 'common/data-types/sqlserver';
 import * as antares from 'common/interfaces/antares';
 import { removeComments } from 'common/libs/sqlUtils';
@@ -202,9 +201,8 @@ export class SQLServerClient extends BaseClient {
             ORDER BY table_name
          `);
 
-         if (triggers.length) {
+         if (triggers.length)
             triggersArr.push(...triggers.map(t => ({ ...t, table_schema: db.schema_name })));
-         }
       }
 
       return databases.map(db => {
@@ -328,12 +326,12 @@ export class SQLServerClient extends BaseClient {
             name: field.column_name,
             key: null as null,
             type: field.data_type.toUpperCase(),
-            schema: schema,
-            table: table,
+            schema,
+            table,
             numScale: field.numeric_scale,
             numPrecision: field.numeric_precision,
             datePrecision: field.datetime_precision,
-            charLength: charLength,
+            charLength,
             nullable: field.is_nullable === 'YES',
             unsigned: null as null,
             zerofill: null as null,
@@ -469,9 +467,9 @@ export class SQLServerClient extends BaseClient {
       const primaryKey = indexes
          .filter(i => i.type === 'PRIMARY')
          .reduce((acc, cur) => {
-            if (!Object.keys(acc).length) {
+            if (!Object.keys(acc).length)
                acc = { name: cur.name, column: `[${cur.column}]`, type: cur.type };
-            }
+
             else
                acc.column += `, [${cur.column}]`;
             return acc;
@@ -487,9 +485,8 @@ export class SQLServerClient extends BaseClient {
                : `(${column.CHARACTER_MAXIMUM_LENGTH})`;
          }
          else if (column.NUMERIC_PRECISION !== null && column.NUMERIC_SCALE !== null &&
-                  !['INT', 'BIGINT', 'SMALLINT', 'TINYINT', 'BIT', 'MONEY', 'SMALLMONEY', 'FLOAT', 'REAL'].includes(column.DATA_TYPE.toUpperCase())) {
+                  !['INT', 'BIGINT', 'SMALLINT', 'TINYINT', 'BIT', 'MONEY', 'SMALLMONEY', 'FLOAT', 'REAL'].includes(column.DATA_TYPE.toUpperCase()))
             colType += `(${column.NUMERIC_PRECISION}, ${column.NUMERIC_SCALE})`;
-         }
 
          const columnArr = [
             `[${column.COLUMN_NAME}]`,
@@ -702,9 +699,8 @@ export class SQLServerClient extends BaseClient {
       if (manageIndexes.length) sql = `${sql} ${manageIndexes.join(';')}; `;
 
       // TABLE COMMENT
-      if (options.comment) {
+      if (options.comment)
          sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${options.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${options.name}'; `;
-      }
 
       return await this.raw(sql);
    }
@@ -738,9 +734,8 @@ export class SQLServerClient extends BaseClient {
             ${addition.nullable ? 'NULL' : 'NOT NULL'}
             ${addition.default !== null ? `DEFAULT ${addition.default || '\'\''}` : ''}`);
 
-         if (addition.comment) {
+         if (addition.comment)
             sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${addition.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${table}', @level2type=N'COLUMN', @level2name=N'${addition.name}'; `;
-         }
       });
 
       // ADD INDEX
@@ -770,9 +765,8 @@ export class SQLServerClient extends BaseClient {
 
          alterColumns.push(`ALTER COLUMN [${change.name}] ${change.type.toUpperCase()}${length ? `(${length}${change.numScale ? `,${change.numScale}` : ''})` : ''} ${change.nullable ? 'NULL' : 'NOT NULL'}`);
 
-         if (change.orgName !== change.name) {
+         if (change.orgName !== change.name)
             sql += `EXEC sp_rename '[${schema}].[${table}].[${change.orgName}]', '${change.name}', 'COLUMN'; `;
-         }
 
          if (change.comment != null) {
             // Try to update existing, add if not exists
@@ -1185,7 +1179,10 @@ export class SQLServerClient extends BaseClient {
    async destroyConnectionToCommit (tabUid: string) {
       const transaction = this._connectionsToCommit.get(tabUid);
       if (transaction) {
-         try { await transaction.rollback(); } catch (_) {}
+         try {
+            await transaction.rollback();
+         }
+         catch (_) {}
          this._connectionsToCommit.delete(tabUid);
       }
    }
@@ -1364,9 +1361,8 @@ export class SQLServerClient extends BaseClient {
          }
          request = new mssql.Request(transaction);
       }
-      else {
+      else
          request = new mssql.Request(this._connection);
-      }
 
       if (args.tabUid)
          this._runningConnections.set(args.tabUid, request);

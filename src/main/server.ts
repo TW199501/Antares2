@@ -1,19 +1,19 @@
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
+import Fastify from 'fastify';
 import * as net from 'net';
 
-import connectionRoutes from './routes/connection';
-import tableRoutes from './routes/tables';
-import schemaRoutes from './routes/schema';
-import viewRoutes from './routes/views';
-import triggerRoutes from './routes/triggers';
-import routineRoutes from './routes/routines';
-import functionRoutes from './routes/functions';
-import schedulerRoutes from './routes/schedulers';
-import databaseRoutes from './routes/databases';
-import userRoutes from './routes/users';
 import applicationRoutes from './routes/application';
+import connectionRoutes from './routes/connection';
+import databaseRoutes from './routes/databases';
+import functionRoutes from './routes/functions';
+import routineRoutes from './routes/routines';
+import schedulerRoutes from './routes/schedulers';
+import schemaRoutes from './routes/schema';
+import tableRoutes from './routes/tables';
+import triggerRoutes from './routes/triggers';
+import userRoutes from './routes/users';
+import viewRoutes from './routes/views';
 
 const findFreePort = (): Promise<number> => {
    return new Promise((resolve, reject) => {

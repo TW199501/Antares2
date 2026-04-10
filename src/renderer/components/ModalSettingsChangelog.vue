@@ -18,15 +18,17 @@
 // import { shell } from 'electron';
 
 // Stub shell for Tauri migration
-const shell = {
-   openExternal: (_url: string) => { window.open(_url, '_blank'); }
-};
 import { marked } from 'marked';
 import { ref } from 'vue';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import { useApplicationStore } from '@/stores/application';
+const shell = {
+   openExternal: (_url: string) => {
+      window.open(_url, '_blank');
+   }
+};
 
 const { appVersion } = useApplicationStore();
 

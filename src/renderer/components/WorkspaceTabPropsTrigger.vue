@@ -127,6 +127,18 @@
 
 <script setup lang="ts">
 import { Ace } from 'ace-builds';
+import { storeToRefs } from 'pinia';
+import { Component, computed, onBeforeUnmount, onMounted, onUnmounted, Ref, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseIcon from '@/components/BaseIcon.vue';
+import BaseLoader from '@/components/BaseLoader.vue';
+import BaseSelect from '@/components/BaseSelect.vue';
+import QueryEditor from '@/components/QueryEditor.vue';
+import Triggers from '@/ipc-api/Triggers';
+import { useConsoleStore } from '@/stores/console';
+import { useNotificationsStore } from '@/stores/notifications';
+import { useWorkspacesStore } from '@/stores/workspaces';
 // TODO: Replace with Tauri event system when Tauri is set up
 // import { ipcRenderer } from 'electron';
 
@@ -141,18 +153,6 @@ const ipcRenderer = {
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    off: (_channel: string, _listener: (...args: any[]) => void) => {}
 };
-import { storeToRefs } from 'pinia';
-import { Component, computed, onBeforeUnmount, onMounted, onUnmounted, Ref, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import BaseIcon from '@/components/BaseIcon.vue';
-import BaseLoader from '@/components/BaseLoader.vue';
-import BaseSelect from '@/components/BaseSelect.vue';
-import QueryEditor from '@/components/QueryEditor.vue';
-import Triggers from '@/ipc-api/Triggers';
-import { useConsoleStore } from '@/stores/console';
-import { useNotificationsStore } from '@/stores/notifications';
-import { useWorkspacesStore } from '@/stores/workspaces';
 
 type TriggerEventName = 'INSERT' | 'UPDATE' | 'DELETE'
 

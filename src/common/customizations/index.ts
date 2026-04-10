@@ -1,8 +1,8 @@
 import * as firebird from 'common/customizations/firebird';
-import * as mssql from 'common/customizations/sqlserver';
 import * as mysql from 'common/customizations/mysql';
 import * as postgresql from 'common/customizations/postgresql';
 import * as sqlite from 'common/customizations/sqlite';
+import * as mssql from 'common/customizations/sqlserver';
 import { Customizations } from 'common/interfaces/customizations';
 
 export default {

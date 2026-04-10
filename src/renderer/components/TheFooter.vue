@@ -83,9 +83,6 @@
 // import { shell } from 'electron';
 
 // Stub shell for Tauri migration
-const shell = {
-   openExternal: (_url: string) => { window.open(_url, '_blank'); }
-};
 import { storeToRefs } from 'pinia';
 import { computed, ComputedRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -96,6 +93,11 @@ import { useApplicationStore } from '@/stores/application';
 import { useConnectionsStore } from '@/stores/connections';
 import { useConsoleStore } from '@/stores/console';
 import { useWorkspacesStore } from '@/stores/workspaces';
+const shell = {
+   openExternal: (_url: string) => {
+      window.open(_url, '_blank');
+   }
+};
 
 const { t } = useI18n();
 

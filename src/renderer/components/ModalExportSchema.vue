@@ -282,6 +282,20 @@
 import { ClientCode, SchemaInfos } from 'common/interfaces/antares';
 import { Customizations } from 'common/interfaces/customizations';
 import { ExportOptions, ExportState } from 'common/interfaces/exporter';
+import moment from 'moment';
+import { storeToRefs } from 'pinia';
+import { computed, onBeforeUnmount, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseIcon from '@/components/BaseIcon.vue';
+import BaseSelect from '@/components/BaseSelect.vue';
+import { useFocusTrap } from '@/composables/useFocusTrap';
+import Application from '@/ipc-api/Application';
+import Schema from '@/ipc-api/Schema';
+import { useConsoleStore } from '@/stores/console';
+import { useNotificationsStore } from '@/stores/notifications';
+import { useSchemaExportStore } from '@/stores/schemaExport';
+import { useWorkspacesStore } from '@/stores/workspaces';
 // TODO: Replace with Tauri event system when Tauri is set up
 // import { ipcRenderer, IpcRendererEvent } from 'electron';
 
@@ -298,20 +312,6 @@ const ipcRenderer = {
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IpcRendererEvent = any;
-import moment from 'moment';
-import { storeToRefs } from 'pinia';
-import { computed, onBeforeUnmount, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import BaseIcon from '@/components/BaseIcon.vue';
-import BaseSelect from '@/components/BaseSelect.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
-import Application from '@/ipc-api/Application';
-import Schema from '@/ipc-api/Schema';
-import { useConsoleStore } from '@/stores/console';
-import { useNotificationsStore } from '@/stores/notifications';
-import { useSchemaExportStore } from '@/stores/schemaExport';
-import { useWorkspacesStore } from '@/stores/workspaces';
 
 const emit = defineEmits(['close']);
 const { t } = useI18n();

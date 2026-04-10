@@ -20,5 +20,8 @@
    "i18n-ally.enabledParsers": ["ts"],
    "i18n-ally.enabledFrameworks": ["vue"],
    "i18n-ally.namespace": false,
-   "i18n-ally.pathMatcher": "{locale}.ts"
+   "i18n-ally.pathMatcher": "{locale}.ts",
+   "i18n-ally-next.localesPaths": [
+      "src/renderer/i18n"
+   ]
 }

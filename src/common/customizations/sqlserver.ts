@@ -1,6 +1,6 @@
+import sqlServerTypes from '../data-types/sqlserver';
 import { Customizations } from '../interfaces/customizations';
 import { defaults } from './defaults';
-import sqlServerTypes from '../data-types/sqlserver';
 
 export const customizations: Customizations = {
    ...defaults,

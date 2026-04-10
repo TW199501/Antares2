@@ -78,7 +78,7 @@ export class BaseExporter extends EventEmitter {
       try {
          fs.accessSync(this._options.outputFile);
       }
-      catch (err) {
+      catch {
          this._isCancelled = true;
 
          const fileName = path.basename(this._options.outputFile);

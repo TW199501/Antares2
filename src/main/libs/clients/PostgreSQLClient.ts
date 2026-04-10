@@ -98,7 +98,7 @@ export class PostgreSQLClient extends BaseClient {
       _float8: 'DOUBLE PRECISION',
       _char: '"CHAR"',
       _varchar: 'CHARACTER VARYING'
-   }
+   };
 
    _params: pg.ClientConfig & {schema: string; ssl?: ConnectionOptions; ssh?: SSHConfig; readonly: boolean};
 
@@ -1712,7 +1712,7 @@ export class PostgreSQLClient extends BaseClient {
                   try {
                      [ast] = pgAst.parse(query);// TODO: maybe refactor
                   }
-                  catch (err) {}
+                  catch {}
 
                   const { rows, fields } = res;
                   let queryResult;

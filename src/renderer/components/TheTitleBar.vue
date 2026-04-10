@@ -52,6 +52,13 @@
 // import { ipcRenderer } from 'electron';
 
 // Stub getCurrentWindow for Tauri migration
+import { storeToRefs } from 'pinia';
+import { computed, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseIcon from '@/components/BaseIcon.vue';
+import { useConnectionsStore } from '@/stores/connections';
+import { useWorkspacesStore } from '@/stores/workspaces';
 const getCurrentWindow = () => ({
    minimize: () => {},
    maximize: () => {},
@@ -77,13 +84,6 @@ const ipcRenderer = {
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    off: (_channel: string, _listener: (...args: any[]) => void) => {}
 };
-import { storeToRefs } from 'pinia';
-import { computed, onUnmounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import BaseIcon from '@/components/BaseIcon.vue';
-import { useConnectionsStore } from '@/stores/connections';
-import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
 

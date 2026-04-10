@@ -31,7 +31,7 @@ export class FirebirdSQLClient extends BaseClient {
       580: 'BIGINT',
       32764: 'BOOLEAN', // >= 3.0
       32766: 'NULL' // >= 2.5
-   }
+   };
 
    constructor (args: antares.ClientParams) {
       super(args);
@@ -340,8 +340,8 @@ export class FirebirdSQLClient extends BaseClient {
             name: field.FIELD_NAME.trim(),
             key: null as null,
             type: fieldType,
-            schema: schema,
-            table: table,
+            schema,
+            table,
             numPrecision: field.FIELD_PRECISION ? field.FIELD_PRECISION : null,
             numScale: Math.abs(field.FIELD_SCALE),
             datePrecision: field.FIELD_NAME.trim() === 'TIMESTAMP' ? 4 : null,
@@ -454,8 +454,8 @@ export class FirebirdSQLClient extends BaseClient {
 
       return rows.map(field => {
          return {
-            schema: schema,
-            table: table,
+            schema,
+            table,
             field: field.FKCOLUMN_NAME.trim(),
             position: field.KEY_SEQ,
             constraintPosition: null as null,
@@ -824,7 +824,7 @@ export class FirebirdSQLClient extends BaseClient {
             return {
                name: param.PARAMETER_NAME.trim(),
                type: param.FIELD_TYPE.trim(),
-               length: length,
+               length,
                context: param.CONTEXT ? 'OUT' : 'IN'
             };
          });

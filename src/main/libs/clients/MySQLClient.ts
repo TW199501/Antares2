@@ -14,7 +14,6 @@ try {
 }
 catch {}
 
-
 export class MySQLClient extends BaseClient {
    private _schema?: string;
    private _runningConnections: Map<string, number>;
@@ -57,7 +56,7 @@ export class MySQLClient extends BaseClient {
       253: 'VARCHAR',
       254: 'CHAR',
       255: 'GEOMETRY'
-   }
+   };
 
    constructor (args: antares.ClientParams) {
       super(args);
@@ -639,7 +638,7 @@ export class MySQLClient extends BaseClient {
                      default: defaultValue
                   };
                }
-               catch (err) {
+               catch {
                   return null;
                }
             })

@@ -232,7 +232,7 @@ watch(() => tablesInQuery.value.length, () => {
       const params = {
          uid: props.workspace.uid,
          schema: props.schema,
-         table: table
+         table
       };
 
       const { response } = await Tables.getTableColumns(params);

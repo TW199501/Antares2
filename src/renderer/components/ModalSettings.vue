@@ -440,9 +440,6 @@
 // import { shell } from 'electron';
 
 // Stub shell for Tauri migration
-const shell = {
-   openExternal: (_url: string) => { window.open(_url, '_blank'); }
-};
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -460,6 +457,11 @@ import { localesNames } from '@/i18n/supported-locales';
 import { useApplicationStore } from '@/stores/application';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
+const shell = {
+   openExternal: (_url: string) => {
+      window.open(_url, '_blank');
+   }
+};
 
 const { t } = useI18n();
 

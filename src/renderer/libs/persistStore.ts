@@ -1,6 +1,3 @@
-let useTauri = false;
-let tauriFs: any = null;
-
 const STORE_PREFIX = 'antares_';
 
 export async function loadStore<T> (name: string, defaults: T): Promise<T> {

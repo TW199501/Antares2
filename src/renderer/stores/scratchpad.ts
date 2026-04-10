@@ -41,9 +41,8 @@ export const useScratchpadStore = defineStore('scratchpad', {
             // Save migrated state (without the old 'notes' key)
             await saveStore('notes', { connectionNotes: notes });
          }
-         else {
+         else
             this.connectionNotes = data.connectionNotes ?? [];
-         }
 
          this._loaded = true;
       },

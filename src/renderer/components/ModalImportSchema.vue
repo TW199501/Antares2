@@ -55,6 +55,16 @@
 
 <script setup lang="ts">
 import { ImportState } from 'common/interfaces/importer';
+import moment from 'moment';
+import { storeToRefs } from 'pinia';
+import { computed, onBeforeUnmount, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseIcon from '@/components/BaseIcon.vue';
+import Schema from '@/ipc-api/Schema';
+import { useConsoleStore } from '@/stores/console';
+import { useNotificationsStore } from '@/stores/notifications';
+import { useWorkspacesStore } from '@/stores/workspaces';
 // TODO: Replace with Tauri event system when Tauri is set up
 // import { ipcRenderer, IpcRendererEvent } from 'electron';
 
@@ -71,16 +81,6 @@ const ipcRenderer = {
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IpcRendererEvent = any;
-import moment from 'moment';
-import { storeToRefs } from 'pinia';
-import { computed, onBeforeUnmount, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import BaseIcon from '@/components/BaseIcon.vue';
-import Schema from '@/ipc-api/Schema';
-import { useConsoleStore } from '@/stores/console';
-import { useNotificationsStore } from '@/stores/notifications';
-import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
 

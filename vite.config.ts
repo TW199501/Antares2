@@ -1,5 +1,5 @@
 import vue from '@vitejs/plugin-vue';
-import { spawn, ChildProcess } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
@@ -44,7 +44,7 @@ export default defineConfig({
    resolve: {
       alias: {
          '@': path.resolve(__dirname, 'src/renderer'),
-         'common': path.resolve(__dirname, 'src/common'),
+         common: path.resolve(__dirname, 'src/common'),
          '~spectre.css': path.resolve(__dirname, 'node_modules/spectre.css'),
          '~': path.resolve(__dirname, 'node_modules')
       }
@@ -63,7 +63,7 @@ export default defineConfig({
       preprocessorOptions: {
          scss: {
             silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin', 'slash-div', 'color-functions'],
-            additionalData: `@import "@/scss/_variables.scss";`
+            additionalData: '@import "@/scss/_variables.scss";'
          }
       }
    },

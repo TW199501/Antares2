@@ -3,8 +3,17 @@ import 'floating-vue/dist/style.css';
 import 'leaflet/dist/leaflet.css';
 import '@/scss/main.scss';
 
+import * as FloatingVue from 'floating-vue';
+import { createPinia } from 'pinia';
+import { VueMaskDirective } from 'v-mask';
+import { createApp } from 'vue';
+
+import App from '@/App.vue';
+import { i18n } from '@/i18n';
 import { setSidecarPort } from '@/ipc-api/httpClient';
 import { initTauriFs } from '@/libs/persistStore';
+import { useConnectionsStore } from '@/stores/connections';
+import { useSettingsStore } from '@/stores/settings';
 
 // Sidecar port initialization
 async function initSidecar () {
@@ -32,26 +41,6 @@ async function initSidecar () {
    // Initialize Tauri fs for persistence
    await initTauriFs();
 }
-
-// Stub ipcRenderer (will be removed once all listeners are migrated)
-const ipcRenderer = {
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   send: (_channel: string, ..._args: any[]) => {},
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
-import * as FloatingVue from 'floating-vue';
-import { createPinia } from 'pinia';
-import { VueMaskDirective } from 'v-mask';
-import { createApp } from 'vue';
-
-import App from '@/App.vue';
-import { i18n } from '@/i18n';
-import { useApplicationStore } from '@/stores/application';
-import { useConnectionsStore } from '@/stores/connections';
-import { QueryLog, useConsoleStore } from '@/stores/console';
-import { useNotificationsStore } from '@/stores/notifications';
-import { useSettingsStore } from '@/stores/settings';
 
 // https://github.com/probil/v-mask/issues/498#issuecomment-827027834
 const vMaskV2 = VueMaskDirective;

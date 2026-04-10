@@ -19,7 +19,7 @@ export function useResultTables (uid: string, reloadTable: () => void) {
       isQuering.value = true;
 
       const params = {
-         uid: uid,
+         uid,
          ...payload
       };
 
@@ -45,7 +45,7 @@ export function useResultTables (uid: string, reloadTable: () => void) {
       isQuering.value = true;
 
       const params = {
-         uid: uid,
+         uid,
          ...payload
       };
 

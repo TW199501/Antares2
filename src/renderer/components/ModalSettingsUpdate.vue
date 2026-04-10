@@ -57,6 +57,13 @@
 // import { ipcRenderer, shell } from 'electron';
 
 // Stub ipcRenderer for Tauri migration
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import BaseIcon from '@/components/BaseIcon.vue';
+import { useApplicationStore } from '@/stores/application';
+import { useSettingsStore } from '@/stores/settings';
 const ipcRenderer = {
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    on: (_channel: string, _listener: (...args: any[]) => void) => {},
@@ -70,15 +77,10 @@ const ipcRenderer = {
 
 // Stub shell for Tauri migration
 const shell = {
-   openExternal: (_url: string) => { window.open(_url, '_blank'); }
+   openExternal: (_url: string) => {
+      window.open(_url, '_blank');
+   }
 };
-import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-import BaseIcon from '@/components/BaseIcon.vue';
-import { useApplicationStore } from '@/stores/application';
-import { useSettingsStore } from '@/stores/settings';
 
 const { t } = useI18n();
 

@@ -1,5 +1,4 @@
 import * as antares from 'common/interfaces/antares';
-const log = { info: console.log, warn: console.warn, error: console.error };
 import * as fs from 'fs';
 import { parentPort } from 'worker_threads';
 
@@ -8,6 +7,7 @@ import { PostgreSQLClient } from '../libs/clients/PostgreSQLClient';
 import { ClientsFactory } from '../libs/ClientsFactory';
 import MysqlExporter from '../libs/exporters/sql/MysqlExporter';
 import PostgreSQLExporter from '../libs/exporters/sql/PostgreSQLExporter';
+const log = { info: console.log, warn: console.warn, error: console.error };
 let exporter: antares.Exporter;
 
 log.transports.file.fileName = 'workers.log';
