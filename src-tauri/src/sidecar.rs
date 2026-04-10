@@ -11,18 +11,22 @@ pub fn get_port() -> u16 {
 }
 
 pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let resource_dir = app.path().resource_dir()?;
-    let server_js = resource_dir.join("sidecar").join("antares-server.cjs");
+    // Use the directory where the exe lives as base
+    let exe_dir = std::env::current_exe()?
+        .parent()
+        .ok_or("cannot get exe parent dir")?
+        .to_path_buf();
+    let server_js = exe_dir.join("sidecar").join("antares-server.cjs");
 
     if !server_js.exists() {
         return Err(format!("Server bundle not found at {:?}", server_js).into());
     }
 
     // Set NODE_PATH so external requires can find modules
-    let node_modules = resource_dir.join("node_modules");
+    let node_modules = exe_dir.join("node_modules");
 
     // Use bundled node.exe, not system node
-    let node_exe = resource_dir.join("sidecar").join("node.exe");
+    let node_exe = exe_dir.join("sidecar").join("node.exe");
     let node_bin = if node_exe.exists() {
         node_exe.to_string_lossy().to_string()
     } else {
