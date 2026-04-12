@@ -13,7 +13,7 @@ export default class {
       return apiCall('/api/schema/update', params);
    }
 
-   static getDatabaseCollation (params: { uid: string; database: string }) {
+   static getDatabaseCollation (params: { uid: string; database: string }): Promise<IpcResponse> {
       return apiCall('/api/schema/getCollation', params);
    }
 

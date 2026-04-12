@@ -43,7 +43,7 @@
          :model-value="selectedValue"
          :message="t('general.browse')"
          @clear="clearValue"
-         @change="filesChange($event)"
+         @select="filesChange"
       />
       <input
          v-else-if="inputProps().type === 'number'"
@@ -192,12 +192,8 @@ const getKeyUsage = (keyName: string) => {
    return props.keyUsage.find(key => key.field === keyName);
 };
 
-const filesChange = (event: Event) => {
-   const { target } = event as Event & { target: HTMLInputElement };
-   const { files } = target;
-   if (!files.length) return;
-
-   selectedValue.value = files[0].path;
+const filesChange = (path: string) => {
+   selectedValue.value = path;
 };
 
 const clearValue = () => {

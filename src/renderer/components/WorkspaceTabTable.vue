@@ -347,7 +347,7 @@ const getTableData = async () => {
       limit: limit.value,
       page: page.value,
       sortParams: { ...sortParams.value },
-      where: [...filters.value] || []
+      where: [...filters.value]
    };
 
    try { // Table data

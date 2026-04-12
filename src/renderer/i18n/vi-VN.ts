@@ -452,3 +452,4 @@ export const viVN = {
       vin: 'Vin'
    }
 };
+export default viVN;

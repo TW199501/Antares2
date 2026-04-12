@@ -161,7 +161,7 @@ export const zhTW = {
       cell: '單元格 | 單元格',
       triggerFunction: '觸發器函數 | 觸發器函數',
       routine: '例程 | 例程',
-      drop: 'Drop',
+      drop: '刪除',
       commit: '提交',
       rollback: '回滾',
       ddl: '資料定義語言',
@@ -277,7 +277,15 @@ export const zhTW = {
       switchDatabase: '切換資料庫',
       searchForElements: '搜索元素',
       searchForSchemas: '搜索模式(schema)',
-      savedQueries: '已保存的查詢'
+      savedQueries: '已保存的查詢',
+      tableChecks: '資料表檢查',
+      materializedView: '物化視圖 | 物化視圖',
+      manageTableChecks: '管理資料表檢查',
+      createNewCheck: '新增檢查',
+      checkClause: '檢查子句',
+      thereAreNoTableChecks: '沒有資料表檢查',
+      createNewMaterializedView: '新增物化視圖',
+      newMaterializedView: '新的物化視圖'
    },
    application: {
       // 應用程式相關術語
@@ -398,7 +406,18 @@ export const zhTW = {
       saveFile: '保存檔案',
       saveFileAs: '將檔案另存為',
       openFile: '打開檔案',
-      openNotes: '打開筆記'
+      openNotes: '打開筆記',
+      customIcon: '自訂圖示',
+      newFolder: '新增資料夾',
+      outOfFolder: '移出資料夾',
+      invalidFile: '無效的檔案',
+      debugConsole: '除錯主控台',
+      executedQueries: '已執行的查詢',
+      sizeLimitError: '已超過 {size} 的大小上限',
+      fullScreen: '全螢幕',
+      zoomIn: '放大',
+      zoomOut: '縮小',
+      zoomReset: '重設縮放'
    },
    faker: {
       // Faker.js 方法，用於隨機生成的內容
@@ -567,3 +586,4 @@ export const zhTW = {
       vin: 'Vin'
    }
 };
+export default zhTW;

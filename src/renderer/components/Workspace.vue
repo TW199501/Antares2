@@ -67,7 +67,7 @@
                            :icon-name="['view', 'materializedView'].includes(element.elementType) ? 'mdiTableEye' : 'mdiTable'"
                            :size="18"
                         />
-                        <span :title="`${t('general.data').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                        <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
                            <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
                            <span
                               class="btn btn-clear"
@@ -84,7 +84,7 @@
                            :icon-name="['view', 'materializedView'].includes(element.elementType) ? 'mdiTableEye' : 'mdiTable'"
                            :size="18"
                         />
-                        <span :title="`${t('general.data').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                        <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
                            {{ cutText(element.elementName, 20, true) }}
                            <span
                               class="btn btn-clear"
@@ -853,10 +853,14 @@ const closeContext = () => {
 
 (async () => {
    await addWorkspace(props.connection.uid);
+   // Only auto-connect if the sidecar already has an active connection for this uid
+   // (e.g. page refresh without sidecar restart). If not, the user must click Connect.
    const isInitiated = await Connection.checkConnection(props.connection.uid);
    if (isInitiated)
       connectWorkspace(props.connection);
-})();
+})().catch(() => {
+   // Ignore errors (e.g. sidecar not ready yet); user will connect manually
+});
 
 onMounted(() => {
    ipcRenderer.on('open-new-tab', () => {

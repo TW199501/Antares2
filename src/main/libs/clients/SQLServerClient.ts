@@ -20,6 +20,14 @@ export class SQLServerClient extends BaseClient {
       this._connectionsToCommit = new Map();
    }
 
+   private _bid (name: string) {
+      return '[' + name.replace(/\]/g, ']]') + ']';
+   }
+
+   private _esc (value: string) {
+      return value.replaceAll('\'', '\'\'');
+   }
+
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    _reducer (acc: string[], curr: any) {
       const type = typeof curr;
@@ -182,7 +190,7 @@ export class SQLServerClient extends BaseClient {
             LEFT JOIN sys.partitions p ON p.object_id = st.object_id AND p.index_id IN (0, 1)
             LEFT JOIN sys.allocation_units a ON a.container_id = p.partition_id
             LEFT JOIN sys.extended_properties ep ON ep.major_id = st.object_id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
-            WHERE t.TABLE_SCHEMA = '${db.schema_name}'
+            WHERE t.TABLE_SCHEMA = '${this._esc(db.schema_name)}'
             GROUP BY t.TABLE_SCHEMA, t.TABLE_NAME, t.TABLE_TYPE, p.rows, ep.value
             ORDER BY t.TABLE_NAME
          `);
@@ -197,7 +205,7 @@ export class SQLServerClient extends BaseClient {
                tr.is_disabled
             FROM sys.triggers tr
             INNER JOIN sys.tables st ON tr.parent_id = st.object_id
-            WHERE SCHEMA_NAME(st.schema_id) = '${db.schema_name}'
+            WHERE SCHEMA_NAME(st.schema_id) = '${this._esc(db.schema_name)}'
             ORDER BY table_name
          `);
 
@@ -304,16 +312,16 @@ export class SQLServerClient extends BaseClient {
             c.COLUMN_DEFAULT AS column_default,
             c.ORDINAL_POSITION AS ordinal_position,
             c.COLLATION_NAME AS collation_name,
-            COLUMNPROPERTY(OBJECT_ID('${schema}.${table}'), c.COLUMN_NAME, 'IsIdentity') AS is_identity,
+            COLUMNPROPERTY(OBJECT_ID('${this._bid(schema)}.${this._bid(table)}'), c.COLUMN_NAME, 'IsIdentity') AS is_identity,
             ISNULL(ep.value, '') AS column_comment
          FROM INFORMATION_SCHEMA.COLUMNS c
          LEFT JOIN sys.columns sc ON sc.name = c.COLUMN_NAME
-            AND sc.object_id = OBJECT_ID('${schema}.${table}')
+            AND sc.object_id = OBJECT_ID('${this._bid(schema)}.${this._bid(table)}')
          LEFT JOIN sys.extended_properties ep ON ep.major_id = sc.object_id
             AND ep.minor_id = sc.column_id
             AND ep.name = 'MS_Description'
-         WHERE c.TABLE_SCHEMA = '${schema}'
-         AND c.TABLE_NAME = '${table}'
+         WHERE c.TABLE_SCHEMA = '${this._esc(schema)}'
+         AND c.TABLE_NAME = '${this._esc(table)}'
          ORDER BY c.ORDINAL_POSITION ASC
       `);
 
@@ -351,8 +359,8 @@ export class SQLServerClient extends BaseClient {
          SELECT SUM(p.rows) AS [count]
          FROM sys.partitions p
          INNER JOIN sys.tables t ON p.object_id = t.object_id
-         WHERE t.name = '${table}'
-         AND SCHEMA_NAME(t.schema_id) = '${schema}'
+         WHERE t.name = '${this._esc(table)}'
+         AND SCHEMA_NAME(t.schema_id) = '${this._esc(schema)}'
          AND p.index_id IN (0, 1)
       `);
 
@@ -378,8 +386,8 @@ export class SQLServerClient extends BaseClient {
             FROM sys.columns WHERE collation_name IS NOT NULL
             GROUP BY object_id
          ) col ON col.object_id = st.object_id
-         WHERE t.TABLE_SCHEMA = '${schema}'
-         AND t.TABLE_NAME = '${table}'
+         WHERE t.TABLE_SCHEMA = '${this._esc(schema)}'
+         AND t.TABLE_NAME = '${this._esc(table)}'
          GROUP BY t.TABLE_NAME, t.TABLE_TYPE, p.rows, ep.value, col.collation_name
       `);
 
@@ -409,7 +417,7 @@ export class SQLServerClient extends BaseClient {
             END AS index_type
          FROM sys.indexes i
          INNER JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-         WHERE i.object_id = OBJECT_ID('${schema}.${table}')
+         WHERE i.object_id = OBJECT_ID('${this._bid(schema)}.${this._bid(table)}')
          AND i.name IS NOT NULL
          ORDER BY i.name, ic.key_ordinal
       `);
@@ -430,8 +438,8 @@ export class SQLServerClient extends BaseClient {
             cc.definition AS clause
          FROM sys.check_constraints cc
          INNER JOIN sys.tables t ON cc.parent_object_id = t.object_id
-         WHERE SCHEMA_NAME(t.schema_id) = '${schema}'
-         AND t.name = '${table}'
+         WHERE SCHEMA_NAME(t.schema_id) = '${this._esc(schema)}'
+         AND t.name = '${this._esc(table)}'
       `);
 
       return rows.map(row => ({
@@ -454,10 +462,10 @@ export class SQLServerClient extends BaseClient {
             c.NUMERIC_SCALE,
             c.IS_NULLABLE,
             c.COLUMN_DEFAULT,
-            COLUMNPROPERTY(OBJECT_ID('${schema}.${table}'), c.COLUMN_NAME, 'IsIdentity') AS is_identity
+            COLUMNPROPERTY(OBJECT_ID('${this._bid(schema)}.${this._bid(table)}'), c.COLUMN_NAME, 'IsIdentity') AS is_identity
          FROM INFORMATION_SCHEMA.COLUMNS c
-         WHERE c.TABLE_SCHEMA = '${schema}'
-         AND c.TABLE_NAME = '${table}'
+         WHERE c.TABLE_SCHEMA = '${this._esc(schema)}'
+         AND c.TABLE_NAME = '${this._esc(table)}'
          ORDER BY c.ORDINAL_POSITION ASC
       `);
 
@@ -554,8 +562,8 @@ export class SQLServerClient extends BaseClient {
          INNER JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu
             ON rc.UNIQUE_CONSTRAINT_NAME = ccu.CONSTRAINT_NAME
             AND rc.UNIQUE_CONSTRAINT_SCHEMA = ccu.CONSTRAINT_SCHEMA
-         WHERE kcu.TABLE_SCHEMA = '${schema}'
-         AND kcu.TABLE_NAME = '${table}'
+         WHERE kcu.TABLE_SCHEMA = '${this._esc(schema)}'
+         AND kcu.TABLE_NAME = '${this._esc(table)}'
       `);
 
       return rows.map(field => {
@@ -700,7 +708,7 @@ export class SQLServerClient extends BaseClient {
 
       // TABLE COMMENT
       if (options.comment)
-         sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${options.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${options.name}'; `;
+         sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(options.name)}'; `;
 
       return await this.raw(sql);
    }
@@ -735,7 +743,7 @@ export class SQLServerClient extends BaseClient {
             ${addition.default !== null ? `DEFAULT ${addition.default || '\'\''}` : ''}`);
 
          if (addition.comment)
-            sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${addition.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${table}', @level2type=N'COLUMN', @level2name=N'${addition.name}'; `;
+            sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(addition.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(addition.name)}'; `;
       });
 
       // ADD INDEX
@@ -766,17 +774,17 @@ export class SQLServerClient extends BaseClient {
          alterColumns.push(`ALTER COLUMN [${change.name}] ${change.type.toUpperCase()}${length ? `(${length}${change.numScale ? `,${change.numScale}` : ''})` : ''} ${change.nullable ? 'NULL' : 'NOT NULL'}`);
 
          if (change.orgName !== change.name)
-            sql += `EXEC sp_rename '[${schema}].[${table}].[${change.orgName}]', '${change.name}', 'COLUMN'; `;
+            sql += `EXEC sp_rename '${this._bid(schema)}.${this._bid(table)}.${this._bid(change.orgName)}', '${this._esc(change.name)}', 'COLUMN'; `;
 
          if (change.comment != null) {
             // Try to update existing, add if not exists
             sql += `
                IF EXISTS (SELECT 1 FROM sys.extended_properties ep
                   INNER JOIN sys.columns c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id
-                  WHERE ep.name = 'MS_Description' AND c.object_id = OBJECT_ID('[${schema}].[${table}]') AND c.name = '${change.name}')
-                  EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${change.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${table}', @level2type=N'COLUMN', @level2name=N'${change.name}'
+                  WHERE ep.name = 'MS_Description' AND c.object_id = OBJECT_ID('${this._bid(schema)}.${this._bid(table)}') AND c.name = '${this._esc(change.name)}')
+                  EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${this._esc(change.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(change.name)}'
                ELSE
-                  EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${change.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${table}', @level2type=N'COLUMN', @level2name=N'${change.name}'; `;
+                  EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(change.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(change.name)}'; `;
          }
       });
 
@@ -814,50 +822,51 @@ export class SQLServerClient extends BaseClient {
          if (['PRIMARY', 'UNIQUE'].includes(deletion.type))
             alterColumns.push(`DROP CONSTRAINT [${deletion.name}]`);
          else
-            manageIndexes.push(`DROP INDEX [${deletion.name}] ON [${schema}].[${table}]`);
+            manageIndexes.push(`DROP INDEX ${this._bid(deletion.name)} ON ${this._bid(schema)}.${this._bid(table)}`);
       });
 
       // DROP FOREIGN KEYS
       foreignChanges.deletions.forEach(deletion => {
-         alterColumns.push(`DROP CONSTRAINT [${deletion.constraintName}]`);
+         alterColumns.push(`DROP CONSTRAINT ${this._bid(deletion.constraintName)}`);
       });
 
       if (manageIndexes.length) sql = `${manageIndexes.join('; ')}; ${sql}`;
-      if (alterColumns.length) sql += `ALTER TABLE [${schema}].[${table}] ${alterColumns.join(', ')}; `;
+      if (alterColumns.length)
+         sql += alterColumns.map(col => `ALTER TABLE ${this._bid(schema)}.${this._bid(table)} ${col}`).join('; ') + '; ';
 
       // TABLE COMMENT
       if (options.comment != null) {
          sql += `
-            IF EXISTS (SELECT 1 FROM sys.extended_properties WHERE major_id = OBJECT_ID('[${schema}].[${table}]') AND minor_id = 0 AND name = 'MS_Description')
-               EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${options.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${table}'
+            IF EXISTS (SELECT 1 FROM sys.extended_properties WHERE major_id = OBJECT_ID('${this._bid(schema)}.${this._bid(table)}') AND minor_id = 0 AND name = 'MS_Description')
+               EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}'
             ELSE
-               EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${options.comment}', @level0type=N'SCHEMA', @level0name=N'${schema}', @level1type=N'TABLE', @level1name=N'${table}'; `;
+               EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}'; `;
       }
 
       // RENAME TABLE
       if (options.name && options.name !== table)
-         sql += `EXEC sp_rename '[${schema}].[${table}]', '${options.name}'; `;
+         sql += `EXEC sp_rename '${this._bid(schema)}.${this._bid(table)}', '${this._esc(options.name)}'; `;
 
       return await this.raw(sql);
    }
 
    async duplicateTable (params: { schema: string; table: string }) {
-      const sql = `SELECT * INTO [${params.schema}].[${params.table}_copy] FROM [${params.schema}].[${params.table}] WHERE 1 = 0`;
+      const sql = `SELECT * INTO ${this._bid(params.schema)}.${this._bid(params.table + '_copy')} FROM ${this._bid(params.schema)}.${this._bid(params.table)} WHERE 1 = 0`;
       return await this.raw(sql);
    }
 
    async truncateTable (params: { schema: string; table: string }) {
-      const sql = `TRUNCATE TABLE [${params.schema}].[${params.table}]`;
+      const sql = `TRUNCATE TABLE ${this._bid(params.schema)}.${this._bid(params.table)}`;
       return await this.raw(sql);
    }
 
    async dropTable (params: { schema: string; table: string }) {
-      const sql = `DROP TABLE [${params.schema}].[${params.table}]`;
+      const sql = `DROP TABLE ${this._bid(params.schema)}.${this._bid(params.table)}`;
       return await this.raw(sql);
    }
 
    async getViewInformations ({ schema, view }: { schema: string; view: string }) {
-      const sql = `SELECT OBJECT_DEFINITION(OBJECT_ID('[${schema}].[${view}]')) AS definition`;
+      const sql = `SELECT OBJECT_DEFINITION(OBJECT_ID('${this._bid(schema)}.${this._bid(view)}')) AS definition`;
       const results = await this.raw(sql);
 
       if (results.rows.length && results.rows[0].definition) {
@@ -923,9 +932,9 @@ export class SQLServerClient extends BaseClient {
             ), 1, 1, '') AS events
          FROM sys.triggers tr
          INNER JOIN sys.tables st ON tr.parent_id = st.object_id
-         WHERE SCHEMA_NAME(st.schema_id) = '${schema}'
-         AND tr.name = '${triggerName}'
-         AND OBJECT_NAME(tr.parent_id) = '${table}'
+         WHERE SCHEMA_NAME(st.schema_id) = '${this._esc(schema)}'
+         AND tr.name = '${this._esc(triggerName)}'
+         AND OBJECT_NAME(tr.parent_id) = '${this._esc(table)}'
       `);
 
       if (rows.length) {
@@ -974,12 +983,12 @@ export class SQLServerClient extends BaseClient {
    async getRoutineInformations ({ schema, routine }: { schema: string; routine: string }) {
       const { rows } = await this.raw(`
          SELECT
-            OBJECT_DEFINITION(OBJECT_ID('[${schema}].[${routine}]')) AS definition,
+            OBJECT_DEFINITION(OBJECT_ID('${this._bid(schema)}.${this._bid(routine)}')) AS definition,
             r.ROUTINE_NAME,
             r.ROUTINE_SCHEMA
          FROM INFORMATION_SCHEMA.ROUTINES r
-         WHERE r.ROUTINE_SCHEMA = '${schema}'
-         AND r.ROUTINE_NAME = '${routine}'
+         WHERE r.ROUTINE_SCHEMA = '${this._esc(schema)}'
+         AND r.ROUTINE_NAME = '${this._esc(routine)}'
          AND r.ROUTINE_TYPE = 'PROCEDURE'
       `);
 
@@ -1003,8 +1012,8 @@ export class SQLServerClient extends BaseClient {
             PARAMETER_MODE AS parameter_mode,
             DATA_TYPE AS data_type
          FROM INFORMATION_SCHEMA.PARAMETERS
-         WHERE SPECIFIC_SCHEMA = '${schema}'
-         AND SPECIFIC_NAME = '${routine}'
+         WHERE SPECIFIC_SCHEMA = '${this._esc(schema)}'
+         AND SPECIFIC_NAME = '${this._esc(routine)}'
          ORDER BY ORDINAL_POSITION
       `);
 
@@ -1054,13 +1063,13 @@ export class SQLServerClient extends BaseClient {
    async getFunctionInformations ({ schema, func }: { schema: string; func: string }) {
       const { rows } = await this.raw(`
          SELECT
-            OBJECT_DEFINITION(OBJECT_ID('[${schema}].[${func}]')) AS definition,
+            OBJECT_DEFINITION(OBJECT_ID('${this._bid(schema)}.${this._bid(func)}')) AS definition,
             r.ROUTINE_NAME,
             r.ROUTINE_SCHEMA,
             r.DATA_TYPE AS returns_type
          FROM INFORMATION_SCHEMA.ROUTINES r
-         WHERE r.ROUTINE_SCHEMA = '${schema}'
-         AND r.ROUTINE_NAME = '${func}'
+         WHERE r.ROUTINE_SCHEMA = '${this._esc(schema)}'
+         AND r.ROUTINE_NAME = '${this._esc(func)}'
          AND r.ROUTINE_TYPE = 'FUNCTION'
       `);
 
@@ -1084,8 +1093,8 @@ export class SQLServerClient extends BaseClient {
             PARAMETER_MODE AS parameter_mode,
             DATA_TYPE AS data_type
          FROM INFORMATION_SCHEMA.PARAMETERS
-         WHERE SPECIFIC_SCHEMA = '${schema}'
-         AND SPECIFIC_NAME = '${func}'
+         WHERE SPECIFIC_SCHEMA = '${this._esc(schema)}'
+         AND SPECIFIC_NAME = '${this._esc(func)}'
          AND ORDINAL_POSITION > 0
          ORDER BY ORDINAL_POSITION
       `);
@@ -1188,7 +1197,7 @@ export class SQLServerClient extends BaseClient {
    }
 
    async getDatabaseCollation (database: string) {
-      const { rows } = await this.raw(`SELECT DATABASEPROPERTYEX('${database}', 'Collation') AS collation`);
+      const { rows } = await this.raw(`SELECT DATABASEPROPERTYEX('${this._esc(database)}', 'Collation') AS collation`);
       return rows.length ? rows[0].collation : '';
    }
 

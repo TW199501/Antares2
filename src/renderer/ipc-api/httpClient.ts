@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 
 const sidecarPort = ref<number>(0);
+let noConnectionHandler: ((uid: string) => void) | null = null;
 
 export function setSidecarPort (port: number) {
    sidecarPort.value = port;
@@ -8,6 +9,10 @@ export function setSidecarPort (port: number) {
 
 export function getSidecarPort (): number {
    return sidecarPort.value;
+}
+
+export function setNoConnectionHandler (handler: (uid: string) => void) {
+   noConnectionHandler = handler;
 }
 
 export async function apiCall<T = unknown> (path: string, params?: unknown): Promise<T> {
@@ -24,7 +29,21 @@ export async function apiCall<T = unknown> (path: string, params?: unknown): Pro
       throw new Error(`API error ${res.status}: ${text}`);
    }
 
-   return res.json();
+   const data = await res.json() as T;
+
+   // Auto-reconnect if the sidecar lost the connection (e.g. after a restart)
+   if (
+      data &&
+      typeof data === 'object' &&
+      (data as Record<string, unknown>).status === 'error' &&
+      typeof (data as Record<string, unknown>).response === 'string' &&
+      ((data as Record<string, unknown>).response as string).includes('No active connection')
+   ) {
+      const uid = params && typeof params === 'object' ? (params as Record<string, unknown>).uid as string : undefined;
+      if (uid && noConnectionHandler) noConnectionHandler(uid);
+   }
+
+   return data;
 }
 
 export function createWebSocket (path: string): WebSocket {

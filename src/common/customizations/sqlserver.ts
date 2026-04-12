@@ -24,6 +24,7 @@ export const customizations: Customizations = {
    functions: true,
    schedulers: false,
    elementsWrapper: '[',
+   elementsWrapperEnd: ']',
    stringsWrapper: '\'',
    tableAdd: true,
    tableDdl: true,

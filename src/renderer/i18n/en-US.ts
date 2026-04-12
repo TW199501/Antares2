@@ -589,3 +589,4 @@ export const enUS = {
       vin: 'Vin'
    }
 };
+export default enUS;

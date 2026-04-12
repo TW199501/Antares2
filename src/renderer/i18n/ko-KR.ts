@@ -502,3 +502,4 @@ export const koKR = {
       vin: '차량식별번호'
    }
 };
+export default koKR;

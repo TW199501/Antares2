@@ -12,6 +12,12 @@ export function getConnections (): Record<string, antares.Client> {
    return connections;
 }
 
+export function requireConnection (uid: string): antares.Client {
+   const conn = connections[uid];
+   if (!conn) throw new Error(`No active connection for uid "${uid}". The server may have restarted — please reconnect.`);
+   return conn;
+}
+
 export default async function connectionRoutes (app: FastifyInstance) {
    // POST /api/connection/test
    app.post('/api/connection/test', async (request) => {

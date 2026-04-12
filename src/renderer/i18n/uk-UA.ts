@@ -548,3 +548,4 @@ export const ukUA = {
    }
 
 };
+export default ukUA;

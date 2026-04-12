@@ -1,40 +1,64 @@
+import { downloadDir } from '@tauri-apps/api/path';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { open as tauriOpen, save as tauriSave } from '@tauri-apps/plugin-dialog';
+import { ShortcutRecord } from 'common/shortcuts';
+
 import { apiCall } from './httpClient';
 
 export default class {
-   // TODO: Replace with @tauri-apps/plugin-dialog
-   // static showOpenDialog (options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
-   //    return ipcRenderer.invoke('show-open-dialog', options);
-   // }
+   static async showOpenDialog (options: {
+      properties?: ('openFile' | 'openDirectory' | 'multiSelections')[];
+      filters?: { name: string; extensions: string[] }[];
+   } = {}): Promise<{ canceled: boolean; filePaths: string[] }> {
+      const result = await tauriOpen({
+         multiple: options.properties?.includes('multiSelections') ?? false,
+         directory: options.properties?.includes('openDirectory') ?? false,
+         filters: options.filters
+      });
+      if (result === null) return { canceled: true, filePaths: [] };
+      const filePaths = Array.isArray(result) ? result : [result];
+      return { canceled: false, filePaths };
+   }
 
-   // TODO: Replace with @tauri-apps/plugin-dialog
-   // static showSaveDialog (options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
-   //    return ipcRenderer.invoke('show-save-dialog', options);
-   // }
+   static async showSaveDialog (options: {
+      filters?: { name: string; extensions: string[] }[];
+      defaultPath?: string;
+   } = {}): Promise<{ canceled: boolean; filePath: string | undefined }> {
+      const result = await tauriSave({
+         filters: options.filters,
+         defaultPath: options.defaultPath
+      });
+      if (result === null) return { canceled: true, filePath: undefined };
+      return { canceled: false, filePath: result };
+   }
 
-   // TODO: Replace with Tauri implementation (no backend route available)
-   // static getDownloadPathDirectory (): Promise<string> {
-   //    return ipcRenderer.invoke('get-download-dir-path');
-   // }
+   static getDownloadPathDirectory (): Promise<string> {
+      return downloadDir();
+   }
 
-   // TODO: Replace with Tauri implementation
-   // static reloadShortcuts () {
-   //    return ipcRenderer.invoke('reload-shortcuts');
-   // }
+   static async closeApp (): Promise<void> {
+      await getCurrentWindow().close();
+   }
 
-   // TODO: Replace with Tauri implementation
-   // static updateShortcuts (shortcuts: ShortcutRecord[]) {
-   //    return ipcRenderer.invoke('update-shortcuts', shortcuts);
-   // }
+   // Shortcut methods: global shortcut registration was Electron-only.
+   // In Tauri, keyboard shortcuts are handled via DOM events in KeyPressDetector.vue.
+   // Shortcut settings are persisted via the settings Pinia store (localStorage).
+   static reloadShortcuts (): Promise<void> {
+      return Promise.resolve();
+   }
 
-   // TODO: Replace with Tauri implementation
-   // static restoreDefaultShortcuts () {
-   //    return ipcRenderer.invoke('resotre-default-shortcuts');
-   // }
+   static unregisterShortcuts (): Promise<void> {
+      return Promise.resolve();
+   }
 
-   // TODO: Replace with Tauri implementation
-   // static unregisterShortcuts () {
-   //    return ipcRenderer.invoke('unregister-shortcuts');
-   // }
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   static updateShortcuts (_shortcuts: ShortcutRecord[]): Promise<void> {
+      return Promise.resolve();
+   }
+
+   static restoreDefaultShortcuts (): Promise<void> {
+      return Promise.resolve();
+   }
 
    static readFile (params: {filePath: string; encoding: string}): Promise<string> {
       return apiCall('/api/app/readFile', params);
@@ -43,9 +67,4 @@ export default class {
    static writeFile (filePath: string, content: unknown) {
       return apiCall('/api/app/writeFile', { filePath, content });
    }
-
-   // TODO: Replace with @tauri-apps/api/window
-   // static closeApp () {
-   //    return ipcRenderer.invoke('close-app');
-   // }
 }

@@ -59,6 +59,9 @@ importers:
       better-sqlite3:
         specifier: ~10.0.0
         version: 10.0.0
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       ciaplu:
         specifier: ^2.2.0
         version: 2.5.0
@@ -123,7 +126,7 @@ importers:
         specifier: ~3.5.32
         version: 3.5.32(typescript@6.0.2)
       vue-i18n:
-        specifier: ~11.3.2
+        specifier: ^11.3.2
         version: 11.3.2(vue@3.5.32(typescript@6.0.2))
       vuedraggable:
         specifier: ~4.1.0

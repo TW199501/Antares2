@@ -580,3 +580,4 @@ export const heIL = {
       vin: 'מספר רכב (VIN)'
    }
 };
+export default heIL;

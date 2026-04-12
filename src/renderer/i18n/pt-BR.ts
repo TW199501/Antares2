@@ -518,3 +518,4 @@ export const ptBR = {
       vin: 'Vin'
    }
 };
+export default ptBR;

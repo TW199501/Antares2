@@ -15,8 +15,9 @@ export default class {
       apiCall('/api/connection/abort', { uid });
    }
 
-   static checkConnection (uid: string): Promise<boolean> {
-      return apiCall('/api/connection/check', { uid });
+   static async checkConnection (uid: string): Promise<boolean> {
+      const result = await apiCall<{ status: string; response: boolean }>('/api/connection/check', { uid });
+      return result.response === true;
    }
 
    static disconnect (uid: string): Promise<void> {

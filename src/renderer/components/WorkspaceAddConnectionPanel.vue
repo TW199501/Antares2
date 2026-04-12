@@ -94,7 +94,7 @@
                                  :model-value="connection.databasePath"
                                  :message="t('general.browse')"
                                  @clear="pathClear('databasePath')"
-                                 @change="pathSelection($event, 'databasePath')"
+                                 @select="(path) => pathSelection(path, 'databasePath')"
                               />
                            </div>
                         </div>
@@ -218,7 +218,7 @@
                                  :model-value="connection.key"
                                  :message="t('general.browse')"
                                  @clear="pathClear('key')"
-                                 @change="pathSelection($event, 'key')"
+                                 @select="(path) => pathSelection(path, 'key')"
                               />
                            </div>
                         </div>
@@ -231,7 +231,7 @@
                                  :model-value="connection.cert"
                                  :message="t('general.browse')"
                                  @clear="pathClear('cert')"
-                                 @change="pathSelection($event, 'cert')"
+                                 @select="(path) => pathSelection(path, 'cert')"
                               />
                            </div>
                         </div>
@@ -244,7 +244,7 @@
                                  :model-value="connection.ca"
                                  :message="t('general.browse')"
                                  @clear="pathClear('ca')"
-                                 @change="pathSelection($event, 'ca')"
+                                 @select="(path) => pathSelection(path, 'ca')"
                               />
                            </div>
                         </div>
@@ -349,7 +349,7 @@
                                  :model-value="connection.sshKey"
                                  :message="t('general.browse')"
                                  @clear="pathClear('sshKey')"
-                                 @change="pathSelection($event, 'sshKey')"
+                                 @select="(path) => pathSelection(path, 'sshKey')"
                               />
                            </div>
                         </div>
@@ -613,11 +613,8 @@ const toggleSsh = () => {
    connection.value.ssh = !connection.value.ssh;
 };
 
-const pathSelection = (event: Event & {target: {files: {path: string}[]}}, name: keyof ConnectionParams) => {
-   const { files } = event.target;
-   if (!files.length) return;
-
-   (connection.value as unknown as Record<string, string>)[name] = files[0].path as string;
+const pathSelection = (path: string, name: keyof ConnectionParams) => {
+   (connection.value as unknown as Record<string, string>)[name] = path;
 };
 
 const pathClear = (name: keyof ConnectionParams) => {

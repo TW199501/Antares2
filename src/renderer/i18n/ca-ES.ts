@@ -520,3 +520,4 @@ export const caES = {
       vin: 'Vin'
    }
 };
+export default caES;

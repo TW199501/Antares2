@@ -9,7 +9,7 @@ import {
    polygon
 } from '@turf/helpers';
 import { getArrayDepth } from 'common/libs/getArrayDepth';
-import { GeoJsonObject } from 'geojson';
+import type { GeoJsonObject } from 'geojson';
 import * as L from 'leaflet';
 import { onMounted, PropType, Ref, ref } from 'vue';
 

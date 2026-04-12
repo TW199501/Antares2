@@ -496,3 +496,4 @@ export const idID = {
       vin: 'Vin'
    }
 };
+export default idID;

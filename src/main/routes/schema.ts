@@ -2,7 +2,7 @@ import * as workers from 'common/interfaces/workers';
 import { FastifyInstance } from 'fastify';
 import { Worker } from 'worker_threads';
 
-import { getConnections } from './connection';
+import { requireConnection } from './connection';
 
 export default async function schemaRoutes (app: FastifyInstance) {
    let exporter: Worker = null;
@@ -10,11 +10,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/create
    app.post('/api/schema/create', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].createSchema(params);
+         await requireConnection(params.uid).createSchema(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -24,11 +23,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/update
    app.post('/api/schema/update', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].alterSchema(params);
+         await requireConnection(params.uid).alterSchema(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -38,11 +36,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/delete
    app.post('/api/schema/delete', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         await connections[params.uid].dropSchema(params);
+         await requireConnection(params.uid).dropSchema(params);
          return { status: 'success' };
       }
       catch (err) {
@@ -52,11 +49,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getCollation
    app.post('/api/schema/getCollation', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
-         const collation = await connections[params.uid].getDatabaseCollation(params);
+         const collation = await requireConnection(params.uid).getDatabaseCollation(params);
          return { status: 'success', response: collation };
       }
       catch (err) {
@@ -66,12 +62,11 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getStructure
    app.post('/api/schema/getStructure', async (request) => {
-      const connections = getConnections();
       const params = request.body as any;
 
       try {
          const schemas = new Set(params.schemas as string[]);
-         const structure: unknown = await connections[params.uid].getStructure(schemas);
+         const structure: unknown = await requireConnection(params.uid).getStructure(schemas);
          return { status: 'success', response: structure };
       }
       catch (err) {
@@ -81,11 +76,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getCollations
    app.post('/api/schema/getCollations', async (request) => {
-      const connections = getConnections();
       const { uid } = request.body as any;
 
       try {
-         const result = await connections[uid].getCollations();
+         const result = await requireConnection(uid).getCollations();
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -95,11 +89,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getVariables
    app.post('/api/schema/getVariables', async (request) => {
-      const connections = getConnections();
       const { uid } = request.body as any;
 
       try {
-         const result = await connections[uid].getVariables();
+         const result = await requireConnection(uid).getVariables();
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -109,11 +102,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getEngines
    app.post('/api/schema/getEngines', async (request) => {
-      const connections = getConnections();
       const { uid } = request.body as any;
 
       try {
-         const result: unknown = await connections[uid].getEngines();
+         const result: unknown = await requireConnection(uid).getEngines();
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -123,11 +115,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getVersion
    app.post('/api/schema/getVersion', async (request) => {
-      const connections = getConnections();
       const { uid } = request.body as any;
 
       try {
-         const result = await connections[uid].getVersion();
+         const result = await requireConnection(uid).getVersion();
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -137,11 +128,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/getProcesses
    app.post('/api/schema/getProcesses', async (request) => {
-      const connections = getConnections();
       const { uid } = request.body as any;
 
       try {
-         const result = await connections[uid].getProcesses();
+         const result = await requireConnection(uid).getProcesses();
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -151,11 +141,10 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/killProcess
    app.post('/api/schema/killProcess', async (request) => {
-      const connections = getConnections();
       const { uid, pid } = request.body as any;
 
       try {
-         const result = await connections[uid].killProcess(pid);
+         const result = await requireConnection(uid).killProcess(pid);
          return { status: 'success', response: result };
       }
       catch (err) {
@@ -165,13 +154,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/useSchema
    app.post('/api/schema/useSchema', async (request) => {
-      const connections = getConnections();
       const { uid, schema } = request.body as any;
 
       if (!schema) return;
 
       try {
-         await connections[uid].use(schema);
+         await requireConnection(uid).use(schema);
          return { status: 'success' };
       }
       catch (err) {
@@ -181,13 +169,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/rawQuery
    app.post('/api/schema/rawQuery', async (request) => {
-      const connections = getConnections();
       const { uid, query, schema, tabUid, autocommit } = request.body as any;
 
       if (!query) return;
 
       try {
-         const result = await connections[uid].raw(query, {
+         const result = await requireConnection(uid).raw(query, {
             nest: true,
             details: true,
             comments: false,
@@ -205,7 +192,6 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/export
    app.post('/api/schema/export', async (request) => {
-      const connections = getConnections();
       const { uid, type, tables, ...rest } = request.body as any;
 
       if (exporter !== null) {
@@ -222,7 +208,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
                type: 'init',
                client: {
                   name: type,
-                  config: await connections[uid].getDbConfig()
+                  config: await requireConnection(uid).getDbConfig()
                },
                tables,
                options: rest
@@ -274,7 +260,6 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/importSql
    app.post('/api/schema/importSql', async (request) => {
-      const connections = getConnections();
       const options = request.body as any;
 
       if (importer !== null) {
@@ -284,7 +269,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
       return new Promise((resolve) => {
          (async () => {
-            const dbConfig = await connections[options.uid].getDbConfig();
+            const dbConfig = await requireConnection(options.uid).getDbConfig();
 
             // @ts-expect-error Worker path resolved at runtime via require.resolve
             importer = new Worker(require.resolve('../workers/importer'));
@@ -341,13 +326,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/killTabQuery
    app.post('/api/schema/killTabQuery', async (request) => {
-      const connections = getConnections();
       const { uid, tabUid } = request.body as any;
 
       if (!tabUid) return;
 
       try {
-         await connections[uid].killTabQuery(tabUid);
+         await requireConnection(uid).killTabQuery(tabUid);
          return { status: 'success' };
       }
       catch (err) {
@@ -357,13 +341,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/commitTab
    app.post('/api/schema/commitTab', async (request) => {
-      const connections = getConnections();
       const { uid, tabUid } = request.body as any;
 
       if (!tabUid) return;
 
       try {
-         await connections[uid].commitTab(tabUid);
+         await requireConnection(uid).commitTab(tabUid);
          return { status: 'success' };
       }
       catch (err) {
@@ -373,13 +356,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/rollbackTab
    app.post('/api/schema/rollbackTab', async (request) => {
-      const connections = getConnections();
       const { uid, tabUid } = request.body as any;
 
       if (!tabUid) return;
 
       try {
-         await connections[uid].rollbackTab(tabUid);
+         await requireConnection(uid).rollbackTab(tabUid);
          return { status: 'success' };
       }
       catch (err) {
@@ -389,13 +371,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // POST /api/schema/destroyConnectionToCommit
    app.post('/api/schema/destroyConnectionToCommit', async (request) => {
-      const connections = getConnections();
       const { uid, tabUid } = request.body as any;
 
       if (!tabUid) return;
 
       try {
-         await connections[uid].destroyConnectionToCommit(tabUid);
+         await requireConnection(uid).destroyConnectionToCommit(tabUid);
          return { status: 'success' };
       }
       catch (err) {

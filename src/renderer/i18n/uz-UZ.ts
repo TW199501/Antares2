@@ -574,3 +574,4 @@ export const uzUZ = {
       vin: 'Vin'
    }
 };
+export default uzUZ;

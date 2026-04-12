@@ -589,3 +589,4 @@ export const esES = {
       vin: 'VIN'
    }
 };
+export default esES;

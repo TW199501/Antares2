@@ -576,3 +576,4 @@ export const ruRU = {
       vin: 'Vin'
    }
 };
+export default ruRU;

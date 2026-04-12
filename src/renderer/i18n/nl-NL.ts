@@ -575,3 +575,4 @@ export const nlNL = {
       vin: 'Vin'
    }
 };
+export default nlNL;

@@ -112,8 +112,7 @@ onMounted(() => {
    });
 
    editor.setOptions({
-      wrap: lineWrap,
-      enableSnippets: false
+      wrap: lineWrap.value
    });
 
    (editor.session as unknown as ace.Ace.Editor).on('change', () => {

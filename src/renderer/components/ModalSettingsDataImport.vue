@@ -130,7 +130,8 @@ const closeModal = () => {
    emit('close');
 };
 
-const filesChange = ({ target } : {target: HTMLInputElement }) => {
+const filesChange = (event: Event) => {
+   const target = event.target as HTMLInputElement;
    const { files } = target;
    if (!files.length) return;
 
@@ -138,7 +139,7 @@ const filesChange = ({ target } : {target: HTMLInputElement }) => {
    reader.readAsText(files[0]);
    reader.onload = () => {
       fileContent.value = reader.result;
-      filePath.value = files[0].path;
+      filePath.value = files[0].name;
    };
 };
 

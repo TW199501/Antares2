@@ -575,3 +575,4 @@ export const zhCN = {
       vin: 'Vin'
    }
 };
+export default zhCN;

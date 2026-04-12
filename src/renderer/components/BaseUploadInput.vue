@@ -1,5 +1,5 @@
 <template>
-   <label :for="`id_${id}`" class="file-uploader">
+   <label class="file-uploader" @click.prevent="handleClick">
       <span class="file-uploader-message">
          <BaseIcon
             icon-name="mdiFolderOpen"
@@ -15,36 +15,27 @@
          class="file-upload-icon-clear"
          icon-name="mdiClose"
          :size="18"
-         @click.prevent="clear"
+         @click.stop="clear"
       />
-      <form :ref="`form_${id}`">
-         <input
-            :id="`id_${id}`"
-            class="file-uploader-input"
-            type="file"
-            :accept="accept"
-            @change="$emit('change', $event)"
-         >
-      </form>
    </label>
 </template>
 
 <script setup lang="ts">
-import { uidGen } from 'common/libs/uidGen';
+import { open as tauriOpen } from '@tauri-apps/plugin-dialog';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import { useFilters } from '@/composables/useFilters';
 
 const { lastPart } = useFilters();
 
-defineProps({
+const props = defineProps({
    message: {
       default: 'Browse',
       type: String
    },
-   accept: {
-      default: '',
-      type: String
+   filters: {
+      default: () => [] as { name: string; extensions: string[] }[],
+      type: Array as () => { name: string; extensions: string[] }[]
    },
    modelValue: {
       default: '',
@@ -53,11 +44,15 @@ defineProps({
 });
 
 const emit = defineEmits<{
-   'change': [event: Event];
+   'select': [path: string];
    'clear': [];
 }>();
 
-const id = uidGen();
+const handleClick = async () => {
+   const result = await tauriOpen({ filters: props.filters });
+   if (result && typeof result === 'string')
+      emit('select', result);
+};
 
 const clear = () => {
    emit('clear');
@@ -89,10 +84,6 @@ const clear = () => {
     display: flex;
     word-break: keep-all;
     border-radius: $border-radius 0 0 $border-radius;
-  }
-
-  .file-uploader-input {
-    display: none;
   }
 
   .file-uploader-value {

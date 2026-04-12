@@ -517,3 +517,4 @@ export const frFR = {
       vin: 'Plaque d\'imatriculation'
    }
 };
+export default frFR;

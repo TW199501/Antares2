@@ -380,3 +380,4 @@ export const deDE = {
       vin: 'Wein'
    }
 };
+export default deDE;

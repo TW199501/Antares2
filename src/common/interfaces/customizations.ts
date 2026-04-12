@@ -36,6 +36,7 @@ export interface Customizations {
    schedulers?: boolean;
    // Misc
    elementsWrapper: string;
+   elementsWrapperEnd?: string;
    stringsWrapper: string;
    tableAdd?: boolean;
    tableSettings?: boolean;

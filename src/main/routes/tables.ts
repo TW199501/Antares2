@@ -145,10 +145,15 @@ export default async function tableRoutes (app: FastifyInstance) {
       try {
          let escapedParam;
          let reload = false;
-         const id = typeof params.id === 'number' ? params.id : `${sw}${sqlEscaper(params.id)}${sw}`;
+         const escapeStrVal = (val: string) => requireConnection(params.uid)._client === 'mssql'
+            ? val.replaceAll('\'', '\'\'')
+            : sqlEscaper(val);
+         const id = typeof params.id === 'number' ? params.id : `${sw}${escapeStrVal(params.id)}${sw}`;
 
-         if ([...NUMBER, ...FLOAT].includes(params.type))
-            escapedParam = params.content;
+         if ([...NUMBER, ...FLOAT].includes(params.type)) {
+            const numVal = Number(params.content);
+            escapedParam = isFinite(numVal) ? numVal : 'NULL';
+         }
          else if ([...TEXT, ...LONG_TEXT].includes(params.type)) {
             switch (requireConnection(params.uid)._client) {
                case 'mysql':
@@ -158,6 +163,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                case 'pg':
                case 'sqlite':
                case 'firebird':
+               case 'mssql':
                   escapedParam = `'${params.content.replaceAll('\'', '\'\'')}'`;
                   break;
             }
@@ -173,6 +179,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                switch (requireConnection(params.uid)._client) {
                   case 'mysql':
                   case 'maria':
+                  case 'mssql':
                      fileBlob = fs.readFileSync(params.content);
                      escapedParam = `0x${fileBlob.toString('hex')}`;
                      break;
@@ -194,6 +201,9 @@ export default async function tableRoutes (app: FastifyInstance) {
                   case 'maria':
                      escapedParam = '\'\'';
                      break;
+                  case 'mssql':
+                     escapedParam = '0x';
+                     break;
                   case 'pg':
                   case 'firebird':
                      escapedParam = 'decode(\'\', \'hex\')';
@@ -205,7 +215,14 @@ export default async function tableRoutes (app: FastifyInstance) {
             }
          }
          else if (BIT.includes(params.type)) {
-            escapedParam = `b'${sqlEscaper(params.content)}'`;
+            switch (requireConnection(params.uid)._client) {
+               case 'mssql':
+                  escapedParam = params.content === 'true' || params.content === '1' ? '1' : '0';
+                  break;
+               default:
+                  escapedParam = `b'${sqlEscaper(params.content)}'`;
+                  break;
+            }
             reload = true;
          }
          else if (BOOLEAN.includes(params.type)) {
@@ -216,6 +233,9 @@ export default async function tableRoutes (app: FastifyInstance) {
                case 'firebird':
                   escapedParam = params.content;
                   break;
+               case 'mssql':
+                  escapedParam = params.content === 'true' || params.content === '1' ? '1' : '0';
+                  break;
                case 'sqlite':
                   escapedParam = Number(params.content === 'true');
                   break;
@@ -224,7 +244,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          else if (params.content === null)
             escapedParam = 'NULL';
          else
-            escapedParam = `'${sqlEscaper(params.content)}'`;
+            escapedParam = `'${escapeStrVal(params.content)}'`;
 
          if (params.primary) {
             await requireConnection(params.uid)
@@ -243,7 +263,7 @@ export default async function tableRoutes (app: FastifyInstance) {
 
             for (const key in orgRow) {
                if (typeof orgRow[key] === 'string')
-                  orgRow[key] = ` = '${sqlEscaper(orgRow[key])}'`;
+                  orgRow[key] = ` = '${escapeStrVal(orgRow[key])}'`;
                else if (typeof orgRow[key] === 'object' && orgRow[key] !== null)
                   orgRow[key] = formatJsonForSqlWhere(orgRow[key], requireConnection(params.uid)._client);
                else if (orgRow[key] === null)
@@ -341,8 +361,10 @@ export default async function tableRoutes (app: FastifyInstance) {
                if (!('group' in params.row[key]) || params.row[key].group === 'manual') {
                   if (params.row[key].value === null || params.row[key].value === undefined)
                      escapedParam = 'NULL';
-                  else if ([...NUMBER, ...FLOAT].includes(type))
-                     escapedParam = params.row[key].value;
+                  else if ([...NUMBER, ...FLOAT].includes(type)) {
+                     const numVal = Number(params.row[key].value);
+                     escapedParam = isFinite(numVal) ? numVal : 'NULL';
+                  }
                   else if ([...TEXT, ...LONG_TEXT].includes(type)) {
                      switch (requireConnection(params.uid)._client) {
                         case 'mysql':
@@ -352,6 +374,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                         case 'pg':
                         case 'sqlite':
                         case 'firebird':
+                        case 'mssql':
                            escapedParam = `'${params.row[key].value.replaceAll('\'', '\'\'')}'`;
                            break;
                      }
@@ -363,6 +386,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                         switch (requireConnection(params.uid)._client) {
                            case 'mysql':
                            case 'maria':
+                           case 'mssql':
                               fileBlob = fs.readFileSync(params.row[key].value);
                               escapedParam = `0x${fileBlob.toString('hex')}`;
                               break;
@@ -378,16 +402,25 @@ export default async function tableRoutes (app: FastifyInstance) {
                            case 'maria':
                               escapedParam = '""';
                               break;
+                           case 'mssql':
+                              escapedParam = '0x';
+                              break;
                            case 'pg':
                               escapedParam = 'decode(\'\', \'hex\')';
                               break;
                         }
                      }
                   }
-                  else if (BIT.includes(type))
-                     escapedParam = `b'${sqlEscaper(params.row[key].value)}'`;
-                  else
-                     escapedParam = `'${sqlEscaper(params.row[key].value)}'`;
+                  else if (BIT.includes(type)) {
+                     escapedParam = requireConnection(params.uid)._client === 'mssql'
+                        ? (params.row[key].value === 'true' || params.row[key].value === '1' ? '1' : '0')
+                        : `b'${sqlEscaper(params.row[key].value)}'`;
+                  }
+                  else {
+                     escapedParam = requireConnection(params.uid)._client === 'mssql'
+                        ? `'${params.row[key].value.replaceAll('\'', '\'\'')}'`
+                        : `'${sqlEscaper(params.row[key].value)}'`;
+                  }
 
                   insertObj[key] = escapedParam;
                }
@@ -420,6 +453,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                         case 'pg':
                         case 'sqlite':
                         case 'firebird':
+                        case 'mssql':
                            fakeValue = `'${fakeValue.replaceAll('\'', '\'\'')}'`;
                            break;
                      }
@@ -450,17 +484,17 @@ export default async function tableRoutes (app: FastifyInstance) {
    // POST /api/tables/getForeignList
    app.post('/api/tables/getForeignList', async (request) => {
       const { uid, schema, table, column, description } = request.body as any;
-      const { elementsWrapper: ew } = customizations[requireConnection(uid)._client];
+      const { elementsWrapper: ew, elementsWrapperEnd: ewEnd = ew } = customizations[requireConnection(uid)._client];
 
       try {
          const query = requireConnection(uid)
-            .select(`${ew}${column}${ew} AS foreign_column`)
+            .select(`${ew}${column}${ewEnd} AS foreign_column`)
             .schema(schema)
             .from(table)
             .orderBy('foreign_column ASC');
 
          if (description)
-            query.select(`LEFT(${ew}${description}${ew}, 20) AS foreign_description`);
+            query.select(`LEFT(${ew}${description}${ewEnd}, 20) AS foreign_description`);
 
          const results = await query.run<Record<string, string>>();
 

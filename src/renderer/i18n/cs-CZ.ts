@@ -579,3 +579,4 @@ export const csCZ = {
       vin: 'Vin'
    }
 };
+export default csCZ;

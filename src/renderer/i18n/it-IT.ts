@@ -503,3 +503,4 @@ export const itIT = {
       vin: 'Vin'
    }
 };
+export default itIT;

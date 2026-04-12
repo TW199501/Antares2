@@ -56,6 +56,15 @@ const start = async () => {
    console.log(`READY:${port}`);
 };
 
+// Prevent unhandled rejections / uncaught exceptions from crashing the sidecar
+process.on('uncaughtException', (err) => {
+   console.error('[sidecar] Uncaught exception:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+   console.error('[sidecar] Unhandled rejection:', reason);
+});
+
 start().catch((err) => {
    console.error('Server failed to start:', err);
    process.exit(1);

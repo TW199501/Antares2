@@ -10,7 +10,7 @@ import { createApp } from 'vue';
 
 import App from '@/App.vue';
 import { i18n } from '@/i18n';
-import { setSidecarPort } from '@/ipc-api/httpClient';
+import { setNoConnectionHandler, setSidecarPort } from '@/ipc-api/httpClient';
 import { initTauriFs } from '@/libs/persistStore';
 import { useConnectionsStore } from '@/stores/connections';
 import { useSettingsStore } from '@/stores/settings';
@@ -95,8 +95,17 @@ async function mountApp () {
    app.mount('#app');
 
    // Set locale from persisted settings
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   (i18n.global as any).locale = settingsStore.locale;
+   i18n.global.locale.value = settingsStore.locale;
+
+   // Auto-reconnect when sidecar loses a connection (e.g. after restart)
+   const { useWorkspacesStore } = await import('@/stores/workspaces');
+   const workspacesStore = useWorkspacesStore();
+   setNoConnectionHandler((uid: string) => {
+      const connection = connectionsStore.getConnectionByUid(uid);
+      const workspace = workspacesStore.getWorkspace(uid);
+      if (connection && workspace?.connectionStatus === 'connected')
+         workspacesStore.connectWorkspace(connection);
+   });
 }
 
 initSidecar()

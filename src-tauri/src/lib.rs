@@ -1,5 +1,6 @@
 mod sidecar;
 
+#[cfg(debug_assertions)]
 use tauri::Manager;
 
 #[tauri::command]

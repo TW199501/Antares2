@@ -46,7 +46,8 @@ export default defineConfig({
          '@': path.resolve(__dirname, 'src/renderer'),
          common: path.resolve(__dirname, 'src/common'),
          '~spectre.css': path.resolve(__dirname, 'node_modules/spectre.css'),
-         '~': path.resolve(__dirname, 'node_modules')
+         '~': path.resolve(__dirname, 'node_modules'),
+         buffer: 'buffer/'
       }
    },
    define: {

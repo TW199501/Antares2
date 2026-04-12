@@ -564,3 +564,4 @@ export const jaJP = {
       vin: '車両識別番号'
    }
 };
+export default jaJP;

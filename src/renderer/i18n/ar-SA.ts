@@ -73,3 +73,4 @@ export const arSA = {
       notificationsTimeout: 'إنتهاء التنبيهات'
    }
 };
+export default arSA;

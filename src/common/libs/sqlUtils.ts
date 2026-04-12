@@ -293,6 +293,8 @@ export const valueToSqlString = (args: {
          parsedValue = `X'${buffer.toString('hex').toUpperCase()}'`;
       else if (client === 'pg')
          parsedValue = `decode('${buffer.toString('hex').toUpperCase()}', 'hex')`;
+      else if (client === 'mssql')
+         parsedValue = `0x${buffer.toString('hex').toUpperCase()}`;
    }
    else if (NUMBER.includes(field.type))
       parsedValue = val;
@@ -343,9 +345,10 @@ export const jsonToSqlInsert = (args: {
    const { client, json, fields, table, options } = args;
    const sqlInsertAfter = options && options.sqlInsertAfter ? options.sqlInsertAfter : 1;
    const sqlInsertDivider = options && options.sqlInsertDivider ? options.sqlInsertDivider : 'rows';
-   const { elementsWrapper: ew } = customizations[client];
-   const fieldNames = Object.keys(json[0]).map(key => `${ew}${key.split('.').pop()}${ew}`);
-   let insertStmt = `INSERT INTO ${ew}${table}${ew} (${fieldNames.join(', ')}) VALUES `;
+   const { elementsWrapper: ew, elementsWrapperEnd: ewEnd = ew } = customizations[client];
+   const wrapId = (name: string) => `${ew}${name}${ewEnd}`;
+   const fieldNames = Object.keys(json[0]).map(key => wrapId(key.split('.').pop()));
+   let insertStmt = `INSERT INTO ${wrapId(table)} (${fieldNames.join(', ')}) VALUES `;
    let insertsString = '';
    let queryLength = 0;
    let rowsWritten = 0;
@@ -362,7 +365,7 @@ export const jsonToSqlInsert = (args: {
          (sqlInsertDivider === 'rows' && rowsWritten === sqlInsertAfter)
       ) {
          insertsString += insertStmt + ';';
-         insertStmt = `\nINSERT INTO ${ew}${table}${ew} (${fieldNames.join(', ')}) VALUES `;
+         insertStmt = `\nINSERT INTO ${wrapId(table)} (${fieldNames.join(', ')}) VALUES `;
          rowsWritten = 0;
       }
       rowsWritten++;
