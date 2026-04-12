@@ -1,4 +1,4 @@
-import SSH2Promise = require('@fabio286/ssh2-promise');
+import SSH2Promise from '@fabio286/ssh2-promise';
 import dataTypes from 'common/data-types/sqlserver';
 import * as antares from 'common/interfaces/antares';
 import { removeComments } from 'common/libs/sqlUtils';

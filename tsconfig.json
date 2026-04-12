@@ -1,9 +1,13 @@
 {
   "include": [
     "./src/renderer/**/*",
-    "./src/common/**/*"
+    "./src/common/**/*",
+    "./src/main/**/*"
   ],
-  "exclude": ["./src/renderer/libs/ext-language_tools.js"],
+  "exclude": [
+    "./src/renderer/libs/ext-language_tools.js",
+    "./src/main/ipc-handlers/**/*"
+  ],
   "compilerOptions": {
     "target": "ESNext",
     "allowJs": true,

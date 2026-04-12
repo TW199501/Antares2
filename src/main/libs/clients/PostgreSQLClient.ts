@@ -1,4 +1,4 @@
-import SSH2Promise = require('@fabio286/ssh2-promise');
+import SSH2Promise from '@fabio286/ssh2-promise';
 import SSHConfig from '@fabio286/ssh2-promise/lib/sshConfig';
 import dataTypes from 'common/data-types/postgresql';
 import * as antares from 'common/interfaces/antares';
