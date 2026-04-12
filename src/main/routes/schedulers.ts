@@ -12,7 +12,7 @@ export default async function schedulerRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -25,7 +25,7 @@ export default async function schedulerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -38,7 +38,7 @@ export default async function schedulerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -51,7 +51,7 @@ export default async function schedulerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -67,7 +67,7 @@ export default async function schedulerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 }

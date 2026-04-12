@@ -3,15 +3,17 @@
       "target": "ES2021",
       "module": "CommonJS",
       "moduleResolution": "node",
+      "ignoreDeprecations": "6.0",
       "esModuleInterop": true,
       "resolveJsonModule": true,
       "sourceMap": true,
       "noImplicitAny": true,
+      "skipLibCheck": true,
       "outDir": "dist-server",
       "paths": {
          "common/*": ["./src/common/*"]
       }
    },
    "include": ["src/main/**/*", "src/common/**/*"],
-   "exclude": ["node_modules"]
+   "exclude": ["node_modules", "src/main/ipc-handlers/**"]
 }

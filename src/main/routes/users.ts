@@ -13,9 +13,9 @@ export default async function userRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         if (err.code === 'ER_TABLEACCESS_DENIED_ERROR')
+         if ((err as any).code === 'ER_TABLEACCESS_DENIED_ERROR')
             return { status: 'success', response: [] };
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 }

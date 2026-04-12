@@ -20,6 +20,25 @@ export class SQLServerClient extends BaseClient {
       this._connectionsToCommit = new Map();
    }
 
+   // Cast _params to MSSQL-specific shape (BaseClient uses a union type)
+   private get _p () {
+      return this._params as {
+         host: string;
+         port: number;
+         user: string;
+         password: string;
+         database?: string;
+         ssh?: {
+            host: string;
+            port: number;
+            username?: string;
+            password?: string;
+            privateKey?: string;
+            passphrase?: string;
+         };
+      };
+   }
+
    private _bid (name: string) {
       return '[' + name.replace(/\]/g, ']]') + ']';
    }
@@ -29,7 +48,7 @@ export class SQLServerClient extends BaseClient {
    }
 
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   _reducer (acc: string[], curr: any) {
+   _reducer (acc: string[], curr: any): string[] {
       const type = typeof curr;
 
       switch (type) {
@@ -40,28 +59,30 @@ export class SQLServerClient extends BaseClient {
             if (Array.isArray(curr))
                return [...acc, ...curr];
             else {
-               const clausoles = [];
+               const clausoles: string[] = [];
                for (const key in curr)
                   clausoles.push(`[${key}] ${curr[key]}`);
 
                return clausoles;
             }
+         default:
+            return acc;
       }
    }
 
    getTypeInfo (type: string): antares.TypeInformations {
       return dataTypes
-         .reduce((acc, group) => [...acc, ...group.types], [])
+         .reduce((acc: antares.TypeInformations[], group: antares.TypesGroup) => [...acc, ...group.types], [])
          .filter(_type => _type.name === type.toUpperCase())[0];
    }
 
    async getDbConfig () {
       const dbConfig: mssql.config = {
-         server: this._params.host,
-         port: this._params.port,
-         user: this._params.user,
-         password: this._params.password,
-         database: this._params.database || 'master',
+         server: this._p.host,
+         port: this._p.port,
+         user: this._p.user,
+         password: this._p.password,
+         database: this._p.database || 'master',
          options: {
             encrypt: false,
             trustServerCertificate: true,
@@ -74,18 +95,18 @@ export class SQLServerClient extends BaseClient {
          }
       };
 
-      if (this._params.ssh) {
+      if (this._p.ssh) {
          try {
             this._ssh = new SSH2Promise({
-               ...this._params.ssh,
+               ...this._p.ssh,
                reconnect: true,
                reconnectTries: 3,
-               debug: process.env.NODE_ENV !== 'production' ? (s) => console.log(s) : null
+               debug: process.env.NODE_ENV !== 'production' ? (s: string) => console.log(s) : undefined
             });
 
             const tunnel = await this._ssh.addTunnel({
-               remoteAddr: this._params.host,
-               remotePort: this._params.port
+               remoteAddr: this._p.host,
+               remotePort: this._p.port
             });
 
             dbConfig.server = '127.0.0.1';
@@ -109,7 +130,7 @@ export class SQLServerClient extends BaseClient {
    }
 
    async ping () {
-      await this._connection.request().query('SELECT 1');
+      await this._connection!.request().query('SELECT 1');
    }
 
    destroy () {
@@ -326,7 +347,7 @@ export class SQLServerClient extends BaseClient {
       `);
 
       return rows.map(field => {
-         let charLength = field.character_maximum_length;
+         let charLength: number | null = field.character_maximum_length;
          // SQL Server uses -1 for MAX types (nvarchar(max), varchar(max), varbinary(max))
          if (charLength === -1) charLength = null;
 
@@ -648,8 +669,8 @@ export class SQLServerClient extends BaseClient {
    }
 
    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-   async alterSchema (params: { name: string }): Promise<void> {
-      return null;
+   async alterSchema (_params: { name: string }): Promise<void> {
+      // SQL Server schemas cannot be renamed; no-op
    }
 
    async dropSchema (params: { database: string }) {
@@ -700,7 +721,7 @@ export class SQLServerClient extends BaseClient {
 
       // ADD FOREIGN KEYS
       foreigns.forEach(foreign => {
-         newForeigns.push(`CONSTRAINT [${foreign.constraintName}] FOREIGN KEY ([${foreign.field}]) REFERENCES [${schema}].[${foreign.refTable}] ([${foreign.refField}]) ON UPDATE ${foreign.onUpdate} ON DELETE ${foreign.onDelete}`);
+         newForeigns.push(`CONSTRAINT [${foreign.constraintName}] FOREIGN KEY ([${foreign.field}]) REFERENCES [${foreign.refSchema || schema}].[${foreign.refTable}] ([${foreign.refField}]) ON UPDATE ${foreign.onUpdate} ON DELETE ${foreign.onDelete}`);
       });
 
       sql = `${sql} (${[...newColumns, ...newIndexes, ...newForeigns].join(', ')}); `;
@@ -708,7 +729,7 @@ export class SQLServerClient extends BaseClient {
 
       // TABLE COMMENT
       if (options.comment)
-         sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(options.name)}'; `;
+         sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment || '')}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(options.name || '')}'; `;
 
       return await this.raw(sql);
    }
@@ -726,6 +747,7 @@ export class SQLServerClient extends BaseClient {
       } = params;
 
       let sql = '';
+      let postAlterSql = '';
       const alterColumns: string[] = [];
       const manageIndexes: string[] = [];
 
@@ -742,8 +764,9 @@ export class SQLServerClient extends BaseClient {
             ${addition.nullable ? 'NULL' : 'NOT NULL'}
             ${addition.default !== null ? `DEFAULT ${addition.default || '\'\''}` : ''}`);
 
+         // Must run AFTER the ALTER TABLE ADD, so collect separately
          if (addition.comment)
-            sql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(addition.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(addition.name)}'; `;
+            postAlterSql += `EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(addition.comment || '')}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(addition.name)}'; `;
       });
 
       // ADD INDEX
@@ -761,7 +784,7 @@ export class SQLServerClient extends BaseClient {
 
       // ADD FOREIGN KEYS
       foreignChanges.additions.forEach(addition => {
-         alterColumns.push(`ADD CONSTRAINT [${addition.constraintName}] FOREIGN KEY ([${addition.field}]) REFERENCES [${schema}].[${addition.refTable}] ([${addition.refField}]) ON UPDATE ${addition.onUpdate} ON DELETE ${addition.onDelete}`);
+         alterColumns.push(`ADD CONSTRAINT [${addition.constraintName}] FOREIGN KEY ([${addition.field}]) REFERENCES [${addition.refSchema || schema}].[${addition.refTable}] ([${addition.refField}]) ON UPDATE ${addition.onUpdate} ON DELETE ${addition.onDelete}`);
       });
 
       // CHANGE FIELDS
@@ -774,7 +797,7 @@ export class SQLServerClient extends BaseClient {
          alterColumns.push(`ALTER COLUMN [${change.name}] ${change.type.toUpperCase()}${length ? `(${length}${change.numScale ? `,${change.numScale}` : ''})` : ''} ${change.nullable ? 'NULL' : 'NOT NULL'}`);
 
          if (change.orgName !== change.name)
-            sql += `EXEC sp_rename '${this._bid(schema)}.${this._bid(table)}.${this._bid(change.orgName)}', '${this._esc(change.name)}', 'COLUMN'; `;
+            sql += `EXEC sp_rename '${this._bid(schema)}.${this._bid(table)}.${this._bid(change.orgName || '')}', '${this._esc(change.name)}', 'COLUMN'; `;
 
          if (change.comment != null) {
             // Try to update existing, add if not exists
@@ -782,15 +805,15 @@ export class SQLServerClient extends BaseClient {
                IF EXISTS (SELECT 1 FROM sys.extended_properties ep
                   INNER JOIN sys.columns c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id
                   WHERE ep.name = 'MS_Description' AND c.object_id = OBJECT_ID('${this._bid(schema)}.${this._bid(table)}') AND c.name = '${this._esc(change.name)}')
-                  EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${this._esc(change.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(change.name)}'
+                  EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${this._esc(change.comment || '')}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(change.name)}'
                ELSE
-                  EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(change.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(change.name)}'; `;
+                  EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(change.comment || '')}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}', @level2type=N'COLUMN', @level2name=N'${this._esc(change.name)}'; `;
          }
       });
 
       // CHANGE INDEX
       indexChanges.changes.forEach(change => {
-         if (['PRIMARY', 'UNIQUE'].includes(change.oldType))
+         if (['PRIMARY', 'UNIQUE'].includes(change.oldType || ''))
             alterColumns.push(`DROP CONSTRAINT [${change.oldName}]`);
          else
             manageIndexes.push(`DROP INDEX [${change.oldName}] ON [${schema}].[${table}]`);
@@ -809,7 +832,7 @@ export class SQLServerClient extends BaseClient {
       // CHANGE FOREIGN KEYS
       foreignChanges.changes.forEach(change => {
          alterColumns.push(`DROP CONSTRAINT [${change.oldName}]`);
-         alterColumns.push(`ADD CONSTRAINT [${change.constraintName}] FOREIGN KEY ([${change.field}]) REFERENCES [${schema}].[${change.refTable}] ([${change.refField}]) ON UPDATE ${change.onUpdate} ON DELETE ${change.onDelete}`);
+         alterColumns.push(`ADD CONSTRAINT [${change.constraintName}] FOREIGN KEY ([${change.field}]) REFERENCES [${change.refSchema || schema}].[${change.refTable}] ([${change.refField}]) ON UPDATE ${change.onUpdate} ON DELETE ${change.onDelete}`);
       });
 
       // DROP FIELDS
@@ -834,13 +857,17 @@ export class SQLServerClient extends BaseClient {
       if (alterColumns.length)
          sql += alterColumns.map(col => `ALTER TABLE ${this._bid(schema)}.${this._bid(table)} ${col}`).join('; ') + '; ';
 
+      // Column comments for new additions (must run after ALTER TABLE ADD)
+      if (postAlterSql)
+         sql += postAlterSql;
+
       // TABLE COMMENT
       if (options.comment != null) {
          sql += `
             IF EXISTS (SELECT 1 FROM sys.extended_properties WHERE major_id = OBJECT_ID('${this._bid(schema)}.${this._bid(table)}') AND minor_id = 0 AND name = 'MS_Description')
-               EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}'
+               EXEC sp_updateextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment || '')}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}'
             ELSE
-               EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment)}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}'; `;
+               EXEC sp_addextendedproperty @name=N'MS_Description', @value=N'${this._esc(options.comment || '')}', @level0type=N'SCHEMA', @level0name=N'${this._esc(schema)}', @level1type=N'TABLE', @level1name=N'${this._esc(table)}'; `;
       }
 
       // RENAME TABLE
@@ -959,7 +986,7 @@ export class SQLServerClient extends BaseClient {
 
    async alterTrigger ({ trigger }: { trigger: antares.AlterTriggerParams }) {
       // SQL Server supports ALTER TRIGGER directly
-      const sql = trigger.sql.replace(/^CREATE\s+TRIGGER/i, 'ALTER TRIGGER');
+      const sql = trigger.sql.replace(/\bCREATE\s+TRIGGER\b/i, 'ALTER TRIGGER');
       return await this.raw(sql, { split: false });
    }
 
@@ -1044,13 +1071,13 @@ export class SQLServerClient extends BaseClient {
 
    async alterRoutine ({ routine }: { routine: antares.AlterRoutineParams }) {
       // SQL Server supports ALTER PROCEDURE directly
-      const sql = routine.sql.replace(/^CREATE\s+PROC(EDURE)?/i, 'ALTER PROCEDURE');
+      const sql = routine.sql.replace(/\bCREATE\s+PROC(EDURE)?\b/i, 'ALTER PROCEDURE');
       return await this.raw(sql, { split: false });
    }
 
    async createRoutine (routine: antares.CreateRoutineParams) {
-      const parameters = 'parameters' in routine
-         ? routine.parameters.reduce((acc, curr) => {
+      const parameters = 'parameters' in routine && routine.parameters
+         ? routine.parameters.reduce((acc: string[], curr: antares.FunctionParam) => {
             acc.push(`${curr.name} ${curr.type}`);
             return acc;
          }, []).join(', ')
@@ -1127,13 +1154,13 @@ export class SQLServerClient extends BaseClient {
 
    async alterFunction ({ func }: { func: antares.AlterFunctionParams }) {
       // SQL Server supports ALTER FUNCTION directly
-      const sql = func.sql.replace(/^CREATE\s+FUNCTION/i, 'ALTER FUNCTION');
+      const sql = func.sql.replace(/\bCREATE\s+FUNCTION\b/i, 'ALTER FUNCTION');
       return await this.raw(sql, { split: false });
    }
 
    async createFunction (func: antares.CreateFunctionParams) {
-      const parameters = 'parameters' in func
-         ? func.parameters.reduce((acc, curr) => {
+      const parameters = 'parameters' in func && func.parameters
+         ? func.parameters.reduce((acc: string[], curr: antares.FunctionParam) => {
             acc.push(`${curr.name} ${curr.type}`);
             return acc;
          }, []).join(', ')
@@ -1400,7 +1427,8 @@ export class SQLServerClient extends BaseClient {
                      table: '',
                      orgTable: '',
                      tableAlias: '',
-                     type: (col.type?.declaration || col.type?.name || '').toUpperCase(),
+                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                     type: (((col.type as any)?.declaration || (col.type as any)?.name) ?? '').toUpperCase(),
                      length: col.length || undefined,
                      key: undefined
                   } as antares.TableField;
@@ -1422,8 +1450,8 @@ export class SQLServerClient extends BaseClient {
                         const fieldIndex = indexes.find(i => i.column === field.name);
 
                         if (detailedField) {
-                           const length = detailedField.numPrecision || detailedField.charLength || detailedField.datePrecision || null;
-                           field = { ...field, ...detailedField, length };
+                           const length = detailedField.numPrecision || detailedField.charLength || detailedField.datePrecision || undefined;
+                           field = { ...field, ...detailedField, length } as unknown as antares.TableField;
                         }
 
                         if (fieldIndex) {
@@ -1436,7 +1464,7 @@ export class SQLServerClient extends BaseClient {
 
                      try {
                         const response = await this.getKeyUsage(paramObj);
-                        keysArr = [...keysArr, ...response];
+                        keysArr = [...keysArr, ...(response as unknown as antares.QueryForeign[])];
                      }
                      catch (_) { /* ignore */ }
                   }

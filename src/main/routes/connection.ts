@@ -42,8 +42,8 @@ export default async function connectionRoutes (app: FastifyInstance) {
          database: '',
          schema: '',
          databasePath: '',
-         ssl: undefined as SslOptions,
-         ssh: undefined as {
+         ssl: undefined as unknown as SslOptions,
+         ssh: undefined as unknown as {
             host: string;
             username: string;
             password: string;
@@ -62,9 +62,9 @@ export default async function connectionRoutes (app: FastifyInstance) {
 
       if (conn.ssl) {
          params.ssl = {
-            key: conn.key ? fs.readFileSync(conn.key).toString() : null,
-            cert: conn.cert ? fs.readFileSync(conn.cert).toString() : null,
-            ca: conn.ca ? fs.readFileSync(conn.ca).toString() : null,
+            key: conn.key ? fs.readFileSync(conn.key).toString() : undefined,
+            cert: conn.cert ? fs.readFileSync(conn.cert).toString() : undefined,
+            ca: conn.ca ? fs.readFileSync(conn.ca).toString() : undefined,
             ciphers: conn.ciphers,
             rejectUnauthorized: !conn.untrustedConnection
          };
@@ -72,13 +72,13 @@ export default async function connectionRoutes (app: FastifyInstance) {
 
       if (conn.ssh) {
          params.ssh = {
-            host: conn.sshHost,
-            username: conn.sshUser,
-            password: conn.sshPass,
-            port: conn.sshPort ? conn.sshPort : 22,
-            privateKey: conn.sshKey ? fs.readFileSync(conn.sshKey).toString() : undefined,
-            passphrase: conn.sshPassphrase,
-            keepaliveInterval: conn.sshKeepAliveInterval ? conn.sshKeepAliveInterval * 1000 : undefined
+            host: conn.sshHost || '',
+            username: conn.sshUser || '',
+            password: conn.sshPass || '',
+            port: conn.sshPort || 22,
+            privateKey: conn.sshKey ? fs.readFileSync(conn.sshKey).toString() : '',
+            passphrase: conn.sshPassphrase || '',
+            keepaliveInterval: conn.sshKeepAliveInterval ? conn.sshKeepAliveInterval * 1000 : 0
          };
       }
 
@@ -107,7 +107,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          if (error instanceof AggregateError)
             throw new Error(error.errors.reduce((acc: string, curr: Error) => acc + ' | ' + curr.message, ''));
          else if (!isLocalAborted)
-            return { status: 'error', response: error.toString() };
+            return { status: 'error', response: String(error) };
          else
             return { status: 'abort', response: 'Connection aborted' };
       }
@@ -137,8 +137,8 @@ export default async function connectionRoutes (app: FastifyInstance) {
          database: '',
          schema: '',
          databasePath: '',
-         ssl: undefined as SslOptions,
-         ssh: undefined as {
+         ssl: undefined as unknown as SslOptions,
+         ssh: undefined as unknown as {
             host: string;
             username: string;
             password: string;
@@ -160,9 +160,9 @@ export default async function connectionRoutes (app: FastifyInstance) {
 
       if (conn.ssl) {
          params.ssl = {
-            key: conn.key ? fs.readFileSync(conn.key).toString() : null,
-            cert: conn.cert ? fs.readFileSync(conn.cert).toString() : null,
-            ca: conn.ca ? fs.readFileSync(conn.ca).toString() : null,
+            key: conn.key ? fs.readFileSync(conn.key).toString() : undefined,
+            cert: conn.cert ? fs.readFileSync(conn.cert).toString() : undefined,
+            ca: conn.ca ? fs.readFileSync(conn.ca).toString() : undefined,
             ciphers: conn.ciphers,
             rejectUnauthorized: !conn.untrustedConnection
          };
@@ -170,13 +170,13 @@ export default async function connectionRoutes (app: FastifyInstance) {
 
       if (conn.ssh) {
          params.ssh = {
-            host: conn.sshHost,
-            username: conn.sshUser,
-            password: conn.sshPass,
-            port: conn.sshPort ? conn.sshPort : 22,
-            privateKey: conn.sshKey ? fs.readFileSync(conn.sshKey).toString() : null,
-            passphrase: conn.sshPassphrase,
-            keepaliveInterval: conn.sshKeepAliveInterval ? conn.sshKeepAliveInterval * 1000 : null
+            host: conn.sshHost || '',
+            username: conn.sshUser || '',
+            password: conn.sshPass || '',
+            port: conn.sshPort || 22,
+            privateKey: conn.sshKey ? fs.readFileSync(conn.sshKey).toString() : '',
+            passphrase: conn.sshPassphrase || '',
+            keepaliveInterval: conn.sshKeepAliveInterval ? conn.sshKeepAliveInterval * 1000 : 0
          };
       }
 
@@ -198,12 +198,12 @@ export default async function connectionRoutes (app: FastifyInstance) {
          connections[conn.uid] = connection;
          clearInterval(abortChecker);
 
-         let structure;
+         let structure: unknown[];
          try {
             structure = await connection.getStructure(new Set());
          }
          catch (structErr) {
-            console.error('[connect] getStructure failed:', structErr.toString());
+            console.error('[connect] getStructure failed:', String(structErr));
             structure = [];
          }
 
@@ -213,7 +213,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          clearInterval(abortChecker);
 
          if (!isLocalAborted)
-            return { status: 'error', response: err.toString() };
+            return { status: 'error', response: String(err) };
          else
             return { status: 'abort', response: 'Connection aborted' };
       }
@@ -229,7 +229,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 

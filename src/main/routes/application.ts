@@ -11,7 +11,7 @@ export default async function applicationRoutes (app: FastifyInstance) {
          return content;
       }
       catch (error) {
-         return { status: 'error', response: error.toString() };
+         return { status: 'error', response: String(error) };
       }
    });
 
@@ -24,7 +24,7 @@ export default async function applicationRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (error) {
-         return { status: 'error', response: error.toString() };
+         return { status: 'error', response: String(error) };
       }
    });
 }

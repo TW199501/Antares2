@@ -13,7 +13,7 @@ export default async function databaseRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 }

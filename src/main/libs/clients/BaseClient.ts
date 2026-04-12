@@ -13,7 +13,7 @@ export abstract class BaseClient {
    _client: antares.ClientCode;
    protected _cUid: string;
    protected _params: mysql.ConnectionOptions | pg.ClientConfig | { databasePath: string; readonly: boolean};
-   protected _poolSize: number;
+   protected _poolSize: number | undefined;
    protected _ssh?: SSH2Promise;
    protected _logger: (args: {content: string; cUid: string; level: LoggerLevel}) => void;
    protected _querySplitter: (sql: string, client: antares.ClientCode) => string[];
@@ -22,7 +22,7 @@ export abstract class BaseClient {
 
    constructor (args: antares.ClientParams) {
       this._client = args.client;
-      this._cUid = args.uid;
+      this._cUid = args.uid || '';
       this._params = args.params;
       this._poolSize = args.poolSize || undefined;
       this._logger = args.logger || ipcLogger;

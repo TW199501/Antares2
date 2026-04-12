@@ -457,7 +457,6 @@
                />
                <WorkspaceTabTable
                   v-else-if="['temp-data', 'data'].includes(tab.type)"
-                  v-once
                   :tab-uid="tab.uid"
                   :connection="connection"
                   :is-selected="selectedTab === tab.uid && isSelected"

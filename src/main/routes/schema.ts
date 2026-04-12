@@ -5,8 +5,8 @@ import { Worker } from 'worker_threads';
 import { requireConnection } from './connection';
 
 export default async function schemaRoutes (app: FastifyInstance) {
-   let exporter: Worker = null;
-   let importer: Worker = null;
+   let exporter: Worker | null = null;
+   let importer: Worker | null = null;
 
    // POST /api/schema/create
    app.post('/api/schema/create', async (request) => {
@@ -17,7 +17,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -30,7 +30,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -43,7 +43,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -56,7 +56,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: collation };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -70,7 +70,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: structure };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -83,7 +83,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -96,7 +96,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -109,7 +109,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -122,7 +122,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -135,7 +135,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -148,7 +148,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -163,7 +163,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -186,7 +186,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -201,7 +201,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
       return new Promise((resolve) => {
          (async () => {
-            // @ts-expect-error Worker path resolved at runtime via require.resolve
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             exporter = new Worker(require.resolve('../workers/exporter'));
 
             exporter.postMessage({
@@ -271,7 +271,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          (async () => {
             const dbConfig = await requireConnection(options.uid).getDbConfig();
 
-            // @ts-expect-error Worker path resolved at runtime via require.resolve
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             importer = new Worker(require.resolve('../workers/importer'));
 
             importer.postMessage({
@@ -292,12 +292,12 @@ export default async function schemaRoutes (app: FastifyInstance) {
                      resolve({ status: 'success', response: payload });
                      break;
                   case 'cancel':
-                     importer.terminate();
+                     importer?.terminate();
                      importer = null;
                      resolve({ status: 'error', response: 'Operation cancelled' });
                      break;
                   case 'error':
-                     importer.terminate();
+                     importer?.terminate();
                      importer = null;
                      resolve({ status: 'error', response: payload });
                      break;
@@ -335,7 +335,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -350,7 +350,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -365,7 +365,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -380,7 +380,7 @@ export default async function schemaRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 

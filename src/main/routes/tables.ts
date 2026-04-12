@@ -5,7 +5,7 @@ import { fakerCustom } from 'common/libs/fakerCustom';
 import { formatJsonForSqlWhere, sqlEscaper } from 'common/libs/sqlUtils';
 import { FastifyInstance } from 'fastify';
 import * as fs from 'fs';
-import * as moment from 'moment';
+import moment from 'moment';
 
 import { getConnections } from './connection';
 
@@ -25,7 +25,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -53,7 +53,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -66,7 +66,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -79,7 +79,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -92,7 +92,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -105,7 +105,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -118,7 +118,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -131,7 +131,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -140,7 +140,7 @@ export default async function tableRoutes (app: FastifyInstance) {
       const params = request.body as any;
 
       delete params.row._antares_id;
-      const { stringsWrapper: sw } = customizations[requireConnection(params.uid)._client];
+      const { stringsWrapper: sw } = (customizations as any)[requireConnection(params.uid)._client];
 
       try {
          let escapedParam;
@@ -284,7 +284,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: { reload } };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -312,7 +312,7 @@ export default async function tableRoutes (app: FastifyInstance) {
             return { status: 'success', response: result };
          }
          catch (err) {
-            return { status: 'error', response: err.toString() };
+            return { status: 'error', response: String(err) };
          }
       }
       else {
@@ -339,7 +339,7 @@ export default async function tableRoutes (app: FastifyInstance) {
             return { status: 'success', response: [] };
          }
          catch (err) {
-            return { status: 'error', response: err.toString() };
+            return { status: 'error', response: String(err) };
          }
       }
    });
@@ -422,7 +422,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                         : `'${sqlEscaper(params.row[key].value)}'`;
                   }
 
-                  insertObj[key] = escapedParam;
+                  insertObj[key] = escapedParam ?? '';
                }
                else {
                   const parsedParams: Record<string, string | number | boolean | Date | Buffer> = {};
@@ -477,14 +477,14 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
    // POST /api/tables/getForeignList
    app.post('/api/tables/getForeignList', async (request) => {
       const { uid, schema, table, column, description } = request.body as any;
-      const { elementsWrapper: ew, elementsWrapperEnd: ewEnd = ew } = customizations[requireConnection(uid)._client];
+      const { elementsWrapper: ew, elementsWrapperEnd: ewEnd = ew } = (customizations as any)[requireConnection(uid)._client];
 
       try {
          const query = requireConnection(uid)
@@ -496,7 +496,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          if (description)
             query.select(`LEFT(${ew}${description}${ewEnd}, 20) AS foreign_description`);
 
-         const results = await query.run<Record<string, string>>();
+         const results = await query.run() as { rows: Record<string, string>[] };
 
          const parsedResults: Record<string, string>[] = [];
 
@@ -514,7 +514,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success', response: results };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -527,7 +527,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -540,7 +540,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -553,7 +553,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -566,7 +566,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 
@@ -579,7 +579,7 @@ export default async function tableRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: err.toString() };
+         return { status: 'error', response: String(err) };
       }
    });
 }

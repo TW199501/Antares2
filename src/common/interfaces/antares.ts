@@ -369,8 +369,8 @@ export interface QueryBuilderObject {
    where: string[];
    groupBy: string[];
    orderBy: string[];
-   limit: number;
-   offset: number;
+   limit: number | null;
+   offset: number | null;
    join: string[];
    update: string[];
    insert: Record<string, string | boolean | number>[];
