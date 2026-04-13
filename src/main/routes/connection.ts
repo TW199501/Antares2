@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { SslOptions } from 'mysql2';
 
 import { ClientsFactory } from '../libs/ClientsFactory';
+import { safeErrorMessage } from '../libs/safeError';
 
 const connections: Record<string, antares.Client> = {};
 const isAborting: Record<string, boolean> = {};
@@ -107,7 +108,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          if (error instanceof AggregateError)
             throw new Error(error.errors.reduce((acc: string, curr: Error) => acc + ' | ' + curr.message, ''));
          else if (!isLocalAborted)
-            return { status: 'error', response: String(error) };
+            return { status: 'error', response: safeErrorMessage(error) };
          else
             return { status: 'abort', response: 'Connection aborted' };
       }
@@ -213,7 +214,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          clearInterval(abortChecker);
 
          if (!isLocalAborted)
-            return { status: 'error', response: String(err) };
+            return { status: 'error', response: safeErrorMessage(err) };
          else
             return { status: 'abort', response: 'Connection aborted' };
       }
@@ -229,7 +230,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 

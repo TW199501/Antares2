@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
+import { safeErrorMessage } from '../libs/safeError';
 import { requireConnection } from './connection';
 
 export default async function triggerRoutes (app: FastifyInstance) {
@@ -12,7 +13,7 @@ export default async function triggerRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 
@@ -25,7 +26,7 @@ export default async function triggerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 
@@ -38,7 +39,7 @@ export default async function triggerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 
@@ -51,7 +52,7 @@ export default async function triggerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 
@@ -67,7 +68,7 @@ export default async function triggerRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 }

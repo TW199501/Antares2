@@ -368,7 +368,7 @@ const includeDropStatementStatus = computed(() => {
 
 const wsExport = ref<WebSocket | null>(null);
 
-const startExport = () => {
+const startExport = async () => {
    isExporting.value = true;
    progressPercentage.value = 0;
    progressStatus.value = '';
@@ -383,7 +383,7 @@ const startExport = () => {
       ...options.value
    };
 
-   const ws = createWebSocket('/ws/export');
+   const ws = await createWebSocket('/ws/export');
    wsExport.value = ws;
 
    ws.onopen = () => {

@@ -1,6 +1,8 @@
+import { invoke } from '@tauri-apps/api/core';
 import { ref } from 'vue';
 
 const sidecarPort = ref<number>(0);
+const sidecarToken = ref<string>('');
 let noConnectionHandler: ((uid: string) => void) | null = null;
 
 export function setSidecarPort (port: number) {
@@ -15,12 +17,23 @@ export function setNoConnectionHandler (handler: (uid: string) => void) {
    noConnectionHandler = handler;
 }
 
+async function getToken (): Promise<string> {
+   if (!sidecarToken.value)
+      sidecarToken.value = await invoke<string>('get_sidecar_token');
+   return sidecarToken.value;
+}
+
 export async function apiCall<T = unknown> (path: string, params?: unknown): Promise<T> {
    const port = sidecarPort.value || 5555;
    const baseUrl = `http://127.0.0.1:${port}`;
+   const token = await getToken();
+
    const res = await fetch(`${baseUrl}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+         'Content-Type': 'application/json',
+         'X-Sidecar-Token': token
+      },
       body: params ? JSON.stringify(params) : undefined
    });
 
@@ -46,10 +59,9 @@ export async function apiCall<T = unknown> (path: string, params?: unknown): Pro
    return data;
 }
 
-export function createWebSocket (path: string): WebSocket {
+export async function createWebSocket (path: string): Promise<WebSocket> {
    const port = sidecarPort.value > 0 ? sidecarPort.value : 5555;
-   if (sidecarPort.value === 0)
-      console.warn('[httpClient] sidecar port is not ready yet, fallback to 5555 for websocket');
-   const baseUrl = `ws://127.0.0.1:${port}`;
-   return new WebSocket(`${baseUrl}${path}`);
+   const token = await getToken();
+   const url = `ws://127.0.0.1:${port}${path}?token=${encodeURIComponent(token)}`;
+   return new WebSocket(url);
 }

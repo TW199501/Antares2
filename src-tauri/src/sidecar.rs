@@ -9,11 +9,16 @@ use std::io::{BufRead, BufReader};
 use tauri::{AppHandle, Emitter};
 
 static SIDECAR_PORT: Mutex<u16> = Mutex::new(0);
+static SIDECAR_TOKEN: Mutex<String> = Mutex::new(String::new());
 static SIDECAR_PID: Mutex<Option<u32>> = Mutex::new(None);
 static SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
 
 pub fn get_port() -> u16 {
     *SIDECAR_PORT.lock().unwrap()
+}
+
+pub fn get_token() -> String {
+    SIDECAR_TOKEN.lock().unwrap().clone()
 }
 
 pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
@@ -102,10 +107,18 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         for line in reader.lines() {
             if let Ok(line) = line {
                 if line.starts_with("READY:") {
-                    if let Ok(port) = line.trim_start_matches("READY:").trim().parse::<u16>() {
-                        *SIDECAR_PORT.lock().unwrap() = port;
-                        let _ = app_handle.emit("sidecar-ready", port);
+                    let rest = line.trim_start_matches("READY:").trim();
+                    let parts: Vec<&str> = rest.splitn(2, ':').collect();
+                    if let Some(port_str) = parts.first() {
+                        if let Ok(port) = port_str.parse::<u16>() {
+                            *SIDECAR_PORT.lock().unwrap() = port;
+                        }
                     }
+                    if let Some(token) = parts.get(1) {
+                        *SIDECAR_TOKEN.lock().unwrap() = token.to_string();
+                    }
+                    let port = *SIDECAR_PORT.lock().unwrap();
+                    let _ = app_handle.emit("sidecar-ready", port);
                 }
             }
         }

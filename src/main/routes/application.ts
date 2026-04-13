@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import * as fs from 'fs';
 
+import { safeErrorMessage } from '../libs/safeError';
+
 export default async function applicationRoutes (app: FastifyInstance) {
    // POST /api/app/readFile
    app.post('/api/app/readFile', async (request) => {
@@ -11,7 +13,7 @@ export default async function applicationRoutes (app: FastifyInstance) {
          return content;
       }
       catch (error) {
-         return { status: 'error', response: String(error) };
+         return { status: 'error', response: safeErrorMessage(error) };
       }
    });
 
@@ -24,7 +26,7 @@ export default async function applicationRoutes (app: FastifyInstance) {
          return { status: 'success' };
       }
       catch (error) {
-         return { status: 'error', response: String(error) };
+         return { status: 'error', response: safeErrorMessage(error) };
       }
    });
 }

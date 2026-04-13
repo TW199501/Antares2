@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
+import { safeErrorMessage } from '../libs/safeError';
 import { getConnections } from './connection';
 
 export default async function userRoutes (app: FastifyInstance) {
@@ -15,7 +16,7 @@ export default async function userRoutes (app: FastifyInstance) {
       catch (err) {
          if ((err as any).code === 'ER_TABLEACCESS_DENIED_ERROR')
             return { status: 'success', response: [] };
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 }

@@ -100,7 +100,7 @@ const formattedQueryErrors = computed(() => {
 
 const wsImport = ref<WebSocket | null>(null);
 
-const startImport = (file: string) => {
+const startImport = async (file: string) => {
    isImporting.value = true;
    sqlFile.value = file;
    completed.value = false;
@@ -116,7 +116,7 @@ const startImport = (file: string) => {
       file
    };
 
-   const ws = createWebSocket('/ws/import');
+   const ws = await createWebSocket('/ws/import');
    wsImport.value = ws;
 
    ws.onopen = () => {

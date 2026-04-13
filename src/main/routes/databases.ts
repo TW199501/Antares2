@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
+import { safeErrorMessage } from '../libs/safeError';
 import { getConnections } from './connection';
 
 export default async function databaseRoutes (app: FastifyInstance) {
@@ -13,7 +14,7 @@ export default async function databaseRoutes (app: FastifyInstance) {
          return { status: 'success', response: result };
       }
       catch (err) {
-         return { status: 'error', response: String(err) };
+         return { status: 'error', response: safeErrorMessage(err) };
       }
    });
 }

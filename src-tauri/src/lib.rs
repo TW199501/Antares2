@@ -8,6 +8,11 @@ fn get_sidecar_port() -> u16 {
     sidecar::get_port()
 }
 
+#[tauri::command]
+fn get_sidecar_token() -> String {
+    sidecar::get_token()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -19,7 +24,7 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![get_sidecar_port])
+        .invoke_handler(tauri::generate_handler![get_sidecar_port, get_sidecar_token])
         .setup(|app| {
             // Enable DevTools in all builds for debugging
             #[cfg(debug_assertions)]
