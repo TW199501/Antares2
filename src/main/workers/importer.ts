@@ -7,98 +7,151 @@ import { parentPort } from 'worker_threads';
 
 import { MySQLClient } from '../libs/clients/MySQLClient';
 import { PostgreSQLClient } from '../libs/clients/PostgreSQLClient';
+import { SQLServerClient } from '../libs/clients/SQLServerClient';
 import { ClientsFactory } from '../libs/ClientsFactory';
+import MSSQLImporter from '../libs/importers/sql/MSSQLImporter';
 import MySQLImporter from '../libs/importers/sql/MySQLlImporter';
 import PostgreSQLImporter from '../libs/importers/sql/PostgreSQLImporter';
-const log = { info: console.log, warn: console.warn, error: console.error };
-let importer: antares.Importer;
 
-log.transports.file.fileName = 'workers.log';
-log.transports.console = null;
-log.errorHandler.startCatching();
+let importer: antares.Importer | null = null;
+let cleanupClient: (() => Promise<void> | void) | null = null;
+
+const cleanup = async () => {
+   if (!cleanupClient)
+      return;
+
+   try {
+      await cleanupClient();
+   }
+   catch (_) {
+      // Ignore cleanup errors
+   }
+   finally {
+      cleanupClient = null;
+   }
+};
 
 const importHandler = async (data: {
    type: string;
-   dbConfig: mysql.ConnectionOptions & { schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean }
+   dbConfig:
+      | mysql.ConnectionOptions & { schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean }
       | pg.ClientConfig & { schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean }
-      | { databasePath: string; readonly: boolean };
+      | { databasePath: string; readonly: boolean }
+      | Record<string, unknown>;
    options: ImportOptions;
 }) => {
    const { type, dbConfig, options } = data;
+
    if (type === 'init') {
       try {
-         const connection = await ClientsFactory.getClient({
-            client: options.type,
-            params: {
-               ...dbConfig,
-               schema: options.schema
-            },
-            poolSize: 1
-         }) as MySQLClient | PostgreSQLClient;
-
-         const pool = await connection.getConnectionPool();
-
          switch (options.type) {
             case 'mysql':
-            case 'maria':
-               importer = new MySQLImporter(pool as unknown as mysql.Pool, options);
+            case 'maria': {
+               const connection = await ClientsFactory.getClient({
+                  client: options.type,
+                  params: {
+                     ...dbConfig,
+                     schema: options.schema
+                  } as any,
+                  poolSize: 1
+               }) as MySQLClient;
+
+               const pool = await connection.getConnectionPool();
+               cleanupClient = async () => {
+                  await pool.end();
+               };
+               importer = new MySQLImporter(pool, options);
                break;
-            case 'pg':
+            }
+            case 'pg': {
+               const connection = await ClientsFactory.getClient({
+                  client: options.type,
+                  params: {
+                     ...dbConfig,
+                     schema: options.schema
+                  } as any,
+                  poolSize: 1
+               }) as PostgreSQLClient;
+
+               const pool = await connection.getConnectionPool();
+               cleanupClient = async () => {
+                  await pool.end();
+               };
                importer = new PostgreSQLImporter(pool as unknown as pg.PoolClient, options);
                break;
+            }
+            case 'mssql': {
+               const connection = await ClientsFactory.getClient({
+                  client: options.type,
+                  params: {
+                     ...dbConfig,
+                     schema: options.schema
+                  } as any,
+                  poolSize: 1
+               }) as SQLServerClient;
+
+               await connection.connect();
+               cleanupClient = () => {
+                  connection.destroy();
+               };
+               importer = new MSSQLImporter(connection, options);
+               break;
+            }
             default:
-               parentPort.postMessage({
+               parentPort?.postMessage({
                   type: 'error',
-                  payload: `"${options.type}" importer not aviable`
+                  payload: `"${options.type}" importer not available`
                });
                return;
          }
 
-         importer.once('error', err => {
-            log.error(err.toString());
-            parentPort.postMessage({
+         importer.once('error', async (err: Error) => {
+            await cleanup();
+            parentPort?.postMessage({
                type: 'error',
                payload: err.toString()
             });
          });
 
-         importer.once('end', () => {
-            parentPort.postMessage({
+         importer.once('end', async () => {
+            await cleanup();
+            parentPort?.postMessage({
                type: 'end',
-               payload: { cancelled: importer.isCancelled }
+               payload: { cancelled: importer?.isCancelled }
             });
          });
 
-         importer.once('cancel', () => {
-            parentPort.postMessage({ type: 'cancel' });
+         importer.once('cancel', async () => {
+            await cleanup();
+            parentPort?.postMessage({ type: 'cancel' });
          });
 
-         importer.on('progress', state => {
-            parentPort.postMessage({
+         importer.on('progress', (state: unknown) => {
+            parentPort?.postMessage({
                type: 'import-progress',
                payload: state
             });
          });
 
-         importer.on('query-error', state => {
-            parentPort.postMessage({
+         importer.on('query-error', (state: unknown) => {
+            parentPort?.postMessage({
                type: 'query-error',
                payload: state
             });
          });
 
-         importer.run();
+         await importer.run();
       }
       catch (err) {
-         log.error(err.toString());
-         parentPort.postMessage({
+         await cleanup();
+         parentPort?.postMessage({
             type: 'error',
-            payload: err.toString()
+            payload: (err as Error).toString()
          });
       }
    }
-   else if (type === 'cancel')
+   else if (type === 'cancel' && importer)
       importer.cancel();
 };
 
-parentPort.on('message', importHandler);
+parentPort?.on('message', importHandler);

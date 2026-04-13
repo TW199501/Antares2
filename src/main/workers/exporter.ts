@@ -4,15 +4,14 @@ import { parentPort } from 'worker_threads';
 
 import { MySQLClient } from '../libs/clients/MySQLClient';
 import { PostgreSQLClient } from '../libs/clients/PostgreSQLClient';
+import { SQLServerClient } from '../libs/clients/SQLServerClient';
 import { ClientsFactory } from '../libs/ClientsFactory';
+import MSSQLExporter from '../libs/exporters/sql/MSSQLExporter';
 import MysqlExporter from '../libs/exporters/sql/MysqlExporter';
 import PostgreSQLExporter from '../libs/exporters/sql/PostgreSQLExporter';
-const log = { info: console.log, warn: console.warn, error: console.error };
-let exporter: antares.Exporter;
 
-log.transports.file.fileName = 'workers.log';
-log.transports.console = null;
-log.errorHandler.startCatching();
+let exporter: antares.Exporter | null = null;
+let activeClient: antares.Client | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const exportHandler = async (data: any) => {
@@ -24,7 +23,9 @@ const exportHandler = async (data: any) => {
             client: client.name,
             params: client.config,
             poolSize: 5
-         }) as MySQLClient | PostgreSQLClient;
+         }) as MySQLClient | PostgreSQLClient | SQLServerClient;
+
+         activeClient = connection;
          await connection.connect();
 
          switch (client.name) {
@@ -35,53 +36,67 @@ const exportHandler = async (data: any) => {
             case 'pg':
                exporter = new PostgreSQLExporter(connection as PostgreSQLClient, tables, options);
                break;
+            case 'mssql':
+               exporter = new MSSQLExporter(connection as SQLServerClient, tables, options);
+               break;
             default:
-               parentPort.postMessage({
+               parentPort?.postMessage({
                   type: 'error',
-                  payload: `"${client.name}" exporter not aviable`
+                  payload: `"${client.name}" exporter not available`
                });
                return;
          }
 
-         exporter.once('error', err => {
-            log.error(err.toString());
-            parentPort.postMessage({
+         exporter.once('error', (err: Error) => {
+            parentPort?.postMessage({
                type: 'error',
                payload: err.toString()
             });
          });
 
          exporter.once('end', () => {
-            parentPort.postMessage({
+            activeClient?.destroy();
+            activeClient = null;
+            parentPort?.postMessage({
                type: 'end',
-               payload: { cancelled: exporter.isCancelled }
+               payload: { cancelled: exporter?.isCancelled }
             });
          });
 
          exporter.once('cancel', () => {
-            fs.unlinkSync(exporter.outputFile);
-            parentPort.postMessage({ type: 'cancel' });
+            if (exporter?.outputFileExists()) {
+               try {
+                  fs.unlinkSync(exporter.outputFile);
+               }
+               catch (_) {
+                  // Ignore cleanup errors on cancel
+               }
+            }
+            activeClient?.destroy();
+            activeClient = null;
+            parentPort?.postMessage({ type: 'cancel' });
          });
 
-         exporter.on('progress', state => {
-            parentPort.postMessage({
+         exporter.on('progress', (state: unknown) => {
+            parentPort?.postMessage({
                type: 'export-progress',
                payload: state
             });
          });
 
-         exporter.run();
+         await exporter.run();
       }
       catch (err) {
-         log.error(err.toString());
-         parentPort.postMessage({
+         activeClient?.destroy();
+         activeClient = null;
+         parentPort?.postMessage({
             type: 'error',
-            payload: err.toString()
+            payload: (err as Error).toString()
          });
       }
    }
-   else if (type === 'cancel')
+   else if (type === 'cancel' && exporter)
       exporter.cancel();
 };
 
-parentPort.on('message', exportHandler);
+parentPort?.on('message', exportHandler);

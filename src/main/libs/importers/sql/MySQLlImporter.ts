@@ -1,6 +1,6 @@
 import * as importer from 'common/interfaces/importer';
 import * as fs from 'fs/promises';
-import * as mysql from 'mysql2';
+import * as mysql from 'mysql2/promise';
 
 import MySQLParser from '../../parsers/MySQLParser';
 import { BaseImporter } from '../BaseImporter';

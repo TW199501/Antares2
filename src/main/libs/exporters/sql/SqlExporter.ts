@@ -2,10 +2,11 @@ import * as moment from 'moment';
 
 import { MySQLClient } from '../../clients/MySQLClient';
 import { PostgreSQLClient } from '../../clients/PostgreSQLClient';
+import { SQLServerClient } from '../../clients/SQLServerClient';
 import { BaseExporter } from '../BaseExporter';
 
 export class SqlExporter extends BaseExporter {
-   protected _client: MySQLClient | PostgreSQLClient;
+   protected _client: MySQLClient | PostgreSQLClient | SQLServerClient;
    protected _commentChar = '--';
    protected _postTablesSql = '';
 
