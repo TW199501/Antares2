@@ -279,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-import { ClientCode, SchemaInfos } from 'common/interfaces/antares';
+import { SchemaInfos } from 'common/interfaces/antares';
 import { Customizations } from 'common/interfaces/customizations';
 import { ExportOptions, ExportState } from 'common/interfaces/exporter';
 import moment from 'moment';
@@ -291,27 +291,10 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import { useFocusTrap } from '@/composables/useFocusTrap';
 import Application from '@/ipc-api/Application';
-import Schema from '@/ipc-api/Schema';
-import { useConsoleStore } from '@/stores/console';
+import { createWebSocket } from '@/ipc-api/httpClient';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSchemaExportStore } from '@/stores/schemaExport';
 import { useWorkspacesStore } from '@/stores/workspaces';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer, IpcRendererEvent } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IpcRendererEvent = any;
 
 const emit = defineEmits<{
    'close': [];
@@ -383,8 +366,13 @@ const includeDropStatementStatus = computed(() => {
    else return 0;
 });
 
-const startExport = async () => {
+const wsExport = ref<WebSocket | null>(null);
+
+const startExport = () => {
    isExporting.value = true;
+   progressPercentage.value = 0;
+   progressStatus.value = '';
+
    const { uid, client } = currentWorkspace.value;
    const params = {
       uid,
@@ -393,38 +381,53 @@ const startExport = async () => {
       outputFile: dumpFilePath.value,
       tables: [...tables.value],
       ...options.value
-   } as ExportOptions & { uid: string; type: ClientCode };
+   };
 
-   try {
-      const { status, response } = await Schema.export(params);
+   const ws = createWebSocket('/ws/export');
+   wsExport.value = ws;
 
-      if (status === 'success')
-         progressStatus.value = response.cancelled ? t('general.aborted') : t('general.completed');
-      else {
-         progressStatus.value = response;
-         addNotification({ status: 'error', message: response });
-         useConsoleStore().putLog('debug', {
-            level: 'error',
-            process: 'worker',
-            message: response,
-            date: new Date()
-         });
+   ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'start', params }));
+   };
+
+   ws.onmessage = (event: MessageEvent) => {
+      const msg = JSON.parse(event.data as string);
+      switch (msg.type) {
+         case 'export-progress':
+            updateProgress(msg.payload);
+            break;
+         case 'end':
+            progressStatus.value = msg.payload?.cancelled
+               ? t('general.aborted')
+               : t('general.completed');
+            isExporting.value = false;
+            wsExport.value = null;
+            ws.close();
+            break;
+         case 'cancel':
+            progressStatus.value = t('general.aborted');
+            isExporting.value = false;
+            wsExport.value = null;
+            ws.close();
+            break;
+         case 'error':
+            progressStatus.value = msg.payload;
+            addNotification({ status: 'error', message: msg.payload });
+            isExporting.value = false;
+            wsExport.value = null;
+            ws.close();
+            break;
       }
-   }
-   catch (err) {
-      addNotification({ status: 'error', message: err.stack });
-      useConsoleStore().putLog('debug', {
-         level: 'error',
-         process: 'worker',
-         message: err.stack,
-         date: new Date()
-      });
-   }
+   };
 
-   isExporting.value = false;
+   ws.onerror = () => {
+      progressStatus.value = t('general.error');
+      isExporting.value = false;
+      wsExport.value = null;
+   };
 };
 
-const updateProgress = (event: IpcRendererEvent, state: ExportState) => {
+const updateProgress = (state: ExportState) => {
    progressPercentage.value = Number((state.currentItemIndex / state.totalItems * 100).toFixed(1));
    switch (state.op) {
       case 'PROCESSING':
@@ -439,16 +442,13 @@ const updateProgress = (event: IpcRendererEvent, state: ExportState) => {
    }
 };
 
-const closeModal = async () => {
-   let willClose = true;
+const closeModal = () => {
    if (isExporting.value) {
-      willClose = false;
-      const { response } = await Schema.abortExport();
-      willClose = response.willAbort;
+      if (wsExport.value && wsExport.value.readyState === WebSocket.OPEN)
+         wsExport.value.send(JSON.stringify({ type: 'abort' }));
+      return;
    }
-
-   if (willClose)
-      emit('close');
+   emit('close');
 };
 
 const onKey = (e: KeyboardEvent) => {
@@ -529,13 +529,13 @@ const openPathDialog = async () => {
       if (val)
          options.value.includes[feat] = !selectedTable.value;
    });
-
-   ipcRenderer.on('export-progress', updateProgress);
 })();
-
 onBeforeUnmount(() => {
    window.removeEventListener('keydown', onKey);
-   ipcRenderer.off('export-progress', updateProgress);
+   if (wsExport.value) {
+      wsExport.value.close();
+      wsExport.value = null;
+   }
 });
 
 </script>

@@ -46,107 +46,77 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Replace with @tauri-apps/api/window when Tauri is set up
-// import { getCurrentWindow } from '@electron/remote';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub getCurrentWindow for Tauri migration
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { storeToRefs } from 'pinia';
-import { computed, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import Application from '@/ipc-api/Application';
 import { useConnectionsStore } from '@/stores/connections';
 import { useWorkspacesStore } from '@/stores/workspaces';
-const getCurrentWindow = () => ({
-   minimize: () => {},
-   maximize: () => {},
-   unmaximize: () => {},
-   close: () => {},
-   isMaximized: () => false,
-   isFullScreen: () => false,
-   setFullScreen: (_flag: boolean) => {},
-   on: (_event: string, _cb: Function) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   webContents: { openDevTools: () => {} } as any,
-   reload: () => {}
-});
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 
 const { t } = useI18n();
-
 const { getConnectionName } = useConnectionsStore();
 const workspacesStore = useWorkspacesStore();
-
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
-
 const { getWorkspace } = workspacesStore;
 
 const appIcon = new URL('@/images/logo.svg', import.meta.url).href;
-const w = ref(getCurrentWindow());
-const isMaximized = ref(getCurrentWindow().isMaximized());
-// TODO: Replace with import.meta.env.DEV when Vite is configured
-const isDevelopment = ref(typeof import.meta !== 'undefined' ? import.meta.env?.MODE === 'development' : false);
-// Platform detection using browser-compatible navigator API
+const isDevelopment = ref(import.meta.env?.MODE === 'development');
 const isMacOS = navigator.platform.startsWith('Mac');
 const isWindows = navigator.platform.startsWith('Win');
 const isLinux = navigator.platform.startsWith('Linux');
+const isMaximized = ref(false);
+
+const appWindow = getCurrentWindow();
 
 const windowTitle = computed(() => {
    if (!selectedWorkspace.value) return '';
    if (selectedWorkspace.value === 'NEW') return t('connection.createNewConnection');
-
    const connectionName = getConnectionName(selectedWorkspace.value);
    const workspace = getWorkspace(selectedWorkspace.value);
-   const breadcrumbs = workspace ? Object.values(workspace.breadcrumbs).filter(breadcrumb => breadcrumb) || [workspace.client] : [];
-
+   const breadcrumbs = workspace
+      ? Object.values(workspace.breadcrumbs).filter(Boolean)
+      : [];
    return [connectionName, ...breadcrumbs].join(' • ');
 });
 
 const openDevTools = () => {
-   w.value.webContents.openDevTools();
+   // DevTools are auto-opened in debug builds by lib.rs; no JS API in Tauri v2
 };
 
 const reload = () => {
-   w.value.reload();
+   location.reload();
 };
 
 const minimize = () => {
-   w.value.minimize();
+   appWindow.minimize();
 };
 
 const toggleFullScreen = () => {
    if (isMaximized.value)
-      w.value.unmaximize();
+      appWindow.unmaximize();
    else
-      w.value.maximize();
+      appWindow.maximize();
 };
 
 const closeApp = () => {
-   ipcRenderer.send('close-app');
+   Application.closeApp();
 };
 
-const onResize = () => {
-   isMaximized.value = w.value.isMaximized();
+const onResize = async () => {
+   isMaximized.value = await appWindow.isMaximized();
 };
 
 watch(windowTitle, (val) => {
-   ipcRenderer.send('change-window-title', val);
+   document.title = val || 'Antares SQL';
 });
 
-window.addEventListener('resize', onResize);
+onMounted(async () => {
+   isMaximized.value = await appWindow.isMaximized();
+   window.addEventListener('resize', onResize);
+});
 
 onUnmounted(() => {
    window.removeEventListener('resize', onResize);
