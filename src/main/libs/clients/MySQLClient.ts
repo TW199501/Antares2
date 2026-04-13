@@ -397,7 +397,6 @@ export class MySQLClient extends BaseClient {
       for (const db of filteredDatabases) {
          if (!schemas.has(db.Database)) continue;
 
-         // TODO: Read show_table_size from sidecar config instead of electron-store
          const showTableSize = false;
 
          if (showTableSize) {

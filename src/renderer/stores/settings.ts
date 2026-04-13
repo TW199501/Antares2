@@ -117,7 +117,6 @@ export const useSettingsStore = defineStore('settings', {
       changeApplicationTheme (theme: string) {
          this.applicationTheme = theme;
          this.persistSettings();
-         // NOTE: ipcRenderer.send('refresh-theme-settings') removed — Electron-only
       },
       changeEditorTheme (theme: string) {
          this.editorTheme = theme;

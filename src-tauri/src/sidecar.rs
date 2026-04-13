@@ -1,5 +1,7 @@
 #[cfg(debug_assertions)]
 use std::net::TcpStream;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::process::{Command as StdCommand, Stdio};
@@ -76,12 +78,18 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         (node_bin, vec![server_js.to_string_lossy().to_string()], node_modules)
     };
 
-    let mut child = StdCommand::new(&node_bin)
-        .args(&server_arg)
+    #[allow(unused_mut)]
+    let mut cmd = StdCommand::new(&node_bin);
+    cmd.args(&server_arg)
         .env("NODE_PATH", node_modules.to_string_lossy().to_string())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
+        .stderr(Stdio::piped());
+
+    // Hide the console window on Windows (CREATE_NO_WINDOW = 0x08000000)
+    #[cfg(windows)]
+    cmd.creation_flags(0x08000000);
+
+    let mut child = cmd.spawn()?;
 
     let pid = child.id();
     *SIDECAR_PID.lock().unwrap() = Some(pid);

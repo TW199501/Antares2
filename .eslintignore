@@ -5,6 +5,7 @@ dist
 build
 misc
 sidecar
+workers
 src/main/ipc-handlers
 src/main/libs/ShortcutRegister.ts
 src/main/libs/misc/validateSender.ts

@@ -9,7 +9,6 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 import { useNotificationsStore } from './notifications';
 
 // TODO: Add encryption via sidecar endpoint
-// NOTE: electron.safeStorage encryption has been removed for Tauri migration.
 // Connections are currently stored in plaintext in localStorage / AppData file.
 
 export interface SidebarElement {
