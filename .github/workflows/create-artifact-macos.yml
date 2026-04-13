@@ -1,6 +1,6 @@
 name: Create artifact [MAC]
 
-on: 
+on:
   workflow_dispatch: {}
 
 jobs:
@@ -10,16 +10,25 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
-      - name: npm install & build
-        run: |
-          npm install
-          npm install "dmg-license" --save-optional
-          npm run build
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm tauri:build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -27,27 +36,36 @@ jobs:
           name: macos-build
           retention-days: 3
           path: |
-            build
-            !build/*-unpacked
-            !build/.icon-ico
+            src-tauri/target/release/bundle/dmg
+            src-tauri/target/release/bundle/macos
+
   build-beta:
     runs-on: macos-latest
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: beta
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
-      - name: npm install & build
-        run: |
-          npm install
-          npm install "dmg-license" --save-optional
-          npm run build
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm tauri:build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -55,6 +73,5 @@ jobs:
           name: macos-build-beta
           retention-days: 3
           path: |
-            build
-            !build/*-unpacked
-            !build/.icon-ico
+            src-tauri/target/release/bundle/dmg
+            src-tauri/target/release/bundle/macos

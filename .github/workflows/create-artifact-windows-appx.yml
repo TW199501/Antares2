@@ -1,6 +1,6 @@
-name: Create artifact [WINDOWS APPX]
+name: Create artifact [WINDOWS]
 
-on: 
+on:
   workflow_dispatch: {}
 
 jobs:
@@ -10,16 +10,25 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      
+          cache: 'pnpm'
+
       - name: Install dependencies
-        run: npm i
-        
-      - name: "Build"
-        run: npm run build:appx
+        run: pnpm install
+
+      - name: Build
+        run: pnpm tauri:build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -27,6 +36,5 @@ jobs:
           name: windows-build
           retention-days: 3
           path: |
-            build
-            !build/*-unpacked
-            !build/.icon-ico
+            src-tauri/target/release/bundle/msi
+            src-tauri/target/release/bundle/nsis

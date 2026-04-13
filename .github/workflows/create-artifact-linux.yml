@@ -1,6 +1,6 @@
 name: Create artifact [LINUX]
 
-on: 
+on:
   workflow_dispatch: {}
 
 jobs:
@@ -10,16 +10,30 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      
+          cache: 'pnpm'
+
       - name: Install dependencies
-        run: npm i
-        
-      - name: "Build"
-        run: npm run build
+        run: pnpm install
+
+      - name: Build
+        run: pnpm tauri:build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -27,6 +41,5 @@ jobs:
           name: linux-build
           retention-days: 3
           path: |
-            build
-            !build/*-unpacked
-            !build/.icon-ico
+            src-tauri/target/release/bundle/deb
+            src-tauri/target/release/bundle/appimage

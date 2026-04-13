@@ -20,26 +20,39 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
-        with: 
+        with:
           ref: beta
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      
+          cache: 'pnpm'
+
       - name: Install dependencies
-        run: | 
-          npm i
-          npm install "dmg-license" --save-optional
-        
-      - name: "Build"
-        run: npm run build
+        run: pnpm install
+
+      - name: Build
+        run: pnpm tauri:build
 
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/*.AppImage,build/*.yml,build/*.deb,build/*.dmg,build/*.blockmap,build/*.zip,build/*.exe"
+          artifacts: "src-tauri/target/release/bundle/**/*.AppImage,src-tauri/target/release/bundle/**/*.deb,src-tauri/target/release/bundle/**/*.dmg,src-tauri/target/release/bundle/**/*.exe,src-tauri/target/release/bundle/**/*.msi"
           allowUpdates: true
           draft: true
           generateReleaseNotes: true
