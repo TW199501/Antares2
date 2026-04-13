@@ -154,7 +154,7 @@ export const useWorkspacesStore = defineStore('workspaces', {
          else
             this.selectedWorkspace = uid;
       },
-      async connectWorkspace (connection: ConnectionParams & { connString?: string }, args?: {mode?: string; signal?: AbortSignal}) {
+      async connectWorkspace (connection: ConnectionParams & { connString?: string }, args?: {signal?: AbortSignal}) {
          this.workspaces = (this.workspaces as Workspace[]).map(workspace => workspace.uid === connection.uid
             ? {
                ...workspace,
@@ -162,7 +162,7 @@ export const useWorkspacesStore = defineStore('workspaces', {
                breadcrumbs: {},
                loadedSchemas: new Set(),
                database: connection.database,
-               connectionStatus: args?.mode === 'switch' ? 'connected' : 'connecting'
+               connectionStatus: 'connecting'
             }
             : workspace);
 
@@ -437,7 +437,7 @@ export const useWorkspacesStore = defineStore('workspaces', {
       },
       async switchConnection (connection: ConnectionParams & { connString?: string }) {
          await Connection.disconnect(connection.uid);
-         return this.connectWorkspace(connection, { mode: 'switch' });
+         return this.connectWorkspace(connection);
       },
       addWorkspace (uid: string) {
          const workspace: Workspace = {
