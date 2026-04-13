@@ -28,6 +28,14 @@ export class SQLServerClient extends BaseClient {
          user: string;
          password: string;
          database?: string;
+         readonly?: boolean;
+         ssl?: {
+            key?: string;
+            cert?: string;
+            ca?: string;
+            ciphers?: string;
+            rejectUnauthorized?: boolean;
+         };
          ssh?: {
             host: string;
             port: number;
@@ -84,9 +92,18 @@ export class SQLServerClient extends BaseClient {
          password: this._p.password,
          database: this._p.database || 'master',
          options: {
-            encrypt: false,
-            trustServerCertificate: true,
-            enableArithAbort: true
+            encrypt: !!this._p.ssl,
+            trustServerCertificate: this._p.ssl ? !this._p.ssl.rejectUnauthorized : true,
+            enableArithAbort: true,
+            readOnlyIntent: !!this._p.readonly,
+            ...(this._p.ssl && {
+               cryptoCredentialsDetails: {
+                  key: this._p.ssl.key,
+                  cert: this._p.ssl.cert,
+                  ca: this._p.ssl.ca,
+                  ciphers: this._p.ssl.ciphers
+               }
+            })
          },
          pool: {
             max: this._poolSize || 10,
