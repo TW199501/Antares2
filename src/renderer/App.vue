@@ -90,7 +90,6 @@ const { connections } = storeToRefs(connectionsStore);
 const { applicationTheme, disableBlur } = storeToRefs(settingsStore);
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 
-const { checkVersionUpdate } = applicationStore;
 const { changeApplicationTheme } = settingsStore;
 
 const schemaExportStore = useSchemaExportStore();
@@ -128,7 +127,7 @@ onMounted(() => {
    window.addEventListener('antares:open-settings', onOpenSettings);
    window.addEventListener('antares:create-connection', onCreateConnection);
 
-   checkVersionUpdate();
+   applicationStore.checkVersionUpdate();
    applicationStore.checkForUpdates();
 
    const InputMenu = Menu.buildFromTemplate([

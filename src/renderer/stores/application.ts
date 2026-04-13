@@ -93,7 +93,12 @@ export const useApplicationStore = defineStore('application', {
          });
       },
       async installUpdate () {
-         await installAndRelaunch();
+         try {
+            await installAndRelaunch();
+         }
+         catch (_err) {
+            this.updateStatus = 'nocheck';
+         }
       }
    }
 });
