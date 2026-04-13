@@ -143,7 +143,11 @@ export class SQLServerClient extends BaseClient {
 
    async connect () {
       const dbConfig = await this.getDbConfig();
-      this._connection = await new mssql.ConnectionPool(dbConfig).connect();
+      const pool = new mssql.ConnectionPool(dbConfig);
+      pool.on('error', (err: Error) => {
+         console.error('[MSSQL] Connection pool error:', err.message);
+      });
+      this._connection = await pool.connect();
    }
 
    async ping () {

@@ -45,7 +45,7 @@ async function initSidecar () {
          const connectionsStore = useConnectionsStore();
 
          const connectedUids = workspacesStore.workspaces
-            .filter((w: { connectionStatus: string }) => w.connectionStatus === 'connected')
+            .filter((w: { connectionStatus: string }) => ['connected', 'failed', 'connecting'].includes(w.connectionStatus))
             .map((w: { uid: string }) => w.uid);
 
          for (const uid of connectedUids) {
