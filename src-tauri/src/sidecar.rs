@@ -1,3 +1,4 @@
+#[cfg(debug_assertions)]
 use std::net::TcpStream;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};

@@ -22,16 +22,9 @@
          "../node_modules/bindings/**/*": "node_modules/bindings/",
          "../node_modules/file-uri-to-path/**/*": "node_modules/file-uri-to-path/"
       },
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"]
+      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico", "icons/icon.icns"]
    },
-   "plugins": {
-      "updater": {
-         "pubkey": "",
-         "endpoints": [
-            "TODO: https://your-update-server/{{target}}/{{arch}}/{{current_version}}"
-         ]
-      }
-   },
+   "plugins": {},
    "app": {
       "windows": [{
          "title": "Antares SQL",
