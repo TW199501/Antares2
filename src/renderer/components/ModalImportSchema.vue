@@ -61,26 +61,9 @@ import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
-import Schema from '@/ipc-api/Schema';
-import { useConsoleStore } from '@/stores/console';
+import { createWebSocket } from '@/ipc-api/httpClient';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer, IpcRendererEvent } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IpcRendererEvent = any;
 
 const { t } = useI18n();
 
@@ -115,69 +98,90 @@ const formattedQueryErrors = computed(() => {
    ).join('\n\n');
 });
 
-const startImport = async (file: string) => {
+const wsImport = ref<WebSocket | null>(null);
+
+const startImport = (file: string) => {
    isImporting.value = true;
    sqlFile.value = file;
+   completed.value = false;
+   progressPercentage.value = 0;
+   queryCount.value = 0;
+   queryErrors.value = [];
 
    const { uid, client } = currentWorkspace.value;
    const params = {
       uid,
       type: client,
       schema: props.selectedSchema,
-      file: sqlFile.value
+      file
    };
 
-   try {
-      completed.value = false;
-      const { status, response } = await Schema.import(params);
+   const ws = createWebSocket('/ws/import');
+   wsImport.value = ws;
 
-      if (status === 'success')
-         progressStatus.value = response.cancelled ? t('general.aborted') : t('general.completed');
-      else {
-         progressStatus.value = response;
-         addNotification({ status: 'error', message: response });
-         useConsoleStore().putLog('debug', {
-            level: 'error',
-            process: 'worker',
-            message: response,
-            date: new Date()
-         });
+   ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'start', params }));
+   };
+
+   ws.onmessage = (event: MessageEvent) => {
+      const msg = JSON.parse(event.data as string);
+      switch (msg.type) {
+         case 'import-progress':
+            updateProgress(msg.payload);
+            break;
+         case 'query-error':
+            handleQueryError(msg.payload);
+            break;
+         case 'end':
+            progressStatus.value = msg.payload?.cancelled
+               ? t('general.aborted')
+               : t('general.completed');
+            completed.value = true;
+            isImporting.value = false;
+            wsImport.value = null;
+            ws.close();
+            refreshSchema({ uid, schema: props.selectedSchema });
+            break;
+         case 'cancel':
+            progressStatus.value = t('general.aborted');
+            completed.value = true;
+            isImporting.value = false;
+            wsImport.value = null;
+            ws.close();
+            break;
+         case 'error':
+            progressStatus.value = msg.payload;
+            addNotification({ status: 'error', message: msg.payload });
+            isImporting.value = false;
+            wsImport.value = null;
+            ws.close();
+            break;
       }
-      refreshSchema({ uid, schema: props.selectedSchema });
-      completed.value = true;
-   }
-   catch (err) {
-      addNotification({ status: 'error', message: err.stack });
-      useConsoleStore().putLog('debug', {
-         level: 'error',
-         process: 'worker',
-         message: err.stack,
-         date: new Date()
-      });
-   }
+   };
 
-   isImporting.value = false;
+   ws.onerror = () => {
+      progressStatus.value = t('general.error');
+      isImporting.value = false;
+      wsImport.value = null;
+   };
 };
 
-const updateProgress = (event: IpcRendererEvent, state: ImportState) => {
+const updateProgress = (state: ImportState) => {
    progressPercentage.value = parseFloat(Number(state.percentage).toFixed(1));
    queryCount.value = Number(state.queryCount);
 };
 
-const handleQueryError = (event: IpcRendererEvent, err: { time: string; message: string }) => {
+const handleQueryError = (err: { time: string; message: string }) => {
    queryErrors.value.push(err);
 };
 
-const closeModal = async () => {
-   let willClose = true;
+const closeModal = () => {
    if (isImporting.value) {
-      willClose = false;
-      const { response } = await Schema.abortImport();
-      willClose = response.willAbort;
+      if (wsImport.value && wsImport.value.readyState === WebSocket.OPEN)
+         wsImport.value.send(JSON.stringify({ type: 'abort' }));
+      return;
    }
-
-   if (willClose)
-      emit('close');
+   emit('close');
 };
 
 const onKey = (e: KeyboardEvent) => {
@@ -188,13 +192,12 @@ const onKey = (e: KeyboardEvent) => {
 
 window.addEventListener('keydown', onKey);
 
-ipcRenderer.on('import-progress', updateProgress);
-ipcRenderer.on('query-error', handleQueryError);
-
 onBeforeUnmount(() => {
    window.removeEventListener('keydown', onKey);
-   ipcRenderer.off('import-progress', updateProgress);
-   ipcRenderer.off('query-error', handleQueryError);
+   if (wsImport.value) {
+      wsImport.value.close();
+      wsImport.value = null;
+   }
 });
 
 defineExpose({ startImport });
