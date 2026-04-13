@@ -7,27 +7,38 @@ import { defineConfig, Plugin } from 'vite';
 // Auto-start sidecar server in dev mode
 function sidecarPlugin (): Plugin {
    let sidecar: ChildProcess | null = null;
+   let killed = false;
+
+   function startSidecar () {
+      sidecar = spawn('npx', ['tsx', 'src/main/server.ts', '--port', '5555'], {
+         shell: true,
+         stdio: ['ignore', 'pipe', 'pipe'],
+         cwd: path.resolve(__dirname)
+      });
+      sidecar.stdout?.on('data', (data: Buffer) => {
+         const msg = data.toString().trim();
+         if (msg) console.log(`[sidecar] ${msg}`);
+      });
+      sidecar.stderr?.on('data', (data: Buffer) => {
+         const msg = data.toString().trim();
+         if (msg) console.error(`[sidecar] ${msg}`);
+      });
+      sidecar.on('exit', (code) => {
+         if (killed) return;
+         if (code !== null && code !== 0) {
+            console.error(`[sidecar] exited with code ${code} — restarting in 1s`);
+            setTimeout(startSidecar, 1000);
+         }
+      });
+   }
+
    return {
       name: 'sidecar-auto-start',
       configureServer () {
-         sidecar = spawn('npx', ['tsx', 'src/main/server.ts', '--port', '5555'], {
-            shell: true,
-            stdio: ['ignore', 'pipe', 'pipe'],
-            cwd: path.resolve(__dirname)
-         });
-         sidecar.stdout?.on('data', (data: Buffer) => {
-            const msg = data.toString().trim();
-            if (msg) console.log(`[sidecar] ${msg}`);
-         });
-         sidecar.stderr?.on('data', (data: Buffer) => {
-            const msg = data.toString().trim();
-            if (msg) console.error(`[sidecar] ${msg}`);
-         });
-         sidecar.on('exit', (code) => {
-            if (code !== null && code !== 0) console.error(`[sidecar] exited with code ${code}`);
-         });
+         startSidecar();
       },
       closeBundle () {
+         killed = true;
          sidecar?.kill();
       }
    };

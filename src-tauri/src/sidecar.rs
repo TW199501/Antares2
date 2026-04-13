@@ -1,11 +1,13 @@
 use std::net::TcpStream;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::process::{Command as StdCommand, Stdio};
 use std::io::{BufRead, BufReader};
 use tauri::{AppHandle, Emitter};
 
 static SIDECAR_PORT: Mutex<u16> = Mutex::new(0);
 static SIDECAR_PID: Mutex<Option<u32>> = Mutex::new(None);
+static SHUTTING_DOWN: AtomicBool = AtomicBool::new(false);
 
 pub fn get_port() -> u16 {
     *SIDECAR_PORT.lock().unwrap()
@@ -111,14 +113,25 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
+    let app_handle_restart = app.clone();
     std::thread::spawn(move || {
-        let _ = child.wait();
+        let status = child.wait();
+        if SHUTTING_DOWN.load(Ordering::Relaxed) { return; }
+        let code = status.ok().and_then(|s| s.code()).unwrap_or(-1);
+        if code != 0 {
+            eprintln!("sidecar: exited with code {} — restarting in 1s", code);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            if !SHUTTING_DOWN.load(Ordering::Relaxed) {
+                let _ = spawn_server(&app_handle_restart);
+            }
+        }
     });
 
     Ok(())
 }
 
 pub fn kill_server() {
+    SHUTTING_DOWN.store(true, Ordering::Relaxed);
     if let Some(pid) = SIDECAR_PID.lock().unwrap().take() {
         #[cfg(windows)]
         {

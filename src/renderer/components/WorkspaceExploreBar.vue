@@ -270,7 +270,7 @@ watch(searchTerm, () => {
 
 watch(selectedDatabase, (val, oldVal) => {
    if (oldVal)
-      switchConnection({ ...props.connection, database: selectedDatabase.value });
+      switchConnection({ ...props.connection, database: selectedDatabase.value }).catch(() => {});
 });
 
 localWidth.value = explorebarSize.value;

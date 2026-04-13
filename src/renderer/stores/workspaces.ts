@@ -290,6 +290,16 @@ export const useWorkspacesStore = defineStore('workspaces', {
                }
                catch (err) {
                   notificationsStore.addNotification({ status: 'error', message: err.stack });
+                  this.workspaces = (this.workspaces as Workspace[]).map(workspace => workspace.uid === connection.uid
+                     ? {
+                        ...workspace,
+                        structure: [] as WorkspaceStructure[],
+                        breadcrumbs: {},
+                        loadedSchemas: new Set(),
+                        connectionStatus: 'failed'
+                     }
+                     : workspace);
+                  reject(err);
                }
             })();
          });
@@ -436,7 +446,12 @@ export const useWorkspacesStore = defineStore('workspaces', {
          this.selectTab({ uid, tab: 0 });
       },
       async switchConnection (connection: ConnectionParams & { connString?: string }) {
-         await Connection.disconnect(connection.uid);
+         try {
+            await Connection.disconnect(connection.uid);
+         }
+         catch (_err) {
+            // Sidecar may be unreachable (ERR_CONNECTION_REFUSED); proceed with reconnect anyway
+         }
          return this.connectWorkspace(connection);
       },
       addWorkspace (uid: string) {

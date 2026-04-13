@@ -156,7 +156,7 @@ export class SQLServerClient extends BaseClient {
 
    destroy () {
       if (this._connection)
-         this._connection.close();
+         this._connection.close().catch(() => {});
       if (this._ssh) {
          this._ssh.close();
          this._ssh.closeTunnel();
@@ -1365,9 +1365,20 @@ export class SQLServerClient extends BaseClient {
       const orderByArray = this._query.orderBy.reduce(this._reducer, []);
       const orderByRaw = orderByArray.length ? `ORDER BY ${orderByArray.join(', ')} ` : '';
 
+      const isUpdate = !!updateRaw;
+      const isDelete = !!this._query.delete;
+      const isSelect = selectArray.length > 0 && !isUpdate && !isDelete && !insertRaw;
+
+      if ((isUpdate || isDelete) && this._query.offset)
+         throw new Error('OFFSET is not supported for UPDATE/DELETE in SQL Server. Use WHERE + LIMIT only.');
+
+      const topRaw = (isUpdate || isDelete) && this._query.limit
+         ? `TOP (${this._query.limit}) `
+         : '';
+
       // LIMIT + OFFSET (SQL Server uses OFFSET ... FETCH NEXT ... ROWS ONLY, requires ORDER BY)
       let limitOffsetRaw = '';
-      if (selectArray.length && this._query.limit) {
+      if (isSelect && this._query.limit) {
          // SQL Server requires ORDER BY for OFFSET/FETCH
          const needsOrderBy = !orderByRaw;
          if (needsOrderBy)
@@ -1375,7 +1386,7 @@ export class SQLServerClient extends BaseClient {
 
          limitOffsetRaw += `OFFSET ${this._query.offset || 0} ROWS FETCH NEXT ${this._query.limit} ROWS ONLY `;
       }
-      else if (selectArray.length && this._query.offset) {
+      else if (isSelect && this._query.offset) {
          const needsOrderBy = !orderByRaw;
          if (needsOrderBy)
             limitOffsetRaw += 'ORDER BY (SELECT NULL) ';
@@ -1383,7 +1394,7 @@ export class SQLServerClient extends BaseClient {
          limitOffsetRaw += `OFFSET ${this._query.offset} ROWS `;
       }
 
-      return `${selectRaw}${updateRaw ? 'UPDATE' : ''}${insertRaw ? 'INSERT ' : ''}${this._query.delete ? 'DELETE ' : ''}${fromRaw}${updateRaw}${whereRaw}${groupByRaw}${orderByRaw}${limitOffsetRaw}${insertRaw}`;
+      return `${selectRaw}${updateRaw ? `UPDATE ${topRaw}` : ''}${insertRaw ? 'INSERT ' : ''}${this._query.delete ? `DELETE ${topRaw}` : ''}${fromRaw}${updateRaw}${whereRaw}${groupByRaw}${orderByRaw}${limitOffsetRaw}${insertRaw}`;
    }
 
    async raw<T = antares.QueryResult> (sql: string, args?: antares.QueryParams) {
