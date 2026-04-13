@@ -283,7 +283,7 @@ onMounted(async () => {
       window.addEventListener('mouseup', stopResize);
    });
 
-   if (workspace.value.structure.length === 1) { // Auto-open if just one schema
+   if (workspace.value.structure.length === 1 && schema.value?.[0]) { // Auto-open if just one schema
       schema.value[0].selectSchema(workspace.value.structure[0].name);
       schema.value[0].$refs.schemaAccordion.open = true;
    }

@@ -215,7 +215,8 @@ export default async function schemaRoutes (app: FastifyInstance) {
             });
 
             exporter.on('message', (message: workers.WorkerIpcMessage) => {
-               const { type, payload } = message;
+               const { type } = message;
+               const payload = 'payload' in message ? message.payload : undefined;
 
                switch (type) {
                   case 'end':
@@ -281,7 +282,8 @@ export default async function schemaRoutes (app: FastifyInstance) {
             });
 
             importer.on('message', (message: workers.WorkerIpcMessage) => {
-               const { type, payload } = message;
+               const { type } = message;
+               const payload = 'payload' in message ? message.payload : undefined;
 
                switch (type) {
                   case 'end':
@@ -386,84 +388,185 @@ export default async function schemaRoutes (app: FastifyInstance) {
 
    // WebSocket channels for export/import progress streaming
    app.register(async function wsRoutes (fastify) {
-      // GET /ws/export — streams export progress from worker thread
       fastify.get('/ws/export', { websocket: true }, (socket) => {
+         let exportWorker: Worker | null = null;
+
+         const sendToSocket = (message: workers.WorkerIpcMessage) => {
+            if (socket.readyState === 1)
+               socket.send(JSON.stringify(message));
+         };
+
          socket.on('message', async (rawMsg: Buffer) => {
-            const msg = JSON.parse(rawMsg.toString());
-            if (msg.type === 'start') {
-               try {
-                  const { Worker } = await import('worker_threads');
-                  const workerPath = require.resolve('../workers/exporter');
-                  const exportWorker = new Worker(workerPath);
+            try {
+               const msg = JSON.parse(rawMsg.toString()) as workers.WorkerControlMessage<{
+                  uid: string;
+                  type: string;
+                  tables: unknown[];
+                  [key: string]: unknown;
+               }>;
 
-                  exportWorker.postMessage({
-                     type: 'init',
-                     ...msg.params
-                  });
-
-                  exportWorker.on('message', (workerMsg: any) => {
-                     if (socket.readyState === 1)
-                        socket.send(JSON.stringify(workerMsg));
-                  });
-
-                  exportWorker.on('error', (err: Error) => {
-                     if (socket.readyState === 1)
-                        socket.send(JSON.stringify({ type: 'error', payload: err.message }));
-                  });
-
-                  socket.on('message', (controlMsg: Buffer) => {
-                     const parsed = JSON.parse(controlMsg.toString());
-                     if (parsed.type === 'abort') {
-                        exportWorker.terminate();
-                        if (socket.readyState === 1)
-                           socket.send(JSON.stringify({ type: 'aborted' }));
-                     }
-                  });
+               if (msg.type === 'abort') {
+                  if (exportWorker) {
+                     exportWorker.postMessage({ type: 'cancel' });
+                     sendToSocket({ type: 'cancel' });
+                  }
+                  return;
                }
-               catch (err) {
-                  socket.send(JSON.stringify({ type: 'error', payload: (err as Error).message }));
+
+               if (msg.type !== 'start')
+                  return;
+
+               if (exportWorker) {
+                  sendToSocket({ type: 'error', payload: 'Export worker already running' });
+                  return;
                }
+
+               const params = (msg.params || {}) as {
+                  uid: string;
+                  type: string;
+                  tables: unknown[];
+                  [key: string]: unknown;
+               };
+               const { uid, type: clientType, tables, ...options } = params;
+
+               if (!uid || !clientType) {
+                  sendToSocket({ type: 'error', payload: 'Invalid export parameters' });
+                  return;
+               }
+
+               const dbConfig = await requireConnection(uid).getDbConfig();
+               const workerPath = require.resolve('../workers/exporter');
+               exportWorker = new Worker(workerPath);
+
+               exportWorker.postMessage({
+                  type: 'init',
+                  client: {
+                     name: clientType,
+                     config: dbConfig
+                  },
+                  tables,
+                  options
+               });
+
+               exportWorker.on('message', (workerMsg: workers.WorkerIpcMessage) => {
+                  sendToSocket(workerMsg);
+
+                  if (['end', 'cancel', 'error'].includes(workerMsg.type)) {
+                     exportWorker?.terminate();
+                     exportWorker = null;
+                  }
+               });
+
+               exportWorker.on('error', (err: Error) => {
+                  sendToSocket({ type: 'error', payload: err.message });
+                  exportWorker = null;
+               });
+
+               exportWorker.on('close', () => {
+                  exportWorker = null;
+               });
+            }
+            catch (err) {
+               sendToSocket({ type: 'error', payload: (err as Error).message });
+            }
+         });
+
+         socket.on('close', () => {
+            if (exportWorker) {
+               exportWorker.terminate();
+               exportWorker = null;
             }
          });
       });
 
-      // GET /ws/import — streams import progress from worker thread
       fastify.get('/ws/import', { websocket: true }, (socket) => {
+         let importWorker: Worker | null = null;
+
+         const sendToSocket = (message: workers.WorkerIpcMessage) => {
+            if (socket.readyState === 1)
+               socket.send(JSON.stringify(message));
+         };
+
          socket.on('message', async (rawMsg: Buffer) => {
-            const msg = JSON.parse(rawMsg.toString());
-            if (msg.type === 'start') {
-               try {
-                  const { Worker } = await import('worker_threads');
-                  const workerPath = require.resolve('../workers/importer');
-                  const importWorker = new Worker(workerPath);
+            try {
+               const msg = JSON.parse(rawMsg.toString()) as workers.WorkerControlMessage<{
+                  uid: string;
+                  type: string;
+                  schema: string;
+                  file: string;
+               }>;
 
-                  importWorker.postMessage({
-                     type: 'init',
-                     ...msg.params
-                  });
-
-                  importWorker.on('message', (workerMsg: any) => {
-                     if (socket.readyState === 1)
-                        socket.send(JSON.stringify(workerMsg));
-                  });
-
-                  importWorker.on('error', (err: Error) => {
-                     if (socket.readyState === 1)
-                        socket.send(JSON.stringify({ type: 'error', payload: err.message }));
-                  });
-
-                  socket.on('message', (controlMsg: Buffer) => {
-                     const parsed = JSON.parse(controlMsg.toString());
-                     if (parsed.type === 'abort') {
-                        importWorker.terminate();
-                        if (socket.readyState === 1)
-                           socket.send(JSON.stringify({ type: 'aborted' }));
-                     }
-                  });
+               if (msg.type === 'abort') {
+                  if (importWorker) {
+                     importWorker.postMessage({ type: 'cancel' });
+                     sendToSocket({ type: 'cancel' });
+                  }
+                  return;
                }
-               catch (err) {
-                  socket.send(JSON.stringify({ type: 'error', payload: (err as Error).message }));
+
+               if (msg.type !== 'start')
+                  return;
+
+               if (importWorker) {
+                  sendToSocket({ type: 'error', payload: 'Import worker already running' });
+                  return;
                }
+
+               const params = msg.params || {} as {
+                  uid: string;
+                  type: string;
+                  schema: string;
+                  file: string;
+               };
+               const { uid, type: clientType, schema, file } = params;
+
+               if (!uid || !clientType || !schema || !file) {
+                  sendToSocket({ type: 'error', payload: 'Invalid import parameters' });
+                  return;
+               }
+
+               const dbConfig = await requireConnection(uid).getDbConfig();
+               const workerPath = require.resolve('../workers/importer');
+               importWorker = new Worker(workerPath);
+
+               importWorker.postMessage({
+                  type: 'init',
+                  dbConfig,
+                  options: {
+                     uid,
+                     schema,
+                     type: clientType,
+                     file
+                  }
+               });
+
+               importWorker.on('message', (workerMsg: workers.WorkerIpcMessage) => {
+                  sendToSocket(workerMsg);
+
+                  if (['end', 'cancel', 'error'].includes(workerMsg.type)) {
+                     importWorker?.terminate();
+                     importWorker = null;
+                  }
+               });
+
+               importWorker.on('error', (err: Error) => {
+                  sendToSocket({ type: 'error', payload: err.message });
+                  importWorker = null;
+               });
+
+               importWorker.on('close', () => {
+                  importWorker = null;
+               });
+            }
+            catch (err) {
+               sendToSocket({ type: 'error', payload: (err as Error).message });
+            }
+         });
+
+         socket.on('close', () => {
+            if (importWorker) {
+               importWorker.terminate();
+               importWorker = null;
             }
          });
       });

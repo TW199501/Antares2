@@ -47,6 +47,9 @@ export async function apiCall<T = unknown> (path: string, params?: unknown): Pro
 }
 
 export function createWebSocket (path: string): WebSocket {
-   const baseUrl = `ws://127.0.0.1:${sidecarPort.value}`;
+   const port = sidecarPort.value > 0 ? sidecarPort.value : 5555;
+   if (sidecarPort.value === 0)
+      console.warn('[httpClient] sidecar port is not ready yet, fallback to 5555 for websocket');
+   const baseUrl = `ws://127.0.0.1:${port}`;
    return new WebSocket(`${baseUrl}${path}`);
 }

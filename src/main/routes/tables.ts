@@ -11,8 +11,18 @@ import { getConnections } from './connection';
 
 function requireConnection (uid: string) {
    const conn = getConnections()[uid];
-   if (!conn) throw new Error(`No active connection for uid "${uid}". The server may have restarted — please reconnect.`);
+   if (!conn) throw new Error(`No active connection for uid "${uid}". The server may have restarted ??please reconnect.`);
    return conn;
+}
+
+function getAffectedRows (result: unknown): number {
+   if (!result || typeof result !== 'object')
+      return 0;
+
+   const report = (result as { report?: { affectedRows?: number } }).report;
+   return report && typeof report.affectedRows === 'number'
+      ? report.affectedRows
+      : 0;
 }
 
 export default async function tableRoutes (app: FastifyInstance) {
@@ -247,16 +257,22 @@ export default async function tableRoutes (app: FastifyInstance) {
             escapedParam = `'${escapeStrVal(params.content)}'`;
 
          if (params.primary) {
-            await requireConnection(params.uid)
+            const result = await requireConnection(params.uid)
                .update({ [params.field]: `= ${escapedParam}` })
                .schema(params.schema)
                .from(params.table)
                .where({ [params.primary]: `= ${id}` })
                .limit(1)
                .run();
+
+            if (getAffectedRows(result) > 1)
+               throw new Error('Unsafe update blocked: expected at most 1 affected row.');
          }
          else {
             const { orgRow } = params;
+            if (!orgRow || !Object.keys(orgRow).length)
+               throw new Error('Unsafe update blocked: missing WHERE condition.');
+
             delete orgRow._antares_id;
 
             reload = true;
@@ -272,13 +288,16 @@ export default async function tableRoutes (app: FastifyInstance) {
                   orgRow[key] = `= ${orgRow[key]}`;
             }
 
-            await requireConnection(params.uid)
+            const result = await requireConnection(params.uid)
                .schema(params.schema)
                .update({ [params.field]: `= ${escapedParam}` })
                .from(params.table)
                .where(orgRow)
                .limit(1)
                .run();
+
+            if (getAffectedRows(result) > 1)
+               throw new Error('Unsafe update blocked: expected at most 1 affected row.');
          }
 
          return { status: 'success', response: { reload } };
@@ -309,6 +328,9 @@ export default async function tableRoutes (app: FastifyInstance) {
                .limit(params.rows.length)
                .run();
 
+            if (getAffectedRows(result) > params.rows.length)
+               throw new Error('Unsafe delete blocked: affected rows exceed expected target size.');
+
             return { status: 'success', response: result };
          }
          catch (err) {
@@ -318,6 +340,9 @@ export default async function tableRoutes (app: FastifyInstance) {
       else {
          try {
             for (const row of params.rows) {
+               if (!Object.keys(row).length)
+                  throw new Error('Unsafe delete blocked: missing WHERE condition.');
+
                for (const key in row) {
                   if (typeof row[key] === 'string')
                      row[key] = `'${sqlEscaper(row[key])}'`;
@@ -328,12 +353,15 @@ export default async function tableRoutes (app: FastifyInstance) {
                      row[key] = `= ${row[key]}`;
                }
 
-               await requireConnection(params.uid)
+               const result = await requireConnection(params.uid)
                   .schema(params.schema)
                   .delete(params.table)
                   .where(row)
                   .limit(1)
                   .run();
+
+               if (getAffectedRows(result) > 1)
+                  throw new Error('Unsafe delete blocked: expected at most 1 affected row.');
             }
 
             return { status: 'success', response: [] };
