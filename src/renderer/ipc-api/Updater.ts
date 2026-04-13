@@ -10,8 +10,16 @@ export type UpdaterCallbacks = {
 /**
  * Checks for an update and, if found, downloads it automatically.
  * Calls the appropriate callback at each stage.
+ *
+ * @param _options.allowPrerelease - Caller hint for prerelease filtering.
+ *   tauri-plugin-updater v2 check() uses the endpoint from tauri.conf.json directly;
+ *   it has no native allowPrerelease flag. The update server must implement
+ *   prerelease filtering (e.g. via a query param or a separate endpoint URL).
  */
-export async function checkAndDownload (callbacks: UpdaterCallbacks): Promise<void> {
+export async function checkAndDownload (
+   callbacks: UpdaterCallbacks,
+   _options?: { allowPrerelease?: boolean }
+): Promise<void> {
    try {
       const update = await check();
 

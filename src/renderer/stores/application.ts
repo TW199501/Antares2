@@ -5,6 +5,7 @@ import { checkAndDownload, installAndRelaunch } from '@/ipc-api/Updater';
 import { loadStore, saveStore } from '@/libs/persistStore';
 
 import { useScratchpadStore } from './scratchpad';
+import { useSettingsStore } from './settings';
 
 export type UpdateStatus = 'noupdate' | 'available' | 'checking' | 'nocheck' | 'downloading' | 'downloaded' | 'disabled' | 'link';
 
@@ -77,6 +78,7 @@ export const useApplicationStore = defineStore('application', {
          this.isScratchpad = false;
       },
       async checkForUpdates () {
+         const { allowPrerelease } = useSettingsStore();
          this.updateStatus = 'checking';
          await checkAndDownload({
             onStatus: (status) => {
@@ -90,7 +92,7 @@ export const useApplicationStore = defineStore('application', {
                this.updateStatus = 'downloaded';
                this.downloadProgress = 100;
             }
-         });
+         }, { allowPrerelease });
       },
       async installUpdate () {
          try {
