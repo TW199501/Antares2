@@ -5,20 +5,28 @@
 </p>
 <!-- markdownlint-restore -->
 
-# Antares SQL Client
+# Antares SQL — Gen 2
 
-![GitHub package.json version](https://img.shields.io/github/package-json/v/antares-sql/antares) ![GitHub](https://img.shields.io/github/license/antares-sql/antares) ![Test e2e](https://github.com/antares-sql/antares/actions/workflows/test-e2e-win.yml/badge.svg?branch=develop) ![Mastodon Follow](https://img.shields.io/mastodon/follow/%20110860460902482117?domain=https%3A%2F%2Ffosstodon.org&style=social) [![Plant a Tree](https://raw.githubusercontent.com/Fabio286/treedom-badge/master/svg/plant-a-tree.svg)](https://www.treedom.net/en/user/fabio-di-stasio/event/antares-for-the-planet)
+![GitHub license](https://img.shields.io/github/license/TW199501/Antares2)
 
-Antares is an SQL client based on [Electron.js](https://github.com/electron/electron) and [Vue.js](https://github.com/vuejs/vue) that aims to become a useful tool, especially for developers.  
-Our target is to support as many databases as possible, and all major operating systems, including the ARM versions.  
+> **Fork of [antares-sql/antares](https://github.com/antares-sql/antares)** by [Fabio Di Stasio](https://github.com/Fabio286), used and extended under the [MIT License](./LICENSE).  
+> We built on top of the original work — full credit to the upstream project and all its contributors.
 
-**At the moment this application is in development state, many features will come in future updates**, and supports only MySQL/MariaDB, PostgreSQL, SQLite and Firebird SQL.  
-However, there are all the features necessary to have a pleasant database management experience, so give it a chance and send us your feedback, we would really appreciate it.  
-We are actively working on it, hoping to provide new cool features, improvements and fixes as soon as possible.  
+## What's new in Gen 2
 
-🔗 If you are curious to try Antares you can download and install the [latest release](https://github.com/antares-sql/antares/releases/latest).  
-👁 To stay tuned for new releases follow Antares SQL on [Mastodon](https://fosstodon.org/@AntaresSQL).  
-🌟 Don't forget to **leave a star** if you appreciate this project.  
+| Area | Change |
+|------|--------|
+| **Runtime** | Migrated from Electron to **Tauri v2** — lighter binary, better OS integration |
+| **SQL Server** | Full support: SSL, read-only mode, single-connection mode, connection pool stability |
+| **Stability** | Fixed connection race condition on database switch; sidecar auto-reconnect on restart |
+| **Auto-update** | Replaced electron-updater with `tauri-plugin-updater` |
+
+🔗 [Latest release](https://github.com/TW199501/Antares2/releases/latest) · [Original project](https://github.com/antares-sql/antares)
+
+---
+
+Antares is a cross-platform SQL client built with [Tauri v2](https://tauri.app/) and [Vue.js](https://github.com/vuejs/vue), aiming to be a forever-free, open-source tool for developers.  
+This fork continues in the same spirit — open source, MIT licensed, community friendly.
 
 🗳️ Polls:
 
@@ -80,7 +88,7 @@ On macOS you can run `.dmg` distribution following [this guide](https://support.
 - [x] SQLite
 - [x] Firebird SQL
 - [ ] DuckDB
-- [ ] SQL Server
+- [x] SQL Server
 - [ ] More...
 
 ### Operating Systems
