@@ -87,10 +87,6 @@
    </BaseContextMenu>
 </template>
 <script setup lang="ts">
-// TODO: Replace with @tauri-apps/api/window when Tauri is set up
-// import { getCurrentWindow } from '@electron/remote';
-
-// Stub getCurrentWindow for Tauri migration
 import moment from 'moment';
 import { storeToRefs } from 'pinia';
 import { highlight } from 'sql-highlight';
@@ -101,19 +97,6 @@ import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import { copyText } from '@/libs/copyText';
 import { useConsoleStore } from '@/stores/console';
-const getCurrentWindow = () => ({
-   minimize: () => {},
-   maximize: () => {},
-   unmaximize: () => {},
-   close: () => {},
-   isMaximized: () => false,
-   isFullScreen: () => false,
-   setFullScreen: (_flag: boolean) => {},
-   on: (_event: string, _cb: Function) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   webContents: { openDevTools: () => {} } as any,
-   reload: () => {}
-});
 
 const { t } = useI18n();
 
@@ -145,7 +128,6 @@ const isHover = ref(false);
 const isContext = ref(false);
 const contextContent: Ref<string> = ref(null);
 const contextEvent: Ref<MouseEvent> = ref(null);
-const w = ref(getCurrentWindow());
 // TODO: Replace with import.meta.env.DEV when Vite is configured
 const isDevelopment = ref(typeof import.meta !== 'undefined' ? import.meta.env?.MODE === 'development' : false);
 
@@ -179,11 +161,11 @@ const copyLog = () => {
 };
 
 const openDevTools = () => {
-   w.value.webContents.openDevTools();
+   // DevTools are auto-opened in debug builds by Tauri setup.
 };
 
 const reload = () => {
-   w.value.reload();
+   location.reload();
 };
 
 watch(workspaceQueryLogs, async () => {

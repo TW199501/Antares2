@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { open } from '@tauri-apps/plugin-shell';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -60,13 +61,6 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import { useApplicationStore } from '@/stores/application';
 import { useSettingsStore } from '@/stores/settings';
-
-// Stub shell for Tauri migration
-const shell = {
-   openExternal: (_url: string) => {
-      window.open(_url, '_blank');
-   }
-};
 
 const { t } = useI18n();
 
@@ -102,8 +96,8 @@ const updateMessage = computed(() => {
    }
 });
 
-const openOutside = (link: string) => {
-   shell.openExternal(link);
+const openOutside = async (link: string) => {
+   await open(link);
 };
 
 const { checkForUpdates, installUpdate } = applicationStore;

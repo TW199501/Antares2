@@ -34,7 +34,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { defineAsyncComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 import ModalExportSchema from '@/components/ModalExportSchema.vue';
 import TheSettingBar from '@/components/TheSettingBar.vue';
@@ -45,27 +44,6 @@ import { useConsoleStore } from '@/stores/console';
 import { useSchemaExportStore } from '@/stores/schemaExport';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
-
-const getCurrentWindow = () => ({
-   minimize: () => {},
-   maximize: () => {},
-   unmaximize: () => {},
-   close: () => {},
-   isMaximized: () => false,
-   isFullScreen: () => false,
-   setFullScreen: (_flag: boolean) => {},
-   on: (_event: string, _cb: Function) => {}
-});
-
-// Stub Menu for Tauri migration
-// TODO: Replace with custom Vue context menu or @tauri-apps/api/menu
-const Menu = {
-   buildFromTemplate: (_template: object[]) => ({
-      popup: (_options?: object) => {}
-   })
-};
-
-const { t } = useI18n();
 
 const TheTitleBar = defineAsyncComponent(() => import(/* webpackChunkName: "TheTitleBar" */'@/components/TheTitleBar.vue'));
 const TheFooter = defineAsyncComponent(() => import(/* webpackChunkName: "TheFooter" */'@/components/TheFooter.vue'));
@@ -129,47 +107,6 @@ onMounted(() => {
 
    applicationStore.checkVersionUpdate();
    applicationStore.checkForUpdates();
-
-   const InputMenu = Menu.buildFromTemplate([
-      {
-         label: t('general.cut'),
-         role: 'cut'
-      },
-      {
-         label: t('general.copy'),
-         role: 'copy'
-      },
-      {
-         label: t('general.paste'),
-         role: 'paste'
-      },
-      {
-         type: 'separator'
-      },
-      {
-         label: t('general.selectAll'),
-         role: 'selectAll'
-      }
-   ]);
-
-   document.body.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let node: any = e.target;
-
-      while (node) {
-         if (node.nodeName.match(/^(input|textarea)$/i) || node.isContentEditable) {
-            if (!node.parentNode.className.split(' ').includes('editor-query')) {
-               InputMenu.popup({ window: getCurrentWindow() });
-               console.log(node.parentNode.className);
-               break;
-            }
-         }
-         node = node.parentNode;
-      }
-   });
 
    document.addEventListener('keydown', e => {
       if (e.altKey && e.key === 'Alt') { // Prevent Alt key to trigger hidden shortcut menu

@@ -79,10 +79,7 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Replace with @tauri-apps/api/shell when Tauri is set up
-// import { shell } from 'electron';
-
-// Stub shell for Tauri migration
+import { open } from '@tauri-apps/plugin-shell';
 import { storeToRefs } from 'pinia';
 import { computed, ComputedRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -93,11 +90,6 @@ import { useApplicationStore } from '@/stores/application';
 import { useConnectionsStore } from '@/stores/connections';
 import { useConsoleStore } from '@/stores/console';
 import { useWorkspacesStore } from '@/stores/workspaces';
-const shell = {
-   openExternal: (_url: string) => {
-      window.open(_url, '_blank');
-   }
-};
 
 const { t } = useI18n();
 
@@ -142,7 +134,7 @@ watch(accentColor, () => {
    changeAccentColor();
 });
 
-const openOutside = (link: string) => shell.openExternal(link);
+const openOutside = async (link: string) => open(link);
 const changeAccentColor = () => {
    document.querySelector<HTMLBodyElement>(':root').style.setProperty('--primary-color', accentColor.value);
    document.querySelector<HTMLBodyElement>(':root').style.setProperty('--primary-color-shadow', hexToRGBA(accentColor.value, 0.2));

@@ -274,7 +274,6 @@
 </template>
 
 <script setup lang="ts">
-// Stub getCurrentWindow for Tauri migration
 import { Ace } from 'ace-builds';
 import { ConnectionParams } from 'common/interfaces/antares';
 import { uidGen } from 'common/libs/uidGen';
@@ -300,25 +299,6 @@ import { useNotificationsStore } from '@/stores/notifications';
 import { useScratchpadStore } from '@/stores/scratchpad';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
-
-const getCurrentWindow = () => ({
-   minimize: () => {},
-   maximize: () => {},
-   unmaximize: () => {},
-   close: () => {},
-   isMaximized: () => false,
-   isFullScreen: () => false,
-   setFullScreen: (_flag: boolean) => {},
-   on: (_event: string, _cb: Function) => {}
-});
-
-// Stub Menu for Tauri migration
-// TODO: Replace with custom Vue context menu or @tauri-apps/api/menu
-const Menu = {
-   buildFromTemplate: (_template: object[]) => ({
-      popup: (_options?: object) => {}
-   })
-};
 
 const { t } = useI18n();
 
@@ -815,67 +795,6 @@ onMounted(() => {
 
    if (props.tab.filePath)
       loadFileContent(props.tab.filePath);
-
-   queryEditor.value.editor.container.addEventListener('contextmenu', (e) => {
-      const InputMenu = Menu.buildFromTemplate([
-         {
-            label: t('general.run'),
-            click: () => runQuery(query.value)
-         },
-         {
-            label: t('general.clear'),
-            click: () => clear()
-         },
-         {
-            type: 'separator'
-         },
-         {
-            label: t('application.saveFile'),
-            click: () => saveFile()
-         },
-         {
-            label: t('application.saveFileAs'),
-            click: () => saveFileAs()
-         },
-         {
-            label: t('application.openFile'),
-            click: () => openFile()
-         },
-         {
-            type: 'separator'
-         },
-         {
-            label: t('general.cut'),
-            role: 'cut'
-         },
-         {
-            label: t('general.copy'),
-            role: 'copy'
-         },
-         {
-            label: t('general.paste'),
-            role: 'paste'
-         },
-         {
-            type: 'separator'
-         },
-         {
-            label: t('general.selectAll'),
-            role: 'selectAll'
-         }
-      ]);
-      e.preventDefault();
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let node: any = e.target;
-      while (node) {
-         if (node.nodeName.match(/^(input|textarea)$/i) || node.isContentEditable) {
-            InputMenu.popup({ window: getCurrentWindow() });
-            break;
-         }
-         node = node.parentNode;
-      }
-   });
 });
 
 onBeforeUnmount(() => {

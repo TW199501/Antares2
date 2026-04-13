@@ -436,10 +436,7 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Replace with @tauri-apps/api/shell when Tauri is set up
-// import { shell } from 'electron';
-
-// Stub shell for Tauri migration
+import { open } from '@tauri-apps/plugin-shell';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -457,11 +454,6 @@ import { localesNames } from '@/i18n/supported-locales';
 import { useApplicationStore } from '@/stores/application';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
-const shell = {
-   openExternal: (_url: string) => {
-      window.open(_url, '_blank');
-   }
-};
 
 const { t } = useI18n();
 
@@ -629,8 +621,8 @@ const selectTab = (tab: string) => {
    selectedTab.value = tab;
 };
 
-const openOutside = (link: string) => {
-   shell.openExternal(link);
+const openOutside = async (link: string) => {
+   await open(link);
 };
 
 const checkNotificationsTimeout = () => {
