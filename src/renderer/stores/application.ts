@@ -3,9 +3,8 @@ import { defineStore, storeToRefs } from 'pinia';
 
 import { checkAndDownload, installAndRelaunch } from '@/ipc-api/Updater';
 import { loadStore, saveStore } from '@/libs/persistStore';
-
-import { useScratchpadStore } from './scratchpad';
-import { useSettingsStore } from './settings';
+import { useScratchpadStore } from '@/stores/scratchpad';
+import { useSettingsStore } from '@/stores/settings';
 
 export type UpdateStatus = 'noupdate' | 'available' | 'checking' | 'nocheck' | 'downloading' | 'downloaded' | 'disabled' | 'link';
 
