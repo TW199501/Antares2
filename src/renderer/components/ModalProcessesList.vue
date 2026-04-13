@@ -165,20 +165,6 @@ import { useConnectionsStore } from '@/stores/connections';
 import { useNotificationsStore } from '@/stores/notifications';
 
 import { exportRows } from '../libs/exportRows';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 
 const { t } = useI18n();
 
@@ -364,7 +350,7 @@ const onKey = (e:KeyboardEvent) => {
       closeModal();
 };
 
-ipcRenderer.on('run-or-reload', getProcessesList);
+window.addEventListener('antares:run-or-reload', getProcessesList);
 
 window.addEventListener('keydown', onKey, { capture: true });
 
@@ -385,7 +371,7 @@ onBeforeUnmount(() => {
    window.removeEventListener('resize', resizeResults);
    clearInterval(refreshInterval.value);
 
-   ipcRenderer.removeListener('run-or-reload', getProcessesList);
+   window.removeEventListener('antares:run-or-reload', getProcessesList);
 });
 
 defineExpose({ refreshScroller });

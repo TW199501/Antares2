@@ -32,12 +32,6 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Replace with @tauri-apps/api/window when Tauri is set up
-// import { getCurrentWindow, Menu } from '@electron/remote';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub getCurrentWindow for Tauri migration
 import { storeToRefs } from 'pinia';
 import { defineAsyncComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
