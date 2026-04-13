@@ -262,20 +262,6 @@ import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 
 const { t } = useI18n();
 
@@ -895,10 +881,10 @@ watch(isChanged, (val) => {
 getFieldsData();
 
 onMounted(() => {
-   ipcRenderer.on('save-content', saveContentListener);
+   window.addEventListener('antares:save-content', saveContentListener);
 });
 
 onBeforeUnmount(() => {
-   ipcRenderer.removeListener('save-content', saveContentListener);
+   window.removeEventListener('antares:save-content', saveContentListener);
 });
 </script>
