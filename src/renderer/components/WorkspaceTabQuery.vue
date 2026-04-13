@@ -274,11 +274,6 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Replace with @tauri-apps/api/window when Tauri is set up
-// import { getCurrentWindow, Menu } from '@electron/remote';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
 // Stub getCurrentWindow for Tauri migration
 import { Ace } from 'ace-builds';
 import { ConnectionParams } from 'common/interfaces/antares';
@@ -323,18 +318,6 @@ const Menu = {
    buildFromTemplate: (_template: object[]) => ({
       popup: (_options?: object) => {}
    })
-};
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
 };
 
 const { t } = useI18n();
@@ -811,14 +794,14 @@ const loadFileContent = async (file: string) => {
 onMounted(() => {
    const localResizer = resizer.value;
 
-   ipcRenderer.on('run-or-reload', reloadListener);
-   ipcRenderer.on('format-query', formatListener);
-   ipcRenderer.on('kill-query', killQueryListener);
-   ipcRenderer.on('clear-query', clearQueryListener);
-   ipcRenderer.on('query-history', historyListener);
-   ipcRenderer.on('open-file', openFileListener);
-   ipcRenderer.on('save-file-as', saveFileAsListener);
-   ipcRenderer.on('save-content', saveContentListener);
+   window.addEventListener('antares:run-or-reload', reloadListener);
+   window.addEventListener('antares:format-query', formatListener);
+   window.addEventListener('antares:kill-query', killQueryListener);
+   window.addEventListener('antares:clear-query', clearQueryListener);
+   window.addEventListener('antares:query-history', historyListener);
+   window.addEventListener('antares:open-file', openFileListener);
+   window.addEventListener('antares:save-file-as', saveFileAsListener);
+   window.addEventListener('antares:save-content', saveContentListener);
 
    localResizer.addEventListener('mousedown', (e: MouseEvent) => {
       e.preventDefault();
@@ -903,14 +886,14 @@ onBeforeUnmount(() => {
    };
    Schema.destroyConnectionToCommit(params);
 
-   ipcRenderer.removeListener('run-or-reload', reloadListener);
-   ipcRenderer.removeListener('format-query', formatListener);
-   ipcRenderer.removeListener('kill-query', killQueryListener);
-   ipcRenderer.removeListener('clear-query', clearQueryListener);
-   ipcRenderer.removeListener('query-history', historyListener);
-   ipcRenderer.removeListener('open-file', openFileListener);
-   ipcRenderer.removeListener('save-file-as', saveFileAsListener);
-   ipcRenderer.removeListener('save-content', saveContentListener);
+   window.removeEventListener('antares:run-or-reload', reloadListener);
+   window.removeEventListener('antares:format-query', formatListener);
+   window.removeEventListener('antares:kill-query', killQueryListener);
+   window.removeEventListener('antares:clear-query', clearQueryListener);
+   window.removeEventListener('antares:query-history', historyListener);
+   window.removeEventListener('antares:open-file', openFileListener);
+   window.removeEventListener('antares:save-file-as', saveFileAsListener);
+   window.removeEventListener('antares:save-content', saveContentListener);
 });
 </script>
 

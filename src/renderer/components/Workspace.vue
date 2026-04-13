@@ -621,7 +621,7 @@
 <script setup lang="ts">
 import { ConnectionParams } from 'common/interfaces/antares';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, Prop, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, Prop, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import * as Draggable from 'vuedraggable';
 
@@ -656,20 +656,6 @@ import { useWorkspacesStore, WorkspaceTab } from '@/stores/workspaces';
 
 import WorkspaceTabNewMaterializedView from './WorkspaceTabNewMaterializedView.vue';
 import WorkspaceTabPropsMaterializedView from './WorkspaceTabPropsMaterializedView.vue';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 
 const { t } = useI18n();
 
@@ -861,36 +847,55 @@ const closeContext = () => {
    // Ignore errors (e.g. sidecar not ready yet); user will connect manually
 });
 
+const onOpenNewTab = (_e: Event) => {
+   if (!isSelected.value) return;
+   addQueryTab();
+};
+
+const onCloseTab = (_e: Event) => {
+   if (!isSelected.value) return;
+   const currentTab = getSelectedTab();
+   if (currentTab)
+      closeTab(currentTab);
+};
+
+const onNextTab = (_e: Event) => {
+   if (!isSelected.value) return;
+   selectNextTab({ uid: props.connection.uid });
+};
+
+const onPrevTab = (_e: Event) => {
+   if (!isSelected.value) return;
+   selectPrevTab({ uid: props.connection.uid });
+};
+
+const selectTabHandlers: ((_e: Event) => void)[] = [];
+for (let i = 1; i <= 9; i++) {
+   selectTabHandlers[i] = (_e: Event) => {
+      if (!isSelected.value) return;
+      if (workspace.value.tabs[i - 1])
+         selectTab({ uid: props.connection.uid, tab: workspace.value.tabs[i - 1].uid });
+   };
+}
+
 onMounted(() => {
-   ipcRenderer.on('open-new-tab', () => {
-      if (!isSelected.value) return;
-      addQueryTab();
-   });
+   window.addEventListener('antares:open-new-tab', onOpenNewTab);
+   window.addEventListener('antares:close-tab', onCloseTab);
+   window.addEventListener('antares:next-tab', onNextTab);
+   window.addEventListener('antares:prev-tab', onPrevTab);
 
-   ipcRenderer.on('close-tab', () => {
-      if (!isSelected.value) return;
-      const currentTab = getSelectedTab();
-      if (currentTab)
-         closeTab(currentTab);
-   });
+   for (let i = 1; i <= 9; i++)
+      window.addEventListener(`antares:select-tab-${i}`, selectTabHandlers[i]);
+});
 
-   ipcRenderer.on('next-tab', () => {
-      if (!isSelected.value) return;
-      selectNextTab({ uid: props.connection.uid });
-   });
+onUnmounted(() => {
+   window.removeEventListener('antares:open-new-tab', onOpenNewTab);
+   window.removeEventListener('antares:close-tab', onCloseTab);
+   window.removeEventListener('antares:next-tab', onNextTab);
+   window.removeEventListener('antares:prev-tab', onPrevTab);
 
-   ipcRenderer.on('prev-tab', () => {
-      if (!isSelected.value) return;
-      selectPrevTab({ uid: props.connection.uid });
-   });
-
-   for (let i = 1; i <= 9; i++) {
-      ipcRenderer.on(`select-tab-${i}`, () => {
-         if (!isSelected.value) return;
-         if (workspace.value.tabs[i-1])
-            selectTab({ uid: props.connection.uid, tab: workspace.value.tabs[i-1].uid });
-      });
-   }
+   for (let i = 1; i <= 9; i++)
+      window.removeEventListener(`antares:select-tab-${i}`, selectTabHandlers[i]);
 });
 </script>
 

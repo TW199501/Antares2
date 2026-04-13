@@ -247,20 +247,6 @@ import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
-// TODO: Replace with Tauri event system when Tauri is set up
-// import { ipcRenderer } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 
 const { localeString } = useFilters();
 
@@ -574,16 +560,16 @@ watch(isSearch, (val) => {
 
 getTableData();
 
-ipcRenderer.on('run-or-reload', reloadListener);
-ipcRenderer.on('open-filter', openFilterListener);
-ipcRenderer.on('next-page', nextPageListener);
-ipcRenderer.on('prev-page', prevPageListener);
+window.addEventListener('antares:run-or-reload', reloadListener);
+window.addEventListener('antares:open-filter', openFilterListener);
+window.addEventListener('antares:next-page', nextPageListener);
+window.addEventListener('antares:prev-page', prevPageListener);
 
 onBeforeUnmount(() => {
    clearInterval(refreshInterval.value);
-   ipcRenderer.removeListener('run-or-reload', reloadListener);
-   ipcRenderer.removeListener('open-filter', openFilterListener);
-   ipcRenderer.removeListener('next-page', nextPageListener);
-   ipcRenderer.removeListener('prev-page', prevPageListener);
+   window.removeEventListener('antares:run-or-reload', reloadListener);
+   window.removeEventListener('antares:open-filter', openFilterListener);
+   window.removeEventListener('antares:next-page', nextPageListener);
+   window.removeEventListener('antares:prev-page', prevPageListener);
 });
 </script>
