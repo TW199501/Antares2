@@ -39,18 +39,19 @@
 
 // Stub getCurrentWindow for Tauri migration
 import { storeToRefs } from 'pinia';
-import { defineAsyncComponent, onMounted, Ref, ref } from 'vue';
+import { defineAsyncComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ModalExportSchema from '@/components/ModalExportSchema.vue';
 import TheSettingBar from '@/components/TheSettingBar.vue';
+import { useShortcutDispatcher } from '@/composables/useShortcutDispatcher';
 import { useApplicationStore } from '@/stores/application';
 import { useConnectionsStore } from '@/stores/connections';
+import { useConsoleStore } from '@/stores/console';
 import { useSchemaExportStore } from '@/stores/schemaExport';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
-import { useConsoleStore } from './stores/console';
 const getCurrentWindow = () => ({
    minimize: () => {},
    maximize: () => {},
@@ -68,18 +69,6 @@ const Menu = {
    buildFromTemplate: (_template: object[]) => ({
       popup: (_options?: object) => {}
    })
-};
-
-// Stub ipcRenderer for Tauri migration
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
 };
 
 const { t } = useI18n();
@@ -118,30 +107,33 @@ const consoleStore = useConsoleStore();
 
 const isAllConnectionsModal: Ref<boolean> = ref(false);
 
+useShortcutDispatcher();
+
 document.addEventListener('DOMContentLoaded', () => {
    setTimeout(() => {
       changeApplicationTheme(applicationTheme.value);// Forces persistentStore to save on file and mail process
    }, 1000);
 });
 
+const onOpenAllConnections = () => {
+   isAllConnectionsModal.value = true;
+};
+const onOpenScratchpad = () => {
+   isScratchpad.value = true;
+};
+const onOpenSettings = () => {
+   isSettingModal.value = true;
+};
+const onCreateConnection = () => {
+   workspacesStore.selectWorkspace('NEW');
+};
+
 onMounted(() => {
-   ipcRenderer.on('open-all-connections', () => {
-      isAllConnectionsModal.value = true;
-   });
+   window.addEventListener('antares:open-all-connections', onOpenAllConnections);
+   window.addEventListener('antares:open-scratchpad', onOpenScratchpad);
+   window.addEventListener('antares:open-settings', onOpenSettings);
+   window.addEventListener('antares:create-connection', onCreateConnection);
 
-   ipcRenderer.on('open-scratchpad', () => {
-      isScratchpad.value = true;
-   });
-
-   ipcRenderer.on('open-settings', () => {
-      isSettingModal.value = true;
-   });
-
-   ipcRenderer.on('create-connection', () => {
-      workspacesStore.selectWorkspace('NEW');
-   });
-
-   ipcRenderer.send('check-for-updates');
    checkVersionUpdate();
 
    const InputMenu = Menu.buildFromTemplate([
@@ -190,6 +182,13 @@ onMounted(() => {
          e.preventDefault();
       }
    });
+});
+
+onUnmounted(() => {
+   window.removeEventListener('antares:open-all-connections', onOpenAllConnections);
+   window.removeEventListener('antares:open-scratchpad', onOpenScratchpad);
+   window.removeEventListener('antares:open-settings', onOpenSettings);
+   window.removeEventListener('antares:create-connection', onCreateConnection);
 });
 
 // Console messages
