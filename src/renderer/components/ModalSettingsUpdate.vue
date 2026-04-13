@@ -53,10 +53,6 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Replace with Tauri event system and @tauri-apps/api/shell when Tauri is set up
-// import { ipcRenderer, shell } from 'electron';
-
-// Stub ipcRenderer for Tauri migration
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -64,16 +60,6 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import { useApplicationStore } from '@/stores/application';
 import { useSettingsStore } from '@/stores/settings';
-const ipcRenderer = {
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   on: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   send: (_channel: string, ..._args: any[]) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   removeListener: (_channel: string, _listener: (...args: any[]) => void) => {},
-   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   off: (_channel: string, _listener: (...args: any[]) => void) => {}
-};
 
 // Stub shell for Tauri migration
 const shell = {
@@ -120,12 +106,10 @@ const openOutside = (link: string) => {
    shell.openExternal(link);
 };
 
-const checkForUpdates = () => {
-   ipcRenderer.send('check-for-updates');
-};
+const { checkForUpdates, installUpdate } = applicationStore;
 
 const restartToUpdate = () => {
-   ipcRenderer.send('restart-to-update');
+   installUpdate();
 };
 
 const toggleAllowPrerelease = () => {

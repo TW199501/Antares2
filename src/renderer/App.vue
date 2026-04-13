@@ -129,6 +129,7 @@ onMounted(() => {
    window.addEventListener('antares:create-connection', onCreateConnection);
 
    checkVersionUpdate();
+   applicationStore.checkForUpdates();
 
    const InputMenu = Menu.buildFromTemplate([
       {
