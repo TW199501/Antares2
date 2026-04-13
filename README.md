@@ -9,6 +9,8 @@
 
 ![GitHub license](https://img.shields.io/github/license/TW199501/Antares2)
 
+**English** | [繁體中文](./README.zh-TW.md)
+
 > **Fork of [antares-sql/antares](https://github.com/antares-sql/antares)** by [Fabio Di Stasio](https://github.com/Fabio286), used and extended under the [MIT License](./LICENSE).  
 > We built on top of the original work — full credit to the upstream project and all its contributors.
 
