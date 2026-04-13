@@ -1,6 +1,7 @@
 import { Ace } from 'ace-builds';
 import { defineStore, storeToRefs } from 'pinia';
 
+import { checkAndDownload, installAndRelaunch } from '@/ipc-api/Updater';
 import { loadStore, saveStore } from '@/libs/persistStore';
 
 import { useScratchpadStore } from './scratchpad';
@@ -74,6 +75,25 @@ export const useApplicationStore = defineStore('application', {
       },
       hideScratchpad () {
          this.isScratchpad = false;
+      },
+      async checkForUpdates () {
+         this.updateStatus = 'checking';
+         await checkAndDownload({
+            onStatus: (status) => {
+               this.updateStatus = status;
+            },
+            onDownloadProgress: (pct) => {
+               this.updateStatus = 'downloading';
+               this.downloadProgress = pct;
+            },
+            onDownloaded: () => {
+               this.updateStatus = 'downloaded';
+               this.downloadProgress = 100;
+            }
+         });
+      },
+      async installUpdate () {
+         await installAndRelaunch();
       }
    }
 });
