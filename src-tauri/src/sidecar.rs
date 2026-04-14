@@ -72,11 +72,14 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             return Err(format!("Server bundle not found at {:?}", server_js).into());
         }
 
-        let node_exe = exe_dir.join("sidecar").join("node.exe");
+        let node_exe  = exe_dir.join("sidecar").join("node.exe"); // Windows
+        let node_unix = exe_dir.join("sidecar").join("node");     // macOS / Linux
         let node_bin = if node_exe.exists() {
             node_exe.to_string_lossy().to_string()
+        } else if node_unix.exists() {
+            node_unix.to_string_lossy().to_string()
         } else {
-            "node".to_string()
+            "node".to_string() // last resort: system node
         };
 
         let node_modules = exe_dir.join("node_modules");

@@ -15,4 +15,5 @@ src-tauri/target/
 
 # Large binary executables (too big for GitHub)
 sidecar/node.exe
+sidecar/node
 src-tauri/binaries/*.exe
