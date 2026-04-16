@@ -96,7 +96,7 @@
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "eslint-plugin-vue": "^9.33.0",
     "husky": "^9.1.7",
-    "playwright": "^1.28.1",
+    "playwright": "^1.55.1",
     "playwright-core": "^1.59.1",
     "sass": "^1.99.0",
     "standard-version": "^9.5.0",
