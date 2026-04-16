@@ -19,20 +19,15 @@
       <div ref="propTable" class="table table-hover">
          <div class="thead">
             <div class="tr">
-               <div class="th">
+               <div class="th th-order">
                   <div class="text-right">
                      {{ t('database.order') }}
                   </div>
                </div>
                <div class="th">
-                  <div class="table-column-title">
-                     {{ t('database.key', 2) }}
-                  </div>
-               </div>
-               <div class="th">
-                  <div class="column-resizable min-100">
+                  <div class="column-resizable min-120">
                      <div class="table-column-title">
-                        {{ t('general.name') }}
+                        {{ t('database.fieldName') }}
                      </div>
                   </div>
                </div>
@@ -43,39 +38,34 @@
                      </div>
                   </div>
                </div>
-               <div v-if="customizations.tableArray" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.array') }}
-                     </div>
+               <div class="th th-chip">
+                  <div class="table-column-title">
+                     {{ t('database.primaryKey') }}
                   </div>
                </div>
-               <div class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.length') }}
-                     </div>
+               <div v-if="customizations.autoIncrement" class="th th-chip">
+                  <div class="table-column-title">
+                     {{ t('database.autoIncrement') }}
                   </div>
                </div>
-               <div v-if="customizations.unsigned" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.unsigned') }}
-                     </div>
+               <div v-if="customizations.nullable" class="th th-chip">
+                  <div class="table-column-title">
+                     {{ t('database.allowNull') }}
                   </div>
                </div>
-               <div v-if="customizations.nullable" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.allowNull') }}
-                     </div>
+               <div class="th th-num">
+                  <div class="table-column-title">
+                     {{ t('database.length') }}
                   </div>
                </div>
-               <div v-if="customizations.zerofill" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.zeroFill') }}
-                     </div>
+               <div class="th th-scale">
+                  <div class="table-column-title">
+                     {{ t('database.precision') }}
+                  </div>
+               </div>
+               <div class="th th-chip2">
+                  <div class="table-column-title">
+                     FK / UQ
                   </div>
                </div>
                <div class="th">
@@ -99,6 +89,11 @@
                      </div>
                   </div>
                </div>
+               <div class="th th-ops">
+                  <div class="table-column-title">
+                     {{ t('general.actions') }}
+                  </div>
+               </div>
             </div>
          </div>
          <Draggable
@@ -117,6 +112,9 @@
                   :customizations="customizations"
                   @contextmenu="contextMenu"
                   @rename-field="emit('rename-field', $event)"
+                  @move-up="moveFieldUp"
+                  @move-down="moveFieldDown"
+                  @remove-field-row="removeFieldById"
                />
             </template>
          </Draggable>
@@ -214,6 +212,24 @@ const removeField = () => {
    emit('remove-field', selectedField.value._antares_id);
 };
 
+const removeFieldById = (id: string) => {
+   emit('remove-field', id);
+};
+
+const moveFieldUp = (id: string) => {
+   const idx = props.fields.findIndex(f => f._antares_id === id);
+   if (idx <= 0) return;
+   const arr = props.fields as typeof props.fields;
+   [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+};
+
+const moveFieldDown = (id: string) => {
+   const idx = props.fields.findIndex(f => f._antares_id === id);
+   if (idx < 0 || idx >= props.fields.length - 1) return;
+   const arr = props.fields as typeof props.fields;
+   [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+};
+
 const getIndexes = (field: string) => {
    return props.indexes.reduce((acc, curr) => {
       acc.push(...curr.fields.map(f => ({ name: f, type: curr.type })));
@@ -271,5 +287,49 @@ defineExpose({ tableWrapper });
 
 .min-100 {
   min-width: 100px !important;
+}
+
+.min-120 {
+  min-width: 120px !important;
+}
+
+// Fixed-width header cells
+.th-order {
+  width: 55px;
+  min-width: 55px;
+  max-width: 55px;
+}
+
+.th-chip {
+  width: 54px;
+  min-width: 54px;
+  max-width: 54px;
+  text-align: center;
+}
+
+.th-num {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+}
+
+.th-chip2 {
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  text-align: center;
+}
+
+.th-scale {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+.th-ops {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  text-align: center;
 }
 </style>

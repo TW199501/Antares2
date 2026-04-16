@@ -3,148 +3,165 @@
       <div class="workspace-query-runner column col-12">
          <div class="workspace-query-runner-footer">
             <div class="workspace-query-buttons">
-               <div class="dropdown">
-                  <div class="btn-group">
-                     <button
-                        class="btn btn-dark btn-sm mr-0 pr-1"
-                        :class="{'loading':isQuering}"
-                        :title="`${t('general.refresh')}`"
-                        @click="reloadTable"
-                     >
-                        <BaseIcon
-                           v-if="!+autorefreshTimer"
-                           class="mr-1"
-                           icon-name="mdiRefresh"
-                           :size="24"
-                        />
-                        <BaseIcon
-                           v-else
-                           class="mr-1"
-                           icon-name="mdiHistory"
-                           flip="horizontal"
-                           :size="24"
-                        />
-                     </button>
-                     <div class="btn btn-dark btn-sm dropdown-toggle pl-0 pr-0" tabindex="0">
-                        <BaseIcon icon-name="mdiMenuDown" :size="24" />
-                     </div>
-                     <div class="menu px-3">
-                        <span>{{ t('general.autoRefresh') }}: <b>{{ +autorefreshTimer ? `${autorefreshTimer}s` : 'OFF' }}</b></span>
-                        <input
-                           v-model="autorefreshTimer"
-                           class="slider no-border"
-                           type="range"
-                           min="0"
-                           max="30"
-                           step="1"
-                           @change="setRefreshInterval"
-                        >
-                     </div>
-                  </div>
-               </div>
-               <div class="btn-group">
+               <!-- 資料 / 屬性 切換 -->
+               <div class="view-mode-toggle">
                   <button
-                     class="btn btn-dark btn-sm mr-0"
-                     :disabled="isQuering || page === 1"
-                     :title="t('application.previousResultsPage')"
-                     @click="pageChange('prev')"
+                     class="btn btn-sm"
+                     :class="viewMode === 'data' ? 'btn-primary' : 'btn-dark'"
+                     @click="viewMode = 'data'"
                   >
-                     <BaseIcon icon-name="mdiSkipPrevious" :size="24" />
+                     <BaseIcon
+                        icon-name="mdiTable"
+                        class="mr-1"
+                        :size="16"
+                     />
+                     {{ t('general.data') }}
                   </button>
-                  <div class="dropdown" :class="{'active': isPageMenu}">
-                     <div @click="openPageMenu">
-                        <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3">
-                           {{ page }}
+                  <button
+                     class="btn btn-sm"
+                     :class="viewMode === 'props' ? 'btn-primary' : 'btn-dark'"
+                     @click="viewMode = 'props'"
+                  >
+                     <BaseIcon
+                        icon-name="mdiWrenchCog"
+                        class="mr-1"
+                        :size="16"
+                     />
+                     {{ t('general.properties') }}
+                  </button>
+               </div>
+               <div v-show="viewMode === 'data'" class="d-flex align-items-center">
+                  <div class="dropdown">
+                     <div class="btn-group">
+                        <button
+                           class="btn btn-dark btn-sm mr-0 pr-1"
+                           :class="{'loading':isQuering}"
+                           :title="`${t('general.refresh')}`"
+                           @click="reloadTable"
+                        >
+                           <BaseIcon
+                              v-if="!+autorefreshTimer"
+                              class="mr-1"
+                              icon-name="mdiRefresh"
+                              :size="24"
+                           />
+                           <BaseIcon
+                              v-else
+                              class="mr-1"
+                              icon-name="mdiHistory"
+                              flip="horizontal"
+                              :size="24"
+                           />
+                        </button>
+                        <div class="btn btn-dark btn-sm dropdown-toggle pl-0 pr-0" tabindex="0">
+                           <BaseIcon icon-name="mdiMenuDown" :size="24" />
                         </div>
                         <div class="menu px-3">
-                           <span>{{ t('general.pageNumber') }}</span>
+                           <span>{{ t('general.autoRefresh') }}: <b>{{ +autorefreshTimer ? `${autorefreshTimer}s` : 'OFF' }}</b></span>
                            <input
-                              ref="pageSelect"
-                              v-model="pageProxy"
-                              type="number"
-                              min="1"
-                              class="form-input"
-                              @blur="setPageNumber"
+                              v-model="autorefreshTimer"
+                              class="slider no-border"
+                              type="range"
+                              min="0"
+                              max="30"
+                              step="1"
+                              @change="setRefreshInterval"
                            >
                         </div>
                      </div>
                   </div>
+                  <div class="btn-group">
+                     <button
+                        class="btn btn-dark btn-sm mr-0"
+                        :disabled="isQuering || page === 1"
+                        :title="t('application.previousResultsPage')"
+                        @click="pageChange('prev')"
+                     >
+                        <BaseIcon icon-name="mdiSkipPrevious" :size="24" />
+                     </button>
+                     <div class="dropdown" :class="{'active': isPageMenu}">
+                        <div @click="openPageMenu">
+                           <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3">
+                              {{ page }}
+                           </div>
+                           <div class="menu px-3">
+                              <span>{{ t('general.pageNumber') }}</span>
+                              <input
+                                 ref="pageSelect"
+                                 v-model="pageProxy"
+                                 type="number"
+                                 min="1"
+                                 class="form-input"
+                                 @blur="setPageNumber"
+                              >
+                           </div>
+                        </div>
+                     </div>
+                     <button
+                        class="btn btn-dark btn-sm mr-0"
+                        :disabled="isQuering || (results.length && results[0].rows.length < limit)"
+                        :title="t('application.nextResultsPage')"
+                        @click="pageChange('next')"
+                     >
+                        <BaseIcon icon-name="mdiSkipNext" :size="24" />
+                     </button>
+                  </div>
+
+                  <div class="divider-vert py-3" />
+
                   <button
-                     class="btn btn-dark btn-sm mr-0"
-                     :disabled="isQuering || (results.length && results[0].rows.length < limit)"
-                     :title="t('application.nextResultsPage')"
-                     @click="pageChange('next')"
-                  >
-                     <BaseIcon icon-name="mdiSkipNext" :size="24" />
-                  </button>
-               </div>
-
-               <div class="divider-vert py-3" />
-
-               <button
-                  class="btn btn-sm"
-                  :title="t('general.filter')"
-                  :disabled="isQuering"
-                  :class="{'btn-primary': isSearch, 'btn-dark': !isSearch}"
-                  @click="isSearch = !isSearch"
-               >
-                  <BaseIcon icon-name="mdiMagnify" :size="24" />
-               </button>
-               <button
-                  v-if="isTable && !connection.readonly"
-                  class="btn btn-dark btn-sm"
-                  :disabled="isQuering"
-                  @click="showFakerModal()"
-               >
-                  <BaseIcon
-                     icon-name="mdiPlaylistPlus"
-                     class="mr-1"
-                     :size="24"
-                  />
-                  <span>{{ t('database.insertRow', 2) }}</span>
-               </button>
-
-               <div class="dropdown table-dropdown">
-                  <button
+                     class="btn btn-sm"
+                     :title="t('general.filter')"
                      :disabled="isQuering"
-                     class="btn btn-dark btn-sm dropdown-toggle mr-0 pr-0"
-                     tabindex="0"
+                     :class="{'btn-primary': isSearch, 'btn-dark': !isSearch}"
+                     @click="isSearch = !isSearch"
+                  >
+                     <BaseIcon icon-name="mdiMagnify" :size="24" />
+                  </button>
+                  <button
+                     v-if="isTable && !connection.readonly"
+                     class="btn btn-dark btn-sm"
+                     :disabled="isQuering"
+                     @click="showFakerModal()"
                   >
                      <BaseIcon
-                        icon-name="mdiFileExport"
+                        icon-name="mdiPlaylistPlus"
                         class="mr-1"
                         :size="24"
                      />
-                     <span>{{ t('database.export') }}</span>
-                     <BaseIcon icon-name="mdiMenuDown" :size="24" />
+                     <span>{{ t('database.insertRow', 2) }}</span>
                   </button>
-                  <ul class="menu text-left">
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('json')">JSON</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('csv')">CSV</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('php')">{{ t('application.phpArray') }}</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('sql')">SQL INSERT</a>
-                     </li>
-                  </ul>
+
+                  <div class="dropdown table-dropdown">
+                     <button
+                        :disabled="isQuering"
+                        class="btn btn-dark btn-sm dropdown-toggle mr-0 pr-0"
+                        tabindex="0"
+                     >
+                        <BaseIcon
+                           icon-name="mdiFileExport"
+                           class="mr-1"
+                           :size="24"
+                        />
+                        <span>{{ t('database.export') }}</span>
+                        <BaseIcon icon-name="mdiMenuDown" :size="24" />
+                     </button>
+                     <ul class="menu text-left">
+                        <li class="menu-item">
+                           <a class="c-hand" @click="downloadTable('json')">JSON</a>
+                        </li>
+                        <li class="menu-item">
+                           <a class="c-hand" @click="downloadTable('csv')">CSV</a>
+                        </li>
+                        <li class="menu-item">
+                           <a class="c-hand" @click="downloadTable('php')">{{ t('application.phpArray') }}</a>
+                        </li>
+                        <li class="menu-item">
+                           <a class="c-hand" @click="downloadTable('sql')">SQL INSERT</a>
+                        </li>
+                     </ul>
+                  </div>
                </div>
-
-               <div class="divider-vert py-3" />
-
-               <button
-                  class="btn btn-dark btn-sm"
-                  :disabled="isQuering"
-                  :title="t('application.settings')"
-                  @click="openTableSettingTab()"
-               >
-                  <BaseIcon icon-name="mdiCog" :size="24" />
-                  <!-- <span>{{ t('application.settings') }}</span> -->
-               </button>
             </div>
             <div class="workspace-query-info">
                <div
@@ -188,7 +205,7 @@
          @filter="updateFilters"
          @filter-change="onFilterChange"
       />
-      <div class="workspace-query-results p-relative column col-12">
+      <div v-show="viewMode === 'data'" class="workspace-query-results p-relative column col-12">
          <BaseLoader v-if="isQuering" />
          <div v-if="!isQuering && !results[0]?.rows.length" class="empty">
             <div class="empty-icon">
@@ -215,6 +232,14 @@
             @hard-sort="hardSort"
          />
       </div>
+      <WorkspaceTabPropsTable
+         v-if="viewMode === 'props'"
+         tab-uid="props"
+         :connection="connection"
+         :is-selected="isSelected && viewMode === 'props'"
+         :table="table"
+         :schema="schema"
+      />
       <ModalFakerRows
          v-if="isFakerModal"
          :fields="fields"
@@ -239,6 +264,7 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import ModalFakerRows from '@/components/ModalFakerRows.vue';
+import WorkspaceTabPropsTable from '@/components/WorkspaceTabPropsTable.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
 import WorkspaceTabTableFilters from '@/components/WorkspaceTabTableFilters.vue';
 import { useFilters } from '@/composables/useFilters';
@@ -285,6 +311,7 @@ const tabUid = ref('data');
 const isPageMenu = ref(false);
 const isSearch = ref(false);
 const results = ref([]);
+const viewMode = ref<'data' | 'props'>('data');
 const lastTable = ref(null);
 const isFakerModal = ref(false);
 const autorefreshTimer = ref(0);
@@ -526,6 +553,7 @@ watch(() => props.table, () => {
       page.value = 1;
       filters.value = [];
       isSearch.value = false;
+      viewMode.value = 'data';
       approximateCount.value = 0;
       sortParams.value = {} as { field: string; dir: 'asc' | 'desc'};
       getTableData();
@@ -573,3 +601,15 @@ onBeforeUnmount(() => {
    window.removeEventListener('antares:prev-page', prevPageListener);
 });
 </script>
+
+<style lang="scss" scoped>
+.view-mode-toggle {
+   display: flex;
+   gap: 2px;
+   margin-right: 8px;
+
+   .btn {
+      border-radius: 4px;
+   }
+}
+</style>

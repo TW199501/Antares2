@@ -1,51 +1,15 @@
 <template>
    <div class="tr" @contextmenu.prevent="!editingField ? emit('contextmenu', $event, localRow._antares_id) : null">
-      <div class="td p-0" tabindex="0">
-         <div :class="customizations.sortableFields ? 'row-draggable' : 'text-center'">
-            <BaseIcon
-               v-if="customizations.sortableFields"
-               icon-name="mdiDragHorizontal"
-               :size="22"
-               class="row-draggable-icon"
-            />
-            {{ localRow.order }}
-         </div>
+      <!-- 排序 -->
+      <div class="td p-0 text-center" tabindex="0">
+         <span class="cell-content text-center">{{ localRow.order }}</span>
       </div>
-      <div class="td p-0" tabindex="0">
-         <div class="text-center" :style="'display: flex; justify-content: center; align-items: center'">
-            <div
-               v-for="(index, i) in indexes"
-               :key="`${index.name}-${i}`"
-               :title="index.type"
-               class="p-vcentered"
-            >
-               <BaseIcon
-                  icon-name="mdiKey"
-                  :rotate="45"
-                  :size="14"
-                  class="d-inline-block column-key c-help"
-                  :class="`key-${index.type}`"
-               />
-            </div>
-            <div
-               v-for="foreign in foreigns"
-               :key="foreign"
-               :title="foreign"
-               class="p-vcentered"
-            >
-               <BaseIcon
-                  class="d-inline-block c-help"
-                  icon-name="mdiKeyLink"
-                  :size="16"
-               />
-            </div>
-         </div>
-      </div>
+      <!-- 字段名 -->
       <div class="td p-0" tabindex="0">
          <span
             v-if="!isInlineEditor.name"
             class="cell-content"
-            @dblclick="editON($event, localRow.name , 'name')"
+            @dblclick="editON($event, localRow.name, 'name')"
          >
             {{ localRow.name }}
          </span>
@@ -59,10 +23,8 @@
             @blur="editOFF"
          >
       </div>
-      <div
-         class="td p-0 text-uppercase"
-         tabindex="0"
-      >
+      <!-- 数据类型 -->
+      <div class="td p-0 text-uppercase" tabindex="0">
          <span
             v-if="!isInlineEditor.type"
             class="cell-content text-left"
@@ -84,50 +46,53 @@
             @blur="editOFF"
          />
       </div>
+      <!-- 主键 PK (read-only chip) -->
+      <div class="td p-0 text-center" tabindex="0">
+         <span
+            class="field-chip"
+            :class="isPrimaryKey ? 'chip-key-primary' : 'chip-inactive'"
+         >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
+      </div>
+      <!-- 自增 AI (toggle chip, conditional) -->
       <div
-         v-if="customizations.tableArray"
-         class="td p-0"
+         v-if="customizations.autoIncrement"
+         class="td p-0 text-center"
          tabindex="0"
       >
-         <label class="form-checkbox">
-            <input v-model="localRow.isArray" type="checkbox">
-            <i class="form-icon" />
-         </label>
+         <span
+            class="field-chip field-chip-toggle"
+            :class="[localRow.autoIncrement ? 'chip-active' : 'chip-inactive', !canAutoincrement ? 'chip-disabled' : '']"
+            @click="canAutoincrement && toggleAutoIncrement()"
+         >{{ localRow.autoIncrement ? t('general.yes') : t('general.no') }}</span>
       </div>
-      <div class="td p-0 type-int" tabindex="0">
-         <template v-if="fieldType?.length">
-            <span
-               v-if="!isInlineEditor.length"
-               class="cell-content"
-               @dblclick="editON($event, localLength, 'length')"
-            >
-               <span v-if="localRow.enumValues">
-                  {{ localRow.enumValues }}
-               </span>
-               <span v-else-if="localRow.numScale">
-                  {{ localLength }}, {{ localRow.numScale }}
-               </span>
-               <span v-else>
-                  {{ localLength }}
-               </span>
-            </span>
+      <!-- 可空 NULL (toggle chip, conditional) -->
+      <div
+         v-if="customizations.nullable"
+         class="td p-0 text-center"
+         tabindex="0"
+      >
+         <span
+            class="field-chip field-chip-toggle"
+            :class="[localRow.nullable ? 'chip-null-active' : 'chip-null-inactive', !isNullable ? 'chip-disabled' : '']"
+            @click="isNullable && (localRow.nullable = !localRow.nullable)"
+         >{{ localRow.nullable ? t('general.yes') : t('general.no') }}</span>
+      </div>
+      <!-- 长度 -->
+      <div class="td p-0 type-int text-center" tabindex="0">
+         <span
+            v-if="!isInlineEditor.length"
+            class="cell-content text-center"
+            :class="!fieldType?.length ? 'cell-readonly' : ''"
+            @dblclick="fieldType?.length ? editON($event, localLength, 'length') : null"
+         >{{ localRow.enumValues || localLength || '-' }}</span>
+         <template v-if="fieldType?.length && isInlineEditor.length">
             <input
-               v-else-if="localRow.enumValues"
+               v-if="localRow.enumValues"
                ref="editField"
                v-model="editingContent"
                type="text"
                autofocus
                class="editable-field form-input input-sm px-1"
-               @blur="editOFF"
-            >
-            <input
-               v-else-if="fieldType.scale"
-               ref="editField"
-               v-model="editingContent"
-               type="text"
-               autofocus
-               class="editable-field form-input input-sm px-1"
-               @keypress="checkLengthScale"
                @blur="editOFF"
             >
             <input
@@ -141,53 +106,49 @@
             >
          </template>
       </div>
-      <div
-         v-if="customizations.unsigned"
-         class="td p-0"
-         tabindex="0"
-      >
-         <label class="form-checkbox">
+      <!-- 精度 (scale) -->
+      <div class="td p-0 type-int text-center" tabindex="0">
+         <template v-if="fieldType?.scale">
+            <span
+               v-if="!isInlineEditor.numScale"
+               class="cell-content text-center"
+               @dblclick="editON($event, localRow.numScale, 'numScale')"
+            >{{ localRow.numScale }}</span>
             <input
-               v-model="localRow.unsigned"
-               type="checkbox"
-               :disabled="!fieldType?.unsigned"
+               v-else
+               ref="editField"
+               v-model="editingContent"
+               type="number"
+               autofocus
+               class="editable-field form-input input-sm px-1"
+               @blur="editOFF"
             >
-            <i class="form-icon" />
-         </label>
+         </template>
       </div>
-      <div
-         v-if="customizations.nullable"
-         class="td p-0"
-         tabindex="0"
-      >
-         <label class="form-checkbox">
-            <input
-               v-model="localRow.nullable"
-               type="checkbox"
-               :disabled="!isNullable"
-            >
-            <i class="form-icon" />
-         </label>
+      <!-- FK / UQ (read-only chips) -->
+      <div class="td p-0 text-center" tabindex="0">
+         <div class="field-fkuq-chips">
+            <span
+               v-for="(idx, i) in uqIndexes"
+               :key="`uq-${i}`"
+               :title="idx.type"
+               class="field-chip chip-key-unique"
+            >UQ</span>
+            <span
+               v-for="foreign in foreigns"
+               :key="foreign"
+               :title="foreign"
+               class="field-chip chip-key-fk"
+            >FK</span>
+         </div>
       </div>
-      <div
-         v-if="customizations.zerofill"
-         class="td p-0"
-         tabindex="0"
-      >
-         <label class="form-checkbox">
-            <input
-               v-model="localRow.zerofill"
-               type="checkbox"
-               :disabled="!fieldType.zerofill"
-            >
-            <i class="form-icon" />
-         </label>
-      </div>
+      <!-- 默认值 -->
       <div class="td p-0" tabindex="0">
          <span class="cell-content" @dblclick="editON($event, localRow.default, 'default')">
             {{ fieldDefault }}
          </span>
       </div>
+      <!-- 描述 (conditional) -->
       <div
          v-if="customizations.comment"
          class="td p-0 type-varchar"
@@ -196,7 +157,7 @@
          <span
             v-if="!isInlineEditor.comment"
             class="cell-content"
-            @dblclick="editON($event, localRow.comment , 'comment')"
+            @dblclick="editON($event, localRow.comment, 'comment')"
          >
             {{ localRow.comment }}
          </span>
@@ -210,6 +171,7 @@
             @blur="editOFF"
          >
       </div>
+      <!-- 排序規則 (collation, conditional) -->
       <div
          v-if="customizations.collation"
          class="td p-0"
@@ -236,6 +198,49 @@
             />
          </template>
       </div>
+      <!-- 操作 -->
+      <div class="td p-0 td-ops" tabindex="0">
+         <div class="ops-btns">
+            <button
+               class="btn btn-link btn-sm op-btn"
+               :title="t('general.moveUp')"
+               @click.stop="emit('move-up', localRow._antares_id)"
+            >
+               <BaseIcon icon-name="mdiArrowUp" :size="14" />
+            </button>
+            <button
+               class="btn btn-link btn-sm op-btn"
+               :title="t('general.moveDown')"
+               @click.stop="emit('move-down', localRow._antares_id)"
+            >
+               <BaseIcon icon-name="mdiArrowDown" :size="14" />
+            </button>
+            <button
+               class="btn btn-link btn-sm op-btn op-btn-edit"
+               :title="t('database.editField')"
+               @click.stop="isEditModal = true"
+            >
+               <BaseIcon icon-name="mdiPencilOutline" :size="14" />
+            </button>
+            <button
+               class="btn btn-link btn-sm op-btn op-btn-delete"
+               :title="t('general.delete')"
+               @click.stop="emit('remove-field-row', localRow._antares_id)"
+            >
+               <BaseIcon icon-name="mdiDeleteOutline" :size="14" />
+            </button>
+         </div>
+      </div>
+      <EditModal
+         v-if="isEditModal"
+         :row="localRow"
+         :indexes="indexes"
+         :foreigns="foreigns"
+         :data-types="dataTypes"
+         :customizations="customizations"
+         @confirm="applyEditModal"
+         @hide="isEditModal = false"
+      />
       <ConfirmModal
          v-if="isDefaultModal"
          :confirm-text="t('general.confirm')"
@@ -355,6 +360,7 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import EditModal from '@/components/WorkspaceTabPropsTableEditModal.vue';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
@@ -373,6 +379,9 @@ const props = defineProps({
 const emit = defineEmits<{
    'contextmenu': [event: MouseEvent, id: string];
    'rename-field': [payload: { old: string; new: string | number }];
+   'move-up': [id: string];
+   'move-down': [id: string];
+   'remove-field-row': [id: string];
 }>();
 
 const workspacesStore = useWorkspacesStore();
@@ -384,6 +393,7 @@ const { getWorkspace } = workspacesStore;
 const localRow: Ref<TableField> = ref({} as TableField);
 const isInlineEditor: Ref<TableField> = ref({} as TableField);
 const isDefaultModal = ref(false);
+const isEditModal = ref(false);
 const defaultValue = ref({
    type: 'noval',
    custom: '',
@@ -395,7 +405,7 @@ const originalContent = ref(null);
 const editingField: Ref<keyof TableField> = ref(null);
 
 const localLength = computed(() => {
-   const localLength = localRow.value.numLength || localRow.value.charLength || localRow.value.datePrecision || localRow.value.numPrecision || 0 as number | true;
+   const localLength = localRow.value.numLength || localRow.value.charLength || localRow.value.numPrecision || localRow.value.datePrecision || 0 as number | true;
    return localLength === true ? null : localLength;
 });
 
@@ -419,6 +429,8 @@ const fieldDefault = computed(() => {
 const collations = computed(() => getWorkspace(selectedWorkspace.value).collations);
 const canAutoincrement = computed(() => props.indexes.some(index => ['PRIMARY', 'UNIQUE'].includes(index.type)));
 const isNullable = computed(() => props.customizations.nullablePrimary || !props.indexes.some(index => ['PRIMARY'].includes(index.type)));
+const isPrimaryKey = computed(() => props.indexes.some(index => index.type === 'PRIMARY'));
+const uqIndexes = computed(() => props.indexes.filter(index => index.type === 'UNIQUE'));
 
 const isInDataTypes = computed(() => {
    let typeNames: string[] = [];
@@ -471,6 +483,14 @@ const initLocalRow = () => {
    }
 };
 
+const toggleAutoIncrement = () => {
+   localRow.value.autoIncrement = !localRow.value.autoIncrement;
+   if (localRow.value.autoIncrement) {
+      localRow.value.default = null;
+      localRow.value.nullable = false;
+   }
+};
+
 const editON = async (event: MouseEvent, content: string | number, field: keyof TableField) => {
    if (field === 'length') {
       if (['integer', 'float', 'binary', 'spatial'].includes(fieldType.value.group)) editingField.value = 'numLength';
@@ -484,11 +504,6 @@ const editON = async (event: MouseEvent, content: string | number, field: keyof 
    if (localRow.value.enumValues && field === 'length') {
       editingContent.value = localRow.value.enumValues;
       originalContent.value = localRow.value.enumValues;
-   }
-   else if (fieldType.value.scale && field === 'length') {
-      const scale = localRow.value.numScale !== null ? localRow.value.numScale : 0;
-      editingContent.value = `${content}, ${scale}`;
-      originalContent.value = `${content}, ${scale}`;
    }
    else {
       editingContent.value = content;
@@ -512,14 +527,8 @@ const editOFF = () => {
    if (editingField.value === 'name')
       emit('rename-field', { old: localRow.value[editingField.value], new: editingContent.value });
 
-   if (editingField.value === 'numLength' && fieldType.value.scale) {
-      const [length, scale] = (editingContent.value as string).split(',');
-      localRow.value.numLength = +length;
-      localRow.value.numScale = scale ? +scale : null;
-   }
-   else
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (localRow.value as any)[editingField.value] = editingContent.value;
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   (localRow.value as any)[editingField.value] = editingContent.value;
 
    if (editingField.value === 'type' && editingContent.value !== originalContent.value) {
       localRow.value.numLength = null;
@@ -582,18 +591,16 @@ const editOFF = () => {
    editingField.value = null;
 };
 
-const checkLengthScale = (e: KeyboardEvent & { target: HTMLInputElement }) => {
-   e = (e) || window.event as KeyboardEvent & { target: HTMLInputElement };
-   const charCode = (e.which) ? e.which : Number(e.code);
-
-   if (((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 44) || (charCode === 44 && e.target.value.includes(',')))
-      e.preventDefault();
-   else
-      return true;
-};
-
 const hideDefaultModal = () => {
    isDefaultModal.value = false;
+};
+
+const applyEditModal = (updated: TableField) => {
+   const oldName = localRow.value.name;
+   Object.assign(localRow.value, updated);
+   isEditModal.value = false;
+   if (updated.name !== oldName)
+      emit('rename-field', { old: oldName, new: updated.name });
 };
 
 watch(localRow, () => {
@@ -631,6 +638,45 @@ onMounted(() => {
   max-height: 21px;
   border-radius: 3px;
   font-size: 0.7rem;
+}
+
+.td-ops {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+}
+
+.ops-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  .tr:hover & {
+    opacity: 1;
+  }
+}
+
+.op-btn {
+  padding: 0 3px;
+  min-height: 0;
+  height: 20px;
+  line-height: 1;
+  opacity: 0.55;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &.op-btn-edit:hover { color: #4a9eff; }
+  &.op-btn-delete:hover { color: #e85600; }
+}
+
+.cell-readonly {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .row-draggable {
@@ -671,5 +717,54 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.field-key-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px 0.2rem 2px;
+}
+
+.field-chip {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+
+  &.chip-key-primary   { background: rgba(74, 158, 255, 0.18); color: #4a9eff; border: 1px solid rgba(74, 158, 255, 0.4); }
+  &.chip-key-unique    { background: rgba(50, 182, 67, 0.18);  color: #32b643; border: 1px solid rgba(50, 182, 67, 0.4); }
+  &.chip-key-index,
+  &.chip-key-key       { background: rgba(224, 164, 12, 0.18); color: #e0a40c; border: 1px solid rgba(224, 164, 12, 0.4); }
+  &.chip-key-fk        { background: rgba(155, 89, 182, 0.18); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.4); }
+  &.chip-null-active   { background: rgba(50, 182, 67, 0.18);  color: #32b643; border: 1px solid rgba(50, 182, 67, 0.4); }
+  &.chip-null-inactive,
+  &.chip-inactive      { background: rgba(232, 86, 0, 0.12); color: rgba(232, 86, 0, 0.75); border: 1px solid rgba(232, 86, 0, 0.3); }
+  &.chip-active        { background: rgba(227, 105, 41, 0.18); color: #e36929; border: 1px solid rgba(227, 105, 41, 0.4); }
+
+  &.field-chip-toggle {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+
+    &.chip-disabled {
+      cursor: not-allowed;
+    }
+
+    &:hover:not(.chip-disabled) {
+      filter: brightness(1.2);
+    }
+  }
+}
+
+.field-fkuq-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  justify-content: center;
+  padding: 2px 0.2rem;
 }
 </style>

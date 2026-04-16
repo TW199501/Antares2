@@ -603,10 +603,21 @@ const onKey = (e: KeyboardEvent) => {
    }
 };
 
-const typeFormat = (val: string | number | Date | number[], type: string, precision?: number | false) => {
-   if (!val) return val;
+const typeFormat = (val: string | number | boolean | Date | number[], type: string, precision?: number | false) => {
+   if (val === null || val === undefined) return val;
 
    type = type.toUpperCase();
+
+   if (BIT.includes(type)) {
+      if (typeof val === 'boolean') return val ? '1' : '0';
+      if (!val) return val;
+      if (typeof val === 'number') val = [val] as number[];
+      const hex = Buffer.from(val as number[]).toString('hex') as unknown as HexChar[];
+      const bitString = hexToBinary(hex);
+      return parseInt(bitString).toString().padStart(Number(precision), '0');
+   }
+
+   if (!val) return val;
 
    if (DATE.includes(type))
       return moment(val).isValid() ? moment(val).format('YYYY-MM-DD') : val;
@@ -630,13 +641,6 @@ const typeFormat = (val: string | number | Date | number[], type: string, precis
 
       const hex = buff.toString('hex').substring(0, 8).toUpperCase();
       return `${mimeFromHex(hex).mime} (${formatBytes(buff.length)})`;
-   }
-
-   if (BIT.includes(type)) {
-      if (typeof val === 'number') val = [val] as number[];
-      const hex = Buffer.from(val as number[]).toString('hex') as unknown as HexChar[];
-      const bitString = hexToBinary(hex);
-      return parseInt(bitString).toString().padStart(Number(precision), '0');
    }
 
    if (BINARY.includes(type))
