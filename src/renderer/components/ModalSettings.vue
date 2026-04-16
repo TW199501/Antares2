@@ -509,9 +509,7 @@ const { getWorkspace } = workspacesStore;
 
 const appAuthor = 'Fabio Di Stasio';
 const pageSizes = [30, 40, 100, 250, 500, 1000];
-// TODO: Replace with build-time constant or app metadata API when Tauri is set up
-// const contributors = process.env.APP_CONTRIBUTORS;
-const contributors = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_CONTRIBUTORS) || '';
+const contributors = import.meta.env?.VITE_APP_CONTRIBUTORS || '';
 const appLogo = new URL('../images/logo.svg', import.meta.url).href;
 const darkPreview = new URL('../images/dark.png', import.meta.url).href;
 const lightPreview = new URL('../images/light.png', import.meta.url).href;
