@@ -2,27 +2,26 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Electron: Main",
+      "name": "Sidecar: Node Attach",
       "cwd": "${workspaceFolder}",
-      "port": 9222,
+      "port": 9230,
       "request": "attach",
       "sourceMaps": true,
       "type": "node",
       "timeout": 1000000
     },
     {
-      "name": "Electron: Renderer",
-      "port": 9223,
-      "request": "attach",
-      "sourceMaps": true,
+      "name": "Renderer: Vite",
+      "request": "launch",
       "type": "chrome",
-      "webRoot": "${workspaceFolder}"
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src/renderer"
     }
   ],
   "compounds": [
-      {
-          "name": "Electron: All",
-          "configurations": ["Electron: Main", "Electron: Renderer"]
-      }
+    {
+      "name": "Tauri: Renderer + Sidecar",
+      "configurations": ["Sidecar: Node Attach", "Renderer: Vite"]
+    }
   ]
 }

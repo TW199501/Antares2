@@ -39,7 +39,7 @@ jobs:
         run: npm i --lockfile-version 2
 
       - name: Generate generated-sources.json
-        run: flatpak-node-generator npm -r package-lock.json --electron-node-headers
+        run: flatpak-node-generator npm -r package-lock.json
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3

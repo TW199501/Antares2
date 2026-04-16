@@ -40,8 +40,8 @@ export default class {
       await getCurrentWindow().close();
    }
 
-   // Shortcut methods: global shortcut registration was Electron-only.
-   // In Tauri, keyboard shortcuts are handled via DOM events in KeyPressDetector.vue.
+   // Shortcut methods: global shortcut registration is not implemented in this runtime.
+   // Keyboard shortcuts are handled via DOM events in KeyPressDetector.vue.
    // Shortcut settings are persisted via the settings Pinia store (localStorage).
    static reloadShortcuts (): Promise<void> {
       return Promise.resolve();

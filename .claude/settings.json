@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pnpm translation:check zh-TW)",
       "Bash(npx tsc:*)",
-      "Bash(grep -rn \"interface ISqlType\" node_modules/.pnpm/mssql@*/node_modules/mssql/**/*.d.ts)"
+      "Bash(grep -rn \"interface ISqlType\" node_modules/.pnpm/mssql@*/node_modules/mssql/**/*.d.ts)",
+      "Bash(npx skills:*)"
     ]
   }
 }

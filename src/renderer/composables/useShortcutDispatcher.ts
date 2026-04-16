@@ -4,7 +4,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 
 /**
- * Translates an Electron Accelerator key token to the equivalent KeyboardEvent.key value.
+ * Translates a shortcut token to the equivalent KeyboardEvent.key value.
  */
 function acceleratorKeyToEventKey (token: string): string {
    const map: Record<string, string> = {

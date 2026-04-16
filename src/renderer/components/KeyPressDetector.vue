@@ -33,7 +33,7 @@ const emit = defineEmits<{
 const isMacOS = navigator.platform.startsWith('Mac');
 
 const props = defineProps({
-   // TODO: Was PropType<string | Electron.Accelerator> — Electron.Accelerator is just a string alias
+   // Shortcut is represented as a plain string in renderer.
    modelValue: String as PropType<string>
 });
 
