@@ -485,7 +485,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                   let fakeValue;
 
                   if (params.locale)
-                     fakerCustom.locale = params.locale;
+                     (fakerCustom as any).locale = params.locale;
 
                   if (Object.keys(params.row[key].params).length) {
                      Object.keys(params.row[key].params).forEach(param => {
