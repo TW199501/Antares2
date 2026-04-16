@@ -10,7 +10,7 @@
    },
    "bundle": {
       "active": true,
-      "targets": ["nsis"],
+      "targets": ["nsis", "msi"],
       "resources": {
          "../sidecar/node.exe": "sidecar/node.exe",
          "../sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
