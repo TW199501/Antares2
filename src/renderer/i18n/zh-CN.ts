@@ -51,6 +51,11 @@ export const zhCN = {
       unpin: '取消固定',
       folder: '文件夹 | 文件夹',
       none: '无',
+      yes: '是',
+      no: '否',
+      actions: '操作',
+      moveUp: '上移',
+      moveDown: '下移',
       singleQuote: '单引号',
       doubleQuote: '双引号',
       deleteConfirm: '您是否确认取消',
@@ -126,6 +131,13 @@ export const zhCN = {
       order: '排序',
       expression: '表达式',
       autoIncrement: '自动增量',
+      primaryKey: '主键',
+      precision: '精度',
+      fieldName: '字段名',
+      editField: '编辑字段',
+      commentPlaceholder: '输入描述...',
+      translateWithAi: 'AI 自动翻译',
+      aiKeyRequired: '请在设置中填入 AI API Key 以使用翻译功能',
       engine: '引擎',
       field: '字段 | 字段',
       approximately: '大约',
@@ -282,6 +294,7 @@ export const zhCN = {
       switchDatabase: '切换数据库',
       searchForElements: '搜索元素',
       searchForSchemas: '搜索模式(schema)',
+      searchForColumns: '搜索字段名称/描述',
       savedQueries: '已保存的查询'
    },
    application: { // 应用程序相关术语
@@ -407,7 +420,12 @@ export const zhCN = {
       openNotes: '打开笔记',
       debugConsole: '调试控制台',
       executedQueries: '执行的查询',
-      sizeLimitError: '超过 {size} 的最大大小'
+      sizeLimitError: '超过 {size} 的最大大小',
+      invalidFile: '无效的文件',
+      fullScreen: '全屏',
+      zoomIn: '放大',
+      zoomOut: '缩小',
+      zoomReset: '重置缩放'
    },
    faker: { // Faker.js 方法，用于随机生成的内容
       address: '地址',
