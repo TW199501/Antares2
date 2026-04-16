@@ -198,6 +198,8 @@ if (!connectionsArr.value.length)
    .settingbar-bottom-elements {
       z-index: 1;
       margin-top: auto;
+      border-top: 1px solid rgba(255 255 255 / 10%);
+      padding-top: 0.25rem;
    }
 
    .settingbar-elements {

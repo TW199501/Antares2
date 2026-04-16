@@ -48,6 +48,19 @@ export default async function tableRoutes (app: FastifyInstance) {
       }
    });
 
+   // POST /api/tables/searchColumns
+   app.post('/api/tables/searchColumns', async (request) => {
+      const params = request.body as any;
+
+      try {
+         const result = await requireConnection(params.uid).searchColumns(params);
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: safeErrorMessage(err) };
+      }
+   });
+
    // POST /api/tables/getData
    app.post('/api/tables/getData', async (request) => {
       const { uid, schema, table, limit, page, sortParams, where } = request.body as any;

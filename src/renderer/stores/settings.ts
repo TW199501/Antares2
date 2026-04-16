@@ -29,6 +29,7 @@ export const useSettingsStore = defineStore('settings', {
       disableBlur: false as boolean,
       shortcuts: [] as ShortcutRecord[],
       defaultCopyType: 'cell' as string,
+      aiApiKey: '' as string,
       _loaded: false
    }),
    actions: {
@@ -51,6 +52,7 @@ export const useSettingsStore = defineStore('settings', {
          if (settings.restore_tabs !== undefined) this.restoreTabs = settings.restore_tabs;
          if (settings.disable_blur !== undefined) this.disableBlur = settings.disable_blur;
          if (settings.default_copy_type !== undefined) this.defaultCopyType = settings.default_copy_type;
+         if (settings.ai_api_key !== undefined) this.aiApiKey = settings.ai_api_key;
          if (shortcuts.shortcuts !== undefined) this.shortcuts = shortcuts.shortcuts;
 
          this._loaded = true;
@@ -71,7 +73,8 @@ export const useSettingsStore = defineStore('settings', {
             editor_font_size: this.editorFontSize,
             restore_tabs: this.restoreTabs,
             disable_blur: this.disableBlur,
-            default_copy_type: this.defaultCopyType
+            default_copy_type: this.defaultCopyType,
+            ai_api_key: this.aiApiKey
          });
       },
       async persistShortcuts () {
@@ -140,6 +143,10 @@ export const useSettingsStore = defineStore('settings', {
       },
       changeDefaultCopyType (type: string) {
          this.defaultCopyType = type;
+         this.persistSettings();
+      },
+      changeAiApiKey (key: string) {
+         this.aiApiKey = key;
          this.persistSettings();
       }
    }
