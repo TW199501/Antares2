@@ -38,15 +38,17 @@ startExport()
 
 ### WebSocket message protocol (from `src/main/routes/schema.ts`)
 
-**Export `/ws/export`:**
+**Export** `**/ws/export**`**:**
 
 Send to open:
-```json
+
+```
 { "type": "start", "params": { "uid": "...", "type": "mysql", "schema": "...", "outputFile": "...", "tables": [...], ... } }
 ```
 
 Receive:
-```json
+
+```
 { "type": "export-progress", "payload": { "currentItemIndex": 3, "totalItems": 10, "currentItem": "users", "op": "PROCESSING" } }
 { "type": "end",             "payload": { "cancelled": false } }
 { "type": "cancel" }
@@ -54,19 +56,22 @@ Receive:
 ```
 
 Abort:
-```json
+
+```
 { "type": "abort" }
 ```
 
-**Import `/ws/import`:**
+**Import** `**/ws/import**`**:**
 
 Send to open:
-```json
+
+```
 { "type": "start", "params": { "uid": "...", "type": "mysql", "schema": "...", "file": "/path/to/file.sql" } }
 ```
 
 Receive:
-```json
+
+```
 { "type": "import-progress", "payload": { "percentage": 42.5, "queryCount": 150 } }
 { "type": "query-error",     "payload": { "time": "2026-04-13T10:00:00", "message": "..." } }
 { "type": "end",             "payload": { "cancelled": false } }
@@ -75,7 +80,8 @@ Receive:
 ```
 
 Abort:
-```json
+
+```
 { "type": "abort" }
 ```
 
@@ -84,7 +90,7 @@ Abort:
 ## File Map
 
 | File | Change |
-|------|--------|
+| --- | --- |
 | `src/renderer/components/ModalExportSchema.vue` | Replace `Schema.export()` + `ipcRenderer.on` with WebSocket |
 | `src/renderer/components/ModalImportSchema.vue` | Replace `Schema.import()` + `ipcRenderer.on` with WebSocket |
 
@@ -95,9 +101,10 @@ No backend changes needed — WebSocket routes already exist.
 ### Task 1: Migrate `ModalExportSchema.vue` to WebSocket
 
 **Files:**
-- Modify: `src/renderer/components/ModalExportSchema.vue`
 
-- [ ] **Step 1: Add `createWebSocket` import**
+Modify: `src/renderer/components/ModalExportSchema.vue`
+
+ **Step 1: Add** `**createWebSocket**` **import**
 
 At the top of the `<script setup>` section, add:
 
@@ -105,7 +112,7 @@ At the top of the `<script setup>` section, add:
 import { createWebSocket } from '@/ipc-api/httpClient';
 ```
 
-- [ ] **Step 2: Add a `wsExport` ref to hold the open socket**
+*   **Step 2: Add a** `**wsExport**` **ref to hold the open socket**
 
 Near the other `ref` declarations in the component, add:
 
@@ -113,7 +120,7 @@ Near the other `ref` declarations in the component, add:
 const wsExport = ref<WebSocket | null>(null);
 ```
 
-- [ ] **Step 3: Replace `startExport` function**
+*   **Step 3: Replace** `**startExport**` **function**
 
 Find the current `startExport` function (around line 386):
 
@@ -191,9 +198,10 @@ const startExport = () => {
 };
 ```
 
-- [ ] **Step 4: Replace `updateProgress` function signature**
+*   **Step 4: Replace** `**updateProgress**` **function signature**
 
 Find:
+
 ```typescript
 const updateProgress = (event: IpcRendererEvent, state: ExportState) => {
    progressPercentage.value = Number((state.currentItemIndex / state.totalItems * 100).toFixed(1));
@@ -220,7 +228,7 @@ const updateProgress = (state: ExportState) => {
 };
 ```
 
-- [ ] **Step 5: Update abortExport to send via WebSocket**
+*   **Step 5: Update abortExport to send via WebSocket**
 
 Find any `Schema.abortExport()` call in the component. Replace with:
 
@@ -231,25 +239,29 @@ const abortExport = () => {
 };
 ```
 
-- [ ] **Step 6: Remove ipcRenderer listener registration**
+*   **Step 6: Remove ipcRenderer listener registration**
 
 Find and remove:
+
 ```typescript
 ipcRenderer.on('export-progress', updateProgress);
 ```
+
 (in `onMounted` / IIFE around line 533)
 
 Find and remove:
+
 ```typescript
 ipcRenderer.off('export-progress', updateProgress);
 ```
+
 (in `onBeforeUnmount` around line 538)
 
 Remove the `ipcRenderer` stub if it exists in this file.
 
 Also remove `IpcRendererEvent` from any imports (it was used in the old signature).
 
-- [ ] **Step 7: Close WebSocket on component unmount**
+*   **Step 7: Close WebSocket on component unmount**
 
 In `onBeforeUnmount`, add:
 
@@ -260,18 +272,18 @@ if (wsExport.value) {
 }
 ```
 
-- [ ] **Step 8: Verify TypeScript**
+*   **Step 8: Verify TypeScript**
 
-```bash
+```
 cd e:/source/antares2
 pnpm vue-tsc --noEmit 2>&1 | grep ModalExportSchema
 ```
 
 Expected: no errors.
 
-- [ ] **Step 9: Commit**
+*   **Step 9: Commit**
 
-```bash
+```
 git add src/renderer/components/ModalExportSchema.vue
 git commit -m "feat: migrate ModalExportSchema to WebSocket progress streaming"
 ```
@@ -281,23 +293,25 @@ git commit -m "feat: migrate ModalExportSchema to WebSocket progress streaming"
 ### Task 2: Migrate `ModalImportSchema.vue` to WebSocket
 
 **Files:**
-- Modify: `src/renderer/components/ModalImportSchema.vue`
 
-- [ ] **Step 1: Add `createWebSocket` import**
+Modify: `src/renderer/components/ModalImportSchema.vue`
+
+ **Step 1: Add** `**createWebSocket**` **import**
 
 ```typescript
 import { createWebSocket } from '@/ipc-api/httpClient';
 ```
 
-- [ ] **Step 2: Add WebSocket ref**
+*   **Step 2: Add WebSocket ref**
 
 ```typescript
 const wsImport = ref<WebSocket | null>(null);
 ```
 
-- [ ] **Step 3: Replace `startImport` function**
+*   **Step 3: Replace** `**startImport**` **function**
 
 Find (around line 118):
+
 ```typescript
 const startImport = async (file: string) => {
    isImporting.value = true;
@@ -378,7 +392,7 @@ const startImport = (file: string) => {
 };
 ```
 
-- [ ] **Step 4: Update `updateProgress` and `handleQueryError` signatures**
+*   **Step 4: Update** `**updateProgress**` **and** `**handleQueryError**` **signatures**
 
 Remove `IpcRendererEvent` as the first argument:
 
@@ -393,9 +407,10 @@ const handleQueryError = (err: { time: string; message: string }) => {
 };
 ```
 
-- [ ] **Step 5: Update `closeModal` to abort via WebSocket**
+*   **Step 5: Update** `**closeModal**` **to abort via WebSocket**
 
 Find:
+
 ```typescript
 const closeModal = async () => {
    let willClose = true;
@@ -409,6 +424,7 @@ const closeModal = async () => {
 ```
 
 Replace with:
+
 ```typescript
 const closeModal = () => {
    if (isImporting.value) {
@@ -424,15 +440,17 @@ const closeModal = () => {
 
 > Note: The abort flow is now: user clicks Cancel → sends `abort` message → server sends back `{ type: 'cancel' }` → `completed` becomes true → user clicks Close.
 
-- [ ] **Step 6: Remove ipcRenderer listener registrations**
+*   **Step 6: Remove ipcRenderer listener registrations**
 
 Remove:
+
 ```typescript
 ipcRenderer.on('import-progress', updateProgress);
 ipcRenderer.on('query-error', handleQueryError);
 ```
 
 Remove:
+
 ```typescript
 ipcRenderer.off('import-progress', updateProgress);
 ipcRenderer.off('query-error', handleQueryError);
@@ -440,9 +458,10 @@ ipcRenderer.off('query-error', handleQueryError);
 
 Remove the `ipcRenderer` stub if it exists in this file.
 
-- [ ] **Step 7: Close WebSocket on component unmount**
+*   **Step 7: Close WebSocket on component unmount**
 
 In `onBeforeUnmount` or `onUnmounted`:
+
 ```typescript
 if (wsImport.value) {
    wsImport.value.close();
@@ -450,27 +469,27 @@ if (wsImport.value) {
 }
 ```
 
-- [ ] **Step 8: Verify TypeScript**
+*   **Step 8: Verify TypeScript**
 
-```bash
+```
 cd e:/source/antares2
 pnpm vue-tsc --noEmit 2>&1 | grep ModalImportSchema
 ```
 
 Expected: no errors.
 
-- [ ] **Step 9: Full TypeScript pass**
+*   **Step 9: Full TypeScript pass**
 
-```bash
+```
 cd e:/source/antares2
 pnpm vue-tsc --noEmit
 ```
 
 Expected: 0 errors.
 
-- [ ] **Step 10: Commit**
+*   **Step 10: Commit**
 
-```bash
+```
 git add src/renderer/components/ModalImportSchema.vue
 git commit -m "feat: migrate ModalImportSchema to WebSocket progress streaming"
 ```
@@ -482,16 +501,18 @@ git commit -m "feat: migrate ModalImportSchema to WebSocket progress streaming"
 > Requires a real database connection.
 
 **Export:**
-- [ ] Right-click a schema → Export → choose output file → click Export
-- [ ] Progress bar fills as tables are processed
-- [ ] Status label shows current table name
-- [ ] On completion: status shows "Completed"
-- [ ] Click Cancel during export → operation aborts, status shows "Aborted"
-- [ ] Exported file exists and is valid SQL
+
+*   Right-click a schema → Export → choose output file → click Export
+*   Progress bar fills as tables are processed
+*   Status label shows current table name
+*   On completion: status shows "Completed"
+*   Click Cancel during export → operation aborts, status shows "Aborted"
+*   Exported file exists and is valid SQL
 
 **Import:**
-- [ ] Right-click a schema → Import SQL → choose a SQL file → import starts
-- [ ] `X% - N queries executed` updates in real time
-- [ ] On completion: "Completed" shown, schema refreshes in sidebar
-- [ ] If SQL contains errors: errors listed in the text area
-- [ ] Click Cancel during import → operation aborts cleanly
+
+*   Right-click a schema → Import SQL → choose a SQL file → import starts
+*   `X% - N queries executed` updates in real time
+*   On completion: "Completed" shown, schema refreshes in sidebar
+*   If SQL contains errors: errors listed in the text area
+*   Click Cancel during import → operation aborts cleanly
