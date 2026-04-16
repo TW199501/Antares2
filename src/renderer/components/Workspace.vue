@@ -600,7 +600,10 @@
             </template>
          </div>
          <div v-else class="connection-panel-wrapper p-relative">
-            <WorkspaceEditConnectionPanel :connection="connection" />
+            <div v-if="workspace?.connectionStatus === 'connecting'" class="empty">
+               <div class="loading loading-lg" />
+            </div>
+            <WorkspaceEditConnectionPanel v-else :connection="connection" />
          </div>
          <DebugConsole v-if="isConsoleOpen" :uid="workspace.uid" />
       </div>

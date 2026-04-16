@@ -446,6 +446,13 @@ export const useWorkspacesStore = defineStore('workspaces', {
          this.selectTab({ uid, tab: 0 });
       },
       async switchConnection (connection: ConnectionParams & { connString?: string }) {
+         // Set status to 'connecting' BEFORE disconnect so noConnectionHandler
+         // won't fire a second connectWorkspace during the disconnect window.
+         this.workspaces = (this.workspaces as Workspace[]).map(workspace =>
+            workspace.uid === connection.uid
+               ? { ...workspace, connectionStatus: 'connecting' }
+               : workspace
+         );
          try {
             await Connection.disconnect(connection.uid);
          }

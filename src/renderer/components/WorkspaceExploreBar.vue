@@ -22,6 +22,7 @@
                   @keypress.stop=""
                   @keydown.stop=""
                />
+               <span v-if="databaseComment" class="database-comment">{{ databaseComment }}</span>
             </div>
             <span v-else class="workspace-explorebar-title">{{ connectionName }}</span>
             <span v-if="workspace.connectionStatus === 'connected'" class="workspace-explorebar-tools">
@@ -53,34 +54,50 @@
                </div>
             </span>
          </div>
-         <div class="workspace-explorebar-search">
-            <div v-if="workspace.connectionStatus === 'connected'" class="input-group has-icon-right">
-               <div
-                  class="input-group-addon px-1 py-0 p-vcentered c-hand"
-                  :title="t('application.switchSearchMethod')"
-                  @click="toggleSearchMethod"
-               >
-                  <BaseIcon :icon-name="searchMethod === 'elements' ? 'mdiShape' : 'mdiDatabase'" :size="18" />
-               </div>
+         <div v-if="workspace.connectionStatus === 'connected'" class="workspace-explorebar-search">
+            <div class="input-group has-icon-right explorebar-search-table">
                <input
                   ref="searchInput"
                   v-model="searchTerm"
                   class="form-input input-sm"
                   type="text"
-                  :placeholder="searchMethod === 'elements' ? t('database.searchForElements') : t('database.searchForSchemas')"
+                  :placeholder="t('database.searchForElements')"
                >
                <BaseIcon
                   v-if="!searchTerm"
                   class="form-icon"
                   icon-name="mdiMagnify"
-                  :size="18"
+                  :size="16"
                />
                <BaseIcon
                   v-else
                   class="form-icon c-hand pr-1"
                   icon-name="mdiBackspace"
-                  :size="18"
+                  :size="16"
                   @click="searchTerm = ''"
+               />
+            </div>
+            <div class="input-group has-icon-right explorebar-search-column">
+               <input
+                  v-model="columnSearchTerm"
+                  class="form-input input-sm"
+                  type="text"
+                  :placeholder="t('database.searchForColumns')"
+                  @keypress.stop=""
+                  @keydown.stop=""
+               >
+               <BaseIcon
+                  v-if="!columnSearchTerm"
+                  class="form-icon"
+                  icon-name="mdiTableColumn"
+                  :size="16"
+               />
+               <BaseIcon
+                  v-else
+                  class="form-icon c-hand pr-1"
+                  icon-name="mdiBackspace"
+                  :size="16"
+                  @click="columnSearchTerm = ''"
                />
             </div>
          </div>
@@ -92,6 +109,7 @@
                :database="db"
                :connection="connection"
                :search-method="searchMethod"
+               :column-search-term="columnSearchTerm"
                @show-schema-context="openSchemaContext"
                @show-table-context="openTableContext"
                @show-misc-context="openMiscContext"
@@ -222,12 +240,14 @@ const isMiscFolderContext = ref(false);
 const databaseContextEvent = ref(null);
 const tableContextEvent = ref(null);
 const miscContextEvent = ref(null);
-const selectedDatabase = ref(props.connection.database);
+const selectedDatabase = ref(getWorkspace(props.connection.uid)?.database || props.connection.database);
 const selectedSchema = ref('');
 const selectedTable = ref(null);
 const selectedMisc = ref(null);
 const searchTerm = ref('');
-const searchMethod: Ref<'elements' | 'schemas'> = ref('elements');
+const columnSearchTerm = ref('');
+const databaseComment = ref('');
+const searchMethod: Ref<'elements' | 'schemas' | 'columns'> = ref('elements');
 
 const workspace = computed(() => {
    return getWorkspace(props.connection.uid);
@@ -273,6 +293,12 @@ watch(selectedDatabase, (val, oldVal) => {
       switchConnection({ ...props.connection, database: selectedDatabase.value }).catch(() => {});
 });
 
+watch(selectedDatabase, async () => {
+   if (!customizations.value.database) return;
+   const { status, response } = await Databases.getDatabaseComment(props.connection.uid);
+   databaseComment.value = status === 'success' ? (response as string) : '';
+});
+
 localWidth.value = explorebarSize.value;
 
 onMounted(async () => {
@@ -300,6 +326,9 @@ onMounted(async () => {
          }
          else
             addNotification({ status: 'error', message: response });
+
+         const { status: cs, response: comment } = await Databases.getDatabaseComment(props.connection.uid);
+         if (cs === 'success') databaseComment.value = comment as string;
       }
       catch (err) {
          addNotification({ status: 'error', message: err.stack });
@@ -489,6 +518,8 @@ const toggleSearchMethod = () => {
 
    if (searchMethod.value === 'elements')
       searchMethod.value = 'schemas';
+   else if (searchMethod.value === 'schemas')
+      searchMethod.value = 'columns';
    else
       searchMethod.value = 'elements';
 };
@@ -564,32 +595,48 @@ const toggleSearchMethod = () => {
     .workspace-explorebar-database-switch {
       width: 100%;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       z-index: 20;
       margin-right: 5px;
       margin-left: -4px;
       margin-top: -3px;
       margin-bottom: -0.5rem;
-      height: 24px;
 
       .form-select.select-sm {
          font-size: 0.6rem;
          height: 1.2rem;
          line-height: 1rem;
       }
+
+      .database-comment {
+         font-size: 0.58rem;
+         opacity: 0.55;
+         padding-left: 0.15rem;
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         line-height: 1.3;
+      }
     }
 
     .workspace-explorebar-search {
       width: 100%;
       display: flex;
-      justify-content: space-between;
+      gap: 3px;
       font-size: 0.6rem;
       height: 28px;
       margin: 0 0 5px 0;
       z-index: 10;
 
+      .explorebar-search-table {
+        flex: 1 1 55%;
+      }
+
+      .explorebar-search-column {
+        flex: 1 1 45%;
+      }
+
       .has-icon-right {
-        width: 100%;
         padding: 0.1rem;
 
         .form-icon {
@@ -600,7 +647,7 @@ const toggleSearchMethod = () => {
         .form-input {
           height: 1.2rem;
           padding-left: 0.2rem;
-          border-radius:0 $border-radius $border-radius 0;
+          border-radius: $border-radius;
 
           &:focus + .form-icon {
             opacity: 0.9;
@@ -618,6 +665,10 @@ const toggleSearchMethod = () => {
       height: calc((100vh - 63px) - #{$excluding-size});
       overflow: overlay;
       padding: 0 0.1rem;
+
+      &::-webkit-scrollbar {
+        width: 3px;
+      }
     }
   }
 </style>

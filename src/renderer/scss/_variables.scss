@@ -23,9 +23,9 @@ $unknown-color: gray;
 
 /* Sizes */
 $border-radius: 0.3rem;
-$titlebar-height: 1.5rem;
-$settingbar-width: 3.5rem;
-$explorebar-width: 14rem;
+$titlebar-height: 0;
+$settingbar-width: 52px;
+$explorebar-width: 387px;
 $footer-height: 1.5rem;
 
 @function get-excluding-size() {

@@ -130,6 +130,7 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
     height: $titlebar-height;
+    overflow: hidden;
     -webkit-app-region: drag;
     user-select: none;
     z-index: 9999;

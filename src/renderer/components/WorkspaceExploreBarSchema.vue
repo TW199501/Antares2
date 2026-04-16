@@ -1,5 +1,9 @@
 <template>
-   <details ref="schemaAccordion" class="accordion workspace-explorebar-database">
+   <details
+      ref="schemaAccordion"
+      class="accordion workspace-explorebar-database"
+      open
+   >
       <summary
          class="accordion-header database-name"
          :class="{'text-bold': breadcrumbs.schema === database.name}"
@@ -55,6 +59,7 @@
                         :style="`min-width: 18px`"
                      />
                      <span v-html="highlightWord(table.name)" />
+                     <span v-if="table.comment" class="table-comment">{{ table.comment }}</span>
                   </a>
                   <div
                      v-if="table.type === 'table' && table.size !== false && !isNaN(table.size)"
@@ -432,10 +437,11 @@
 import { EventInfos, FunctionInfos, RoutineInfos, TableInfos, TriggerFunctionInfos, TriggerInfos } from 'common/interfaces/antares';
 import { formatBytes } from 'common/libs/formatBytes';
 import { storeToRefs } from 'pinia';
-import { computed, Prop, Ref, ref, watch } from 'vue';
+import { computed, onMounted, Prop, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import Tables from '@/ipc-api/Tables';
 import { useSettingsStore } from '@/stores/settings';
 import { Breadcrumb, useWorkspacesStore, WorkspaceStructure } from '@/stores/workspaces';
 
@@ -444,7 +450,8 @@ const { t } = useI18n();
 const props = defineProps({
    database: Object as Prop<WorkspaceStructure>,
    connection: Object,
-   searchMethod: String as Prop<'elements' | 'schemas'>
+   searchMethod: String as Prop<'elements' | 'schemas' | 'columns'>,
+   columnSearchTerm: String as Prop<string>
 });
 
 const emit = defineEmits<{
@@ -471,20 +478,45 @@ const {
 
 const schemaAccordion: Ref<HTMLDetailsElement> = ref(null);
 const isLoading = ref(false);
+const columnSearchResults: Ref<{ tableName: string; columnName: string }[]> = ref([]);
 
 const searchTerm = computed(() => {
    return getSearchTerm(props.connection.uid);
 });
 
+watch(() => props.columnSearchTerm, async (term) => {
+   if (!term) {
+      columnSearchResults.value = [];
+      return;
+   }
+   const { status, response } = await Tables.searchColumns({
+      uid: props.connection.uid,
+      schema: props.database.name,
+      search: term
+   });
+   if (status === 'success')
+      columnSearchResults.value = response as { tableName: string; columnName: string }[];
+});
+
 const filteredTables = computed(() => {
-   if (props.searchMethod === 'elements') {
-      const searchTermLower = searchTerm.value.toLowerCase();
-      return props.database.tables.filter(table =>
-         table.name.toLowerCase().includes(searchTermLower) && table.type === 'table'
+   let tables = props.database.tables.filter(t => t.type === 'table');
+
+   if (props.searchMethod === 'elements' && searchTerm.value) {
+      const q = searchTerm.value.toLowerCase();
+      tables = tables.filter(t =>
+         t.name.toLowerCase().includes(q) ||
+         (t.comment && t.comment.toLowerCase().includes(q))
       );
    }
-   else
-      return props.database.tables;
+
+   if (props.columnSearchTerm && columnSearchResults.value.length > 0) {
+      const matchedTables = new Set(columnSearchResults.value.map(r => r.tableName));
+      tables = tables.filter(t => matchedTables.has(t.name));
+   }
+   else if (props.columnSearchTerm && columnSearchResults.value.length === 0)
+      tables = [];
+
+   return tables;
 });
 
 const filteredViews = computed(() => {
@@ -705,6 +737,10 @@ const checkLoadingStatus = (name: string, type: string) => {
       el.schema === props.database.name);
 };
 
+onMounted(() => {
+   selectSchema(props.database.name);
+});
+
 defineExpose({ selectSchema, schemaAccordion });
 </script>
 
@@ -714,18 +750,25 @@ defineExpose({ selectSchema, schemaAccordion });
     font-weight: 700;
   }
 
-  .database-name {
-    position: sticky;
-    top: 0;
-    z-index: 2;
+  &:only-child {
+    > .database-name {
+      display: none !important;
+    }
 
-    .schema-size {
-      visibility: hidden;
-      width: 22.5px;
+    > .accordion-body {
+      padding: 0;
+      margin: 0;
+
+      > .database-tables {
+        margin-left: 0;
+      }
+
+      > .database-misc {
+        margin-left: 0.4rem;
+      }
     }
   }
 
-  .database-name,
   .misc-name,
   a.table-name {
     display: flex;
@@ -739,6 +782,16 @@ defineExpose({ selectSchema, schemaAccordion });
       white-space: nowrap;
       display: block;
       text-overflow: ellipsis;
+    }
+
+    .table-comment {
+      margin-left: 0.4rem;
+      opacity: 0.45;
+      font-size: 0.65rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
     }
 
     .database-icon,
@@ -786,11 +839,11 @@ defineExpose({ selectSchema, schemaAccordion });
   }
 
   .database-tables {
-    margin-left: 1.2rem;
+    margin-left: 0.9rem;
   }
 
   .database-misc {
-    margin-left: 1.6rem;
+    margin-left: 1.3rem;
 
     .open-folder {
       display: none;
