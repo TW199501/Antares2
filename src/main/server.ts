@@ -16,7 +16,10 @@ import triggerRoutes from './routes/triggers';
 import userRoutes from './routes/users';
 import viewRoutes from './routes/views';
 
-const SIDECAR_TOKEN = randomBytes(32).toString('hex');
+// When launched with --port (Vite dev mode), skip token auth so the Tauri
+// shell does not need to intercept the READY line to learn the token.
+const DEV_MODE = process.argv.includes('--port');
+const SIDECAR_TOKEN = DEV_MODE ? '' : randomBytes(32).toString('hex');
 
 const findFreePort = (): Promise<number> => {
    return new Promise((resolve, reject) => {
@@ -42,9 +45,11 @@ const start = async () => {
    });
    await app.register(websocket);
 
-   // Validate secret token on every request except /health
+   // Validate secret token on every request except /health.
+   // In dev mode (--port flag) token is empty so validation is skipped.
    app.addHook('preHandler', async (request, reply) => {
       if (request.url === '/health') return;
+      if (DEV_MODE) return;
 
       const isWs = request.headers.upgrade === 'websocket';
       const token = isWs
