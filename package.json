@@ -11,7 +11,7 @@
     "sidecar:dev": "tsx watch src/main/server.ts --port 5555",
     "sidecar:build": "node scripts/build-sidecar.mjs",
     "tauri:dev": "tauri dev",
-    "tauri:build": "node scripts/build-sidecar.mjs && tauri build",
+    "tauri:build": "node scripts/tauri-build.mjs",
     "lint": "eslint . --ext .js,.ts,.vue && stylelint \"./src/**/*.{css,scss,sass,vue}\"",
     "lint:fix": "eslint . --ext .js,.ts,.vue --fix && stylelint \"./src/**/*.{css,scss,sass,vue}\" --fix",
     "verify:tauri-migration": "node ./scripts/checkTauriMigration.js",
