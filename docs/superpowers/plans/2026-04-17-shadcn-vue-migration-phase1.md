@@ -1176,3 +1176,121 @@ Plan complete and saved to `docs/superpowers/plans/2026-04-17-shadcn-vue-migrati
 **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.
 
 Which approach?
+
+---
+
+# Phase 1 Addendum (2026-04-17): Pilot pivot + primitive expansion
+
+## Why this addendum exists
+
+After the initial plan was written, the designer's `.pen` file (`E:\source\antares2\pencil-new.pen`) was opened. It already contains:
+
+- A completed Antares2 Design System frame (51 reusable components).
+- Three Connection Modal screens (常規 / SSL / SSH 通道 tabs) showing the target pilot UI.
+- A full variable set: HSL tokens, font stacks, spacing / radius / font-size scales.
+
+Three facts forced a pivot:
+
+1. **The brand primary is `#FF5000`**, not `#E36929`. The token commit (`58ec1a7`) replaces the wrong HSL values across `tailwind.css` and adds `primary-tint`, `info/success/warning` pairs, a 4-step radius scale, and Antares-specific font stacks.
+2. **The pilot should be the Connection Modal**, not `ModalDiscardChanges`. The designer drew the Connection Modal in detail (中文 labels, 3 tabs, 8 form fields, 3 checkboxes, 2 footer buttons), so that is the screen the migration has to prove.
+3. **The Connection Modal needs more primitives than originally planned** — Tabs, Select, Checkbox, and a FormField composite. Task 7's Dialog alone is not enough.
+
+## New tasks
+
+### Task 5b: Tighten Button + Input to match `.pen` density
+
+**Files:**
+- Modify: `src/renderer/components/ui/button/variants.ts`
+- Modify: `src/renderer/components/ui/input/Input.vue`
+
+**Why:** The `.pen` Button has no drop shadow; mine did. The `.pen` Input has a `bg-secondary` grey fill rather than transparent; mine was transparent. Connection Modal stacks 8 inputs vertically — the fill difference is the biggest visual tell.
+
+**Changes:**
+- Remove `shadow` from Button's `default` variant and `shadow-sm` from `destructive` / `outline` / `secondary`. Leaves Button flat and matches the `.pen` aesthetic.
+- Remove `shadow-sm` from Input. Change Input's `bg-transparent` to `bg-secondary`.
+
+### Task 6b: Tabs primitive family
+
+**Files:** `src/renderer/components/ui/tabs/{Tabs,TabsList,TabsTrigger,TabsContent,index.ts}.vue`
+
+**Why:** Connection Modal uses 3 tabs (常規 / SSL / SSH 通道). The `.pen` tab list is a `h-44px` pill-bg container with 4px padding; the active trigger gets the `bg-background` indicator; inactive triggers are transparent text.
+
+**Key values from `.pen`:**
+- `Tabs / List` (`oVuQd`): `cornerRadius: 6, fill: #F4F4F5 (secondary), padding: 4, height: 44, alignItems: center`
+- `Tabs / Trigger Active` (`gEmhD`) + `Tabs / Trigger Inactive` (`HkZRk`) — to be read during implementation
+
+**Target Tailwind classes:**
+- TabsList: `inline-flex h-11 items-center justify-center rounded-md bg-secondary p-1 text-muted-foreground`
+- TabsTrigger: `inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground`
+
+Implement via `reka-ui`'s `TabsRoot / TabsList / TabsTrigger / TabsContent`.
+
+### Task 6c: Select primitive family
+
+**Files:** `src/renderer/components/ui/select/{Select,SelectContent,SelectItem,SelectTrigger,SelectValue,index.ts}.vue`
+
+**Why:** Connection Modal has "資料庫類型" dropdown (MySQL / PostgreSQL / SQLite / etc.). `Select (closed)` component exists in `.pen` — match it.
+
+Implement via `reka-ui`'s `SelectRoot / SelectTrigger / SelectContent / SelectItem / SelectValue / SelectPortal`.
+
+### Task 6d: Checkbox primitive
+
+**Files:** `src/renderer/components/ui/checkbox/{Checkbox.vue,index.ts}`
+
+**Why:** Connection Modal has 3 checkboxes (唯讀模式 / 詢問憑據 / 單一連線) in a horizontal row. `.pen` has `Checkbox / Unchecked` + `Checkbox / Checked` variants.
+
+Implement via `reka-ui`'s `CheckboxRoot` + `CheckboxIndicator` + MDI `mdiCheck` icon (NOT `lucide`).
+
+### Task 6e: FormField composite
+
+**Files:** `src/renderer/components/ui/form-field/{FormField.vue,index.ts}`
+
+**Why:** Connection Modal repeats `<label>{content}<input/>` vertically for every field. Encapsulating as `<FormField label="連線名稱" ... />` avoids 8× repetition and matches `.pen`'s FormField reusable component.
+
+**Structure:**
+```vue
+<template>
+   <div class="flex flex-col gap-1.5">
+      <Label :for="id">{{ label }}</Label>
+      <slot :id="id" />
+      <p v-if="error" class="text-xs text-destructive">{{ error }}</p>
+   </div>
+</template>
+```
+
+Default slot receives the input/select/etc. Scoped slot exposes `id` so the control can bind `for`/`id` pairing.
+
+### Task 8 (pivoted): Connection Modal pilot
+
+**Replaces the original Task 8 (`ModalDiscardChanges`) — that modal now migrates in Phase 2 as part of the simple-modals batch.**
+
+**Files:**
+- Modify: `src/renderer/components/ModalConnectionAppearance.vue` — NO, that's a different modal
+- Likely create: `src/renderer/components/WorkspaceAddConnectionPanel.vue` refactor — TBD during execution after reading the real Antares flow
+- Reference: the actual Antares file currently rendering "New Connection" UI — to be located during Task 8 reconnaissance
+
+**Pilot success criteria:**
+- Visually matches `.pen` Screen 1 (`qoGrg`): 3 tabs, 8 form fields, 3 horizontal checkboxes, footer with "測試連線" left + "保存" right.
+- Keeps the existing caller's public API (props/emits).
+- Playwright e2e suite still passes.
+
+## Updated task order
+
+| Order | Task |
+|-------|------|
+| ✅ 1–5 | Foundation (Tailwind, deps, tokens, cn, Button) |
+| ✅ (interstitial) | Token realignment to `.pen` primary `#FF5000` + zinc palette + radius scale + font stacks |
+| ✅ 6 | Label + Input primitives (committed, to be tightened in 5b) |
+| 🆕 5b | Tighten Button (no shadow) + Input (`bg-secondary`) |
+| 🆕 6b | Tabs primitive family |
+| 🆕 6c | Select primitive family |
+| 🆕 6d | Checkbox primitive |
+| 🆕 6e | FormField composite |
+| 7 | Dialog primitive family |
+| 🔁 8 | **Connection Modal** pilot (was: `ModalDiscardChanges`) |
+| 9 | Migration recipe doc |
+| 10 | CLAUDE.md coexistence note |
+
+## Visual QA checkpoint
+
+After Task 6e (all primitives in place, before Dialog + pilot), spin up `pnpm tauri:dev` and render a temporary `UiPlayground.vue` showing Button × all variants+sizes, Input, Label, Tabs, Select, Checkbox, FormField. The user verifies visual density / color / font / dark-mode behavior. Any deltas get fixed before Task 7 starts.
