@@ -1,9 +1,9 @@
 <template>
    <div class="connection-panel-wrapper p-relative">
       <div class="connection-panel">
-         <div class="mx-auto min-w-[480px] max-w-lg rounded-md border bg-card p-5 text-card-foreground shadow-sm">
+         <div class="mx-auto min-w-[480px] max-w-lg rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)] backdrop-blur-sm">
             <Tabs v-model="selectedTab">
-               <TabsList class="mb-4 w-full">
+               <TabsList class="mb-5 w-full bg-muted/60">
                   <TabsTrigger value="general" class="flex-1">
                      {{ t('application.general') }}
                   </TabsTrigger>
@@ -24,7 +24,7 @@
                </TabsList>
 
                <TabsContent value="general">
-                  <fieldset class="m-0 flex flex-col gap-3 p-0" :disabled="isBusy">
+                  <fieldset class="m-0 flex flex-col gap-4 p-0" :disabled="isBusy">
                      <FormField v-slot="{ id }" :label="t('connection.connectionName')">
                         <input
                            :id="id"
@@ -160,12 +160,12 @@
                </TabsContent>
 
                <TabsContent value="ssl">
-                  <fieldset class="m-0 flex flex-col gap-3 p-0">
+                  <fieldset class="m-0 flex flex-col gap-4 p-0">
                      <label class="flex cursor-pointer items-center gap-2 text-sm font-medium" @click.prevent="toggleSsl">
                         <Checkbox :checked="connection.ssl" />
                         {{ t('connection.enableSsl') }}
                      </label>
-                     <fieldset class="m-0 flex flex-col gap-3 border-0 p-0" :disabled="isBusy || !connection.ssl">
+                     <fieldset class="m-0 flex flex-col gap-4 border-0 p-0" :disabled="isBusy || !connection.ssl">
                         <FormField :label="t('connection.privateKey')">
                            <BaseUploadInput
                               :model-value="connection.key"
@@ -206,12 +206,12 @@
                </TabsContent>
 
                <TabsContent value="ssh">
-                  <fieldset class="m-0 flex flex-col gap-3 p-0">
+                  <fieldset class="m-0 flex flex-col gap-4 p-0">
                      <label class="flex cursor-pointer items-center gap-2 text-sm font-medium" @click.prevent="toggleSsh">
                         <Checkbox :checked="connection.ssh" />
                         {{ t('connection.enableSsh') }}
                      </label>
-                     <fieldset class="m-0 flex flex-col gap-3 border-0 p-0" :disabled="isBusy || !connection.ssh">
+                     <fieldset class="m-0 flex flex-col gap-4 border-0 p-0" :disabled="isBusy || !connection.ssh">
                         <FormField v-slot="{ id }" :label="`${t('connection.hostName')}/IP`">
                            <Input
                               :id="id"
@@ -276,7 +276,7 @@
                </TabsContent>
             </Tabs>
 
-            <div class="mt-4 flex justify-end gap-2 border-t pt-4">
+            <div class="mt-5 flex justify-end gap-2 border-t border-border/60 pt-5">
                <div
                   @mouseenter="setCancelTestButtonVisibility(true)"
                   @mouseleave="setCancelTestButtonVisibility(false)"
