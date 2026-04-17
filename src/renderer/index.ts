@@ -2,6 +2,7 @@
 import 'floating-vue/dist/style.css';
 import 'leaflet/dist/leaflet.css';
 import '@/scss/main.scss';
+import '@/assets/tailwind.css';
 
 import { Buffer } from 'buffer';
 import * as FloatingVue from 'floating-vue';
