@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, PropType, useSlots } from 'vue';
+import { computed, PropType, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { Button } from '@/components/ui/button';
@@ -89,16 +89,4 @@ const confirmModal = () => {
 const hideModal = () => {
    emit('hide');
 };
-
-const onKey = (e: KeyboardEvent) => {
-   e.stopPropagation();
-   if (e.key === 'Escape')
-      hideModal();
-};
-
-window.addEventListener('keydown', onKey);
-
-onBeforeUnmount(() => {
-   window.removeEventListener('keydown', onKey);
-});
 </script>
