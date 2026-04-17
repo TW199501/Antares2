@@ -125,5 +125,20 @@ Shortcuts are handled entirely via DOM `CustomEvent`s — Tauri's global shortcu
 ### Customizations pattern
 When a feature exists for some databases but not others, gate it via the `customizations` object rather than hard-coding client checks in the UI. Access via `workspace.customizations.<feature>` in renderer code, or import `common/customizations/<client>.ts` directly.
 
+### UI stack: shadcn-vue + spectre coexistence
+
+As of the shadcn-vue migration (Phase 1), the renderer has **two** UI systems running side-by-side:
+
+- **Legacy**: `spectre.css 0.5.9` via `src/renderer/scss/main.scss`. Class-based (`.btn`, `.form-input`, `.modal`). All unmigrated components use this.
+- **New**: Tailwind CSS v3 + shadcn-vue primitives in `src/renderer/components/ui/` (Button / Label / Input / Tabs / Select / Checkbox / FormField / Dialog). Utility-class driven. Design tokens in `src/renderer/assets/tailwind.css` use HSL CSS variables matching the `pencil-new.pen` design (brand `#FF5000`, zinc neutrals, 4-step radius scale, mono/CJK-sans font stacks).
+
+**Invariants until migration is complete:**
+
+- Tailwind's `preflight` is **disabled** in `tailwind.config.ts`. Re-enabling it will break every spectre-based screen. Don't touch.
+- The dark-mode selector is `darkMode: ['class', '.theme-dark']`. The existing `theme-${applicationTheme}` class on `#wrapper` (`App.vue`) drives both systems — don't rename.
+- Never install `lucide-vue-next`. shadcn-vue's default icons must be swapped to `BaseIcon` + `mdi*` names. See [docs/superpowers/rules/shadcn-vue-migration-recipe.md](docs/superpowers/rules/shadcn-vue-migration-recipe.md).
+- Never let the shadcn-vue CLI write into the repo (`pnpm dlx shadcn-vue@latest add ...`). Run it in a scratch directory and hand-port, because the CLI assumes aliases/icon libs that don't match this project.
+- When migrating a component, keep its **public API (props/emits/slots) identical** so callers don't need to change in the same PR. `BaseConfirmModal` was migrated this way in Phase 1 — 16 callers untouched.
+
 ### Sidecar bundle
 `sidecar/antares-server.cjs` and `workers/*.js` are esbuild outputs committed to the repo. After changing anything in `src/main/`, run `pnpm sidecar:build` and commit both the source change and the updated bundle together. Packages with dynamic `__dirname`-based requires or native addons (`@heroku/socksv5`, `better-sqlite3`, `ssh2`, `node-firebird`, etc.) are marked `external` in `scripts/build-sidecar.mjs` — they are loaded from the `node_modules/` directory that Tauri bundles as a resource alongside the exe.
