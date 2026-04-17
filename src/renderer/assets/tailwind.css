@@ -1,81 +1,83 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS v4 — preflight intentionally omitted to coexist with spectre.css baseline */
+@layer theme, base, components, utilities;
 
-@layer base {
-   :root {
-      /* Surface — zinc palette (light mode) */
-      --background: 0 0% 100%;         /* #FFFFFF */
-      --foreground: 240 6% 10%;        /* #18181B zinc-900 */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
-      --card: 0 0% 100%;
-      --card-foreground: 240 6% 10%;
+@custom-variant dark (&:where(.theme-dark, .theme-dark *));
 
-      --popover: 0 0% 100%;
-      --popover-foreground: 240 6% 10%;
+@theme {
+   /* Radius scale (matches pencil-new.pen) */
+   --radius-sm: 4px;
+   --radius-md: 6px;
+   --radius-lg: 8px;
+   --radius-pill: 9999px;
 
-      --secondary: 240 5% 96%;         /* #F4F4F5 zinc-100 */
-      --secondary-foreground: 240 6% 10%;
+   /* Typography stacks */
+   --font-mono: ui-monospace, 'SF Mono', Consolas, 'JetBrains Mono', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+   --font-sans: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
+}
 
-      --muted: 240 5% 96%;
-      --muted-foreground: 240 4% 46%;  /* #71717A zinc-500 */
+:root {
+   /* Surface (light) */
+   --color-background: hsl(0 0% 100%);
+   --color-foreground: hsl(240 6% 10%);
 
-      --accent: 240 5% 96%;
-      --accent-foreground: 240 6% 10%;
+   --color-card: hsl(0 0% 100%);
+   --color-card-foreground: hsl(240 6% 10%);
 
-      --border: 240 6% 90%;            /* #E4E4E7 zinc-200 */
-      --input: 240 6% 90%;
+   --color-popover: hsl(0 0% 100%);
+   --color-popover-foreground: hsl(240 6% 10%);
 
-      /* Brand — Antares International Orange (#FF5000) */
-      --primary: 19 100% 50%;
-      --primary-foreground: 0 0% 100%;
-      --primary-tint: 20 100% 96%;     /* #FFF4ED */
-      --ring: 19 100% 50%;
+   --color-secondary: hsl(240 5% 96%);
+   --color-secondary-foreground: hsl(240 6% 10%);
 
-      /* Destructive */
-      --destructive: 0 84% 60%;        /* #EF4444 red-500 */
-      --destructive-foreground: 0 0% 100%;
+   --color-muted: hsl(240 5% 96%);
+   --color-muted-foreground: hsl(240 4% 46%);
 
-      /* Status (bg pastel + fg deep — same across themes by design) */
-      --info-bg: 214 95% 93%;          /* #DBEAFE blue-100 */
-      --info-fg: 226 71% 40%;          /* #1E40AF blue-800 */
-      --success-bg: 149 80% 90%;       /* #D1FAE5 emerald-100 */
-      --success-fg: 162 88% 20%;       /* #065F46 emerald-800 */
-      --warning-bg: 45 96% 89%;        /* #FEF3C7 amber-100 */
-      --warning-fg: 26 84% 32%;        /* #92400E amber-800 */
+   --color-accent: hsl(240 5% 96%);
+   --color-accent-foreground: hsl(240 6% 10%);
 
-      /* Radius scale */
-      --radius-sm: 4px;
-      --radius-md: 6px;
-      --radius-lg: 8px;
-      --radius-pill: 9999px;
+   --color-border: hsl(240 6% 90%);
+   --color-input: hsl(240 6% 90%);
 
-      /* Typography stacks */
-      --font-primary: ui-monospace, 'SF Mono', Consolas, 'JetBrains Mono', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
-      --font-secondary: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
-   }
+   /* Brand — Antares International Orange #FF5000 */
+   --color-primary: hsl(19 100% 50%);
+   --color-primary-foreground: hsl(0 0% 100%);
+   --color-primary-tint: hsl(20 100% 96%);
+   --color-ring: hsl(19 100% 50%);
 
-   /* Dark mode — only overrides differing tokens */
-   .theme-dark {
-      --background: 0 0% 4%;           /* #0A0A0A */
-      --foreground: 0 0% 98%;          /* #FAFAFA */
+   --color-destructive: hsl(0 84% 60%);
+   --color-destructive-foreground: hsl(0 0% 100%);
 
-      --card: 240 10% 4%;              /* #09090B zinc-950 */
-      --card-foreground: 0 0% 98%;
+   /* Status */
+   --color-info-bg: hsl(214 95% 93%);
+   --color-info-fg: hsl(226 71% 40%);
+   --color-success-bg: hsl(149 80% 90%);
+   --color-success-fg: hsl(162 88% 20%);
+   --color-warning-bg: hsl(45 96% 89%);
+   --color-warning-fg: hsl(26 84% 32%);
+}
 
-      --popover: 240 10% 4%;
-      --popover-foreground: 0 0% 98%;
+.theme-dark {
+   --color-background: hsl(0 0% 4%);
+   --color-foreground: hsl(0 0% 98%);
 
-      --secondary: 240 4% 16%;         /* #27272A zinc-800 */
-      --secondary-foreground: 0 0% 98%;
+   --color-card: hsl(240 10% 4%);
+   --color-card-foreground: hsl(0 0% 98%);
 
-      --muted: 240 4% 16%;
-      --muted-foreground: 240 5% 65%;  /* #A1A1AA zinc-400 */
+   --color-popover: hsl(240 10% 4%);
+   --color-popover-foreground: hsl(0 0% 98%);
 
-      --accent: 240 4% 16%;
-      --accent-foreground: 0 0% 98%;
+   --color-secondary: hsl(240 4% 16%);
+   --color-secondary-foreground: hsl(0 0% 98%);
 
-      --border: 240 4% 16%;            /* #27272A */
-      --input: 240 4% 16%;
-   }
+   --color-muted: hsl(240 4% 16%);
+   --color-muted-foreground: hsl(240 5% 65%);
+
+   --color-accent: hsl(240 4% 16%);
+   --color-accent-foreground: hsl(0 0% 98%);
+
+   --color-border: hsl(240 4% 16%);
+   --color-input: hsl(240 4% 16%);
 }
