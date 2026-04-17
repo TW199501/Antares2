@@ -24,7 +24,8 @@ export default {
             foreground: 'hsl(var(--foreground))',
             primary: {
                DEFAULT: 'hsl(var(--primary))',
-               foreground: 'hsl(var(--primary-foreground))'
+               foreground: 'hsl(var(--primary-foreground))',
+               tint: 'hsl(var(--primary-tint))'
             },
             secondary: {
                DEFAULT: 'hsl(var(--secondary))',
@@ -49,12 +50,29 @@ export default {
             card: {
                DEFAULT: 'hsl(var(--card))',
                foreground: 'hsl(var(--card-foreground))'
+            },
+            info: {
+               DEFAULT: 'hsl(var(--info-bg))',
+               foreground: 'hsl(var(--info-fg))'
+            },
+            success: {
+               DEFAULT: 'hsl(var(--success-bg))',
+               foreground: 'hsl(var(--success-fg))'
+            },
+            warning: {
+               DEFAULT: 'hsl(var(--warning-bg))',
+               foreground: 'hsl(var(--warning-fg))'
             }
          },
          borderRadius: {
-            lg: 'var(--radius)',
-            md: 'calc(var(--radius) - 2px)',
-            sm: 'calc(var(--radius) - 4px)'
+            sm: 'var(--radius-sm)',
+            md: 'var(--radius-md)',
+            lg: 'var(--radius-lg)',
+            pill: 'var(--radius-pill)'
+         },
+         fontFamily: {
+            mono: ['var(--font-primary)'],
+            sans: ['var(--font-secondary)']
          },
          keyframes: {
             'accordion-down': {

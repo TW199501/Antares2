@@ -4,65 +4,78 @@
 
 @layer base {
    :root {
-      --background: 0 0% 100%;
-      --foreground: 0 0% 10%;
+      /* Surface — zinc palette (light mode) */
+      --background: 0 0% 100%;         /* #FFFFFF */
+      --foreground: 240 6% 10%;        /* #18181B zinc-900 */
 
       --card: 0 0% 100%;
-      --card-foreground: 0 0% 10%;
+      --card-foreground: 240 6% 10%;
 
       --popover: 0 0% 100%;
-      --popover-foreground: 0 0% 10%;
+      --popover-foreground: 240 6% 10%;
 
-      /* Antares brand orange #e36929 → hsl(21 77% 53%) */
-      --primary: 21 77% 53%;
+      --secondary: 240 5% 96%;         /* #F4F4F5 zinc-100 */
+      --secondary-foreground: 240 6% 10%;
+
+      --muted: 240 5% 96%;
+      --muted-foreground: 240 4% 46%;  /* #71717A zinc-500 */
+
+      --accent: 240 5% 96%;
+      --accent-foreground: 240 6% 10%;
+
+      --border: 240 6% 90%;            /* #E4E4E7 zinc-200 */
+      --input: 240 6% 90%;
+
+      /* Brand — Antares International Orange (#FF5000) */
+      --primary: 19 100% 50%;
       --primary-foreground: 0 0% 100%;
+      --primary-tint: 20 100% 96%;     /* #FFF4ED */
+      --ring: 19 100% 50%;
 
-      --secondary: 0 0% 96%;
-      --secondary-foreground: 0 0% 15%;
-
-      --muted: 0 0% 96%;
-      --muted-foreground: 0 0% 40%;
-
-      --accent: 0 0% 95%;
-      --accent-foreground: 0 0% 10%;
-
-      --destructive: 4 74% 52%;          /* #de3b28 */
+      /* Destructive */
+      --destructive: 0 84% 60%;        /* #EF4444 red-500 */
       --destructive-foreground: 0 0% 100%;
 
-      --border: 0 0% 88%;
-      --input: 0 0% 88%;
-      --ring: 21 77% 53%;
+      /* Status (bg pastel + fg deep — same across themes by design) */
+      --info-bg: 214 95% 93%;          /* #DBEAFE blue-100 */
+      --info-fg: 226 71% 40%;          /* #1E40AF blue-800 */
+      --success-bg: 149 80% 90%;       /* #D1FAE5 emerald-100 */
+      --success-fg: 162 88% 20%;       /* #065F46 emerald-800 */
+      --warning-bg: 45 96% 89%;        /* #FEF3C7 amber-100 */
+      --warning-fg: 26 84% 32%;        /* #92400E amber-800 */
 
-      --radius: 0.3rem;
+      /* Radius scale */
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-pill: 9999px;
+
+      /* Typography stacks */
+      --font-primary: ui-monospace, 'SF Mono', Consolas, 'JetBrains Mono', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+      --font-secondary: 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
    }
 
+   /* Dark mode — only overrides differing tokens */
    .theme-dark {
-      --background: 0 0% 11%;           /* #1d1d1d */
-      --foreground: 0 0% 98%;
+      --background: 0 0% 4%;           /* #0A0A0A */
+      --foreground: 0 0% 98%;          /* #FAFAFA */
 
-      --card: 0 0% 15%;
+      --card: 240 10% 4%;              /* #09090B zinc-950 */
       --card-foreground: 0 0% 98%;
 
-      --popover: 0 0% 15%;
+      --popover: 240 10% 4%;
       --popover-foreground: 0 0% 98%;
 
-      --primary: 21 77% 53%;
-      --primary-foreground: 0 0% 100%;
+      --secondary: 240 4% 16%;         /* #27272A zinc-800 */
+      --secondary-foreground: 0 0% 98%;
 
-      --secondary: 0 0% 18%;
-      --secondary-foreground: 0 0% 95%;
+      --muted: 240 4% 16%;
+      --muted-foreground: 240 5% 65%;  /* #A1A1AA zinc-400 */
 
-      --muted: 0 0% 18%;
-      --muted-foreground: 0 0% 65%;
-
-      --accent: 0 0% 22%;
+      --accent: 240 4% 16%;
       --accent-foreground: 0 0% 98%;
 
-      --destructive: 4 65% 48%;
-      --destructive-foreground: 0 0% 100%;
-
-      --border: 0 0% 25%;
-      --input: 0 0% 25%;
-      --ring: 21 77% 53%;
+      --border: 240 4% 16%;            /* #27272A */
+      --input: 240 4% 16%;
    }
 }
