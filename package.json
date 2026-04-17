@@ -68,7 +68,11 @@
     "vuedraggable": "^4.1.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3", "cpu-features", "ssh2"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "cpu-features",
+      "ssh2"
+    ]
   },
   "devDependencies": {
     "@commitlint/cli": "~19.0.3",
@@ -87,6 +91,7 @@
     "@typescript-eslint/parser": "^8.58.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "all-contributors-cli": "~6.26.1",
+    "autoprefixer": "^10.5.0",
     "esbuild": "^0.28.0",
     "eslint": "^8.57.1",
     "eslint-config-standard": "^17.1.0",
@@ -98,6 +103,7 @@
     "husky": "^9.1.7",
     "playwright": "^1.28.1",
     "playwright-core": "^1.59.1",
+    "postcss": "^8.5.9",
     "sass": "^1.99.0",
     "standard-version": "^9.5.0",
     "stylelint": "^15.11.0",
@@ -105,6 +111,8 @@
     "stylelint-config-recommended-vue": "^1.5.0",
     "stylelint-config-standard": "^34.0.0",
     "stylelint-scss": "~5.3.0",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
