@@ -18,3 +18,10 @@ src-tauri/resources/
 sidecar/node.exe
 sidecar/node
 src-tauri/binaries/*.exe
+
+# Test / debug artifacts (not for GitHub)
+.playwright-mcp/
+skills-lock.json
+antares-fixed-*.png
+antares-initial.png
+verify-*.png
