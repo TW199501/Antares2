@@ -839,13 +839,15 @@ defineExpose({ selectSchema, schemaAccordion });
     > .table-name {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      min-height: 20px;
-      font-size: 11px;
-      line-height: 1.2;
+      gap: 6px;
+      padding: 0 8px;
+      min-height: 32px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.3;
       color: var(--foreground);
-      border-radius: 3px;
+      background: color-mix(in srgb, var(--muted-foreground) 6%, transparent);
+      border-radius: 4px;
       cursor: pointer;
       text-decoration: none;
 
@@ -857,10 +859,13 @@ defineExpose({ selectSchema, schemaAccordion });
 
       .table-comment {
         margin-left: 6px;
-        opacity: 0.75;
-        font-size: 10px;
-        font-style: italic;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.3;
         color: var(--muted-foreground);
+        background: color-mix(in srgb, var(--muted-foreground) 14%, transparent);
+        border-radius: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -888,12 +893,21 @@ defineExpose({ selectSchema, schemaAccordion });
 
     &:hover > .table-name {
       background: color-mix(in srgb, var(--muted-foreground) 14%, transparent);
+
+      .table-comment {
+        background: color-mix(in srgb, var(--muted-foreground) 22%, transparent);
+      }
     }
 
     &.selected > .table-name {
       background: color-mix(in srgb, var(--primary) 16%, transparent);
       color: var(--primary);
       font-weight: 600;
+
+      .table-comment {
+        color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 22%, transparent);
+      }
 
       .table-icon,
       .misc-icon {

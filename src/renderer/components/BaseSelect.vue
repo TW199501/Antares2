@@ -136,6 +136,10 @@ export default defineComponent({
       maxVisibleOptions: {
          type: Number,
          default: 100
+      },
+      dropdownMatchParent: {
+         type: Boolean,
+         default: false
       }
    },
    emits: ['select', 'open', 'close', 'update:modelValue', 'change', 'blur'],
@@ -309,20 +313,22 @@ export default defineComponent({
       const adjustListPosition = () => {
          if (!optionList.value) return;
 
-         const element = el.value;
-         let { left, top } = element.getBoundingClientRect();
+         const anchor = props.dropdownMatchParent && el.value.parentElement
+            ? el.value.parentElement
+            : el.value;
+         let { left, top } = anchor.getBoundingClientRect();
          const { left: offsetLeft = 0, top: offsetTop = 0 } = props.dropdownOffsets;
-         top = top + element.clientHeight + offsetTop;
+         top = top + anchor.clientHeight + offsetTop;
          const openBottom = top >= 0 && top + optionList.value.clientHeight <= window.innerHeight;
 
          if (!openBottom) {
-            top -= (offsetTop * 2 + element.clientHeight);
+            top -= (offsetTop * 2 + anchor.clientHeight);
             optionList.value.style.transform = 'translate(0, -100%)';
          }
 
          optionList.value.style.left = `${left + offsetLeft}px`;
          optionList.value.style.top = `${top}px`;
-         optionList.value.style.minWidth = `${element.clientWidth}px`;
+         optionList.value.style.width = `${anchor.clientWidth}px`;
       };
 
       const keyArrows = (direction) => {

@@ -9,28 +9,34 @@
          @keypress="explorebarSearch"
          @keydown="explorebarSearch"
       >
-         <div class="flex items-center gap-1.5 px-2 pt-1.5 pb-1">
+         <div class="flex h-[32px] items-center gap-1.5 px-2">
             <div
                v-if="customizations.database && databases.length"
                class="min-w-0 flex-1"
             >
                <div
-                  class="flex h-[22px] items-center rounded-md border border-input bg-muted/40 px-2 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
+                  class="flex h-[32px] items-center gap-1.5 rounded-md border border-muted-foreground/40 bg-muted/40 px-2 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
                   :title="t('database.switchDatabase')"
                >
                   <BaseSelect
                      v-model="selectedDatabase"
                      :options="databases"
-                     class="w-full text-[11px] font-semibold"
+                     class="min-w-0 flex-1 text-[14px] font-semibold"
+                     dropdown-match-parent
                      @keypress.stop=""
                      @keydown.stop=""
                   />
+                  <span
+                     v-if="databaseComment"
+                     class="max-w-[40%] shrink-0 truncate rounded bg-muted-foreground/15 px-2 py-0.5 text-[12px] font-medium text-muted-foreground"
+                     :title="databaseComment"
+                  >{{ databaseComment }}</span>
+                  <BaseIcon
+                     icon-name="mdiChevronDown"
+                     :size="18"
+                     class="shrink-0 text-muted-foreground"
+                  />
                </div>
-               <span
-                  v-if="databaseComment"
-                  class="mt-0.5 block pl-0.5 text-[10px] italic leading-tight text-muted-foreground"
-                  :title="databaseComment"
-               >{{ databaseComment }}</span>
             </div>
             <span
                v-else
@@ -43,37 +49,37 @@
                <button
                   v-if="customizations.schemas"
                   type="button"
-                  class="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   :title="t('database.createNewSchema')"
                   @click="showNewDBModal"
                >
-                  <BaseIcon icon-name="mdiDatabasePlus" :size="16" />
+                  <BaseIcon icon-name="mdiDatabasePlus" :size="20" />
                </button>
                <button
                   type="button"
-                  class="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   :title="t('general.refresh')"
                   @click="refresh"
                >
                   <BaseIcon
                      icon-name="mdiRefresh"
-                     :size="16"
+                     :size="20"
                      :class="{'rotate': isRefreshing}"
                   />
                </button>
                <button
                   type="button"
-                  class="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
                   :title="t('connection.disconnect')"
                   @click="disconnectWorkspace(connection.uid)"
                >
-                  <BaseIcon icon-name="mdiPower" :size="16" />
+                  <BaseIcon icon-name="mdiPower" :size="20" />
                </button>
             </div>
          </div>
          <div
             v-if="workspace.connectionStatus === 'connected'"
-            class="flex items-center gap-1 border-b border-border px-2 pb-1.5"
+            class="flex h-[32px] items-center gap-1 border-b border-border px-2"
          >
             <div class="relative flex-[1_1_55%]">
                <input
