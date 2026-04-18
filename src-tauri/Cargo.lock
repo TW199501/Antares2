@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "antares-sql"
+name = "antares2"
 version = "0.8.0"
 dependencies = [
  "serde",

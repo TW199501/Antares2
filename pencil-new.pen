@@ -16,8 +16,8 @@
     {
       "type": "frame",
       "id": "BaJIl",
-      "x": -221,
-      "y": -204,
+      "x": 0,
+      "y": 23,
       "name": "Antares2 Design System (shadcn migration)",
       "width": 1400,
       "fill": "$--background",

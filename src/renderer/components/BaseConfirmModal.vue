@@ -1,8 +1,8 @@
 <template>
    <Dialog :open="true" @update:open="(v) => { if (!v) hideModal(); }">
       <DialogContent
-         ref="trapRef"
          :class="modalSizeClass"
+         @open-auto-focus="onOpenAutoFocus"
          @escape-key-down.prevent="hideModal"
          @pointer-down-outside.prevent="hideModal"
       >
@@ -33,7 +33,6 @@ import { useI18n } from 'vue-i18n';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useFocusTrap } from '@/composables/useFocusTrap';
 
 const { t } = useI18n();
 
@@ -64,8 +63,6 @@ const emit = defineEmits<{
 }>();
 const slots = useSlots();
 
-const { trapRef } = useFocusTrap({ disableAutofocus: props.disableAutofocus });
-
 const hasHeader = computed(() => !!slots.header);
 const hasBody = computed(() => !!slots.body);
 const hasDefault = computed(() => !!slots.default);
@@ -88,5 +85,9 @@ const confirmModal = () => {
 
 const hideModal = () => {
    emit('hide');
+};
+
+const onOpenAutoFocus = (e: Event) => {
+   if (props.disableAutofocus) e.preventDefault();
 };
 </script>

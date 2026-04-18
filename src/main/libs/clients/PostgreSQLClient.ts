@@ -150,7 +150,7 @@ export class PostgreSQLClient extends BaseClient {
    }
 
    async getDbConfig () {
-      this._params.application_name = 'Antares SQL';
+      this._params.application_name = 'Antares2';
 
       const dbConfig = {
          host: this._params.host,

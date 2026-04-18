@@ -207,7 +207,7 @@ window.addEventListener('error', (event) => {
     .connection-panel-wrapper {
       height: calc(100vh - #{$excluding-size});
       width: 100%;
-      padding-top: 10vh;
+      padding-top: 0;
       display: flex;
       justify-content: center;
       align-items: flex-start;

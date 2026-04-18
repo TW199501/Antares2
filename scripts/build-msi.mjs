@@ -28,7 +28,7 @@ const LIGHT_EXE = join(WIX_DIR, 'light.exe');
 const WIX_X64 = 'src-tauri/target/release/wix/x64';
 const WIXOBJ = join(WIX_X64, 'main.wixobj');
 const WXLOC = join(WIX_X64, 'locale.wxl');
-const OUT_MSI = `src-tauri/target/release/bundle/msi/Antares SQL_${version}_x64_en-US.msi`;
+const OUT_MSI = `src-tauri/target/release/bundle/msi/Antares2_${version}_x64_en-US.msi`;
 
 if (!existsSync(LIGHT_EXE)) {
    console.error(`light.exe not found at: ${LIGHT_EXE}`);

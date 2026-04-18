@@ -1,6 +1,6 @@
 ![](https://raw.githubusercontent.com/antares-sql/antares/master/docs/gh-logo.png)
 
-# Antares SQL — 第二代
+# Antares2
 
 ![GitHub license](https://img.shields.io/github/license/TW199501/Antares2)
 
@@ -9,7 +9,7 @@
 > \*\*本專案 Fork 自 [antares-sql/antares](https://github.com/antares-sql/antares)\*\*，原作者為 [Fabio Di Stasio](https://github.com/Fabio286)，依 [MIT 授權](./LICENSE) 使用與延伸開發。  
 > 感謝原專案及所有貢獻者的努力，本專案在其基礎上持續開發。
 
-## 第二代新增功能
+## Antares2 新增與改進
 
 | 項目 | 變更說明 |
 | --- | --- |
@@ -49,7 +49,7 @@ Antares 是一款以 [Tauri v2](https://tauri.app/) 和 [Vue.js](https://github.
 *   PostgreSQL
 *   SQLite
 *   Firebird SQL
-*   SQL Server（第二代新增完整支援）
+*   SQL Server（Antares2 新增完整支援）
 *   DuckDB
 *   更多...
 

@@ -1,8 +1,9 @@
-/* Tailwind CSS v4 — preflight intentionally omitted to coexist with spectre.css baseline */
-@layer theme, base, components, utilities;
-
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+/* Tailwind CSS v4 — full import so JIT properly resolves @theme and generates
+   all color utilities. The split import (`theme.css` + `utilities.css`) skipped
+   color utilities — spectre.css's conflicting `.bg-secondary !important` then
+   filled the void with peach.
+   Preflight is disabled via @source inline directive below to coexist with spectre. */
+@import "tailwindcss";
 
 @custom-variant dark (&:where(.theme-dark, .theme-dark *));
 
@@ -50,6 +51,8 @@
 }
 
 :root {
+   color-scheme: light;
+
    /* Light — white + lavender-tinted neutrals; Antares Orange primary */
    --background: #ffffff;
    --foreground: #0f0f1a;
@@ -83,9 +86,14 @@
    --success-foreground: #ffffff;
    --warning: #d49400;
    --warning-foreground: #ffffff;
+
+   /* Solid fill used by -webkit-autofill override (must be opaque to cover Chrome's peach/yellow) */
+   --autofill: #f4f4f7;
 }
 
 .theme-dark {
+   color-scheme: dark;
+
    /* Dark — navy glass palette from untitled1 Variant E / showcase */
    --background: #08091a;
    --foreground: #f5f5fa;
@@ -99,24 +107,45 @@
    --primary: #ff5000;
    --primary-foreground: #ffffff;
 
-   --secondary: rgb(255 255 255 / 0.08);
+   /* Solid (not translucent) to prevent Chromium's form/autofill peach bleed-through.
+      Only --card stays translucent for the navy-glass panel surface. */
+   --secondary: #151a35;
    --secondary-foreground: #f5f5fa;
 
-   --muted: rgb(255 255 255 / 0.06);
+   --muted: #111530;
    --muted-foreground: #8899bb;
 
-   --accent: rgb(255 255 255 / 0.10);
+   --accent: #1e2240;
    --accent-foreground: #f5f5fa;
 
    --destructive: #ff5757;
    --destructive-foreground: #ffffff;
 
-   --border: rgb(255 255 255 / 0.14);
-   --input: rgb(255 255 255 / 0.14);
+   --border: rgb(255 255 255 / 0.10);
+   --input: rgb(255 255 255 / 0.15);
    --ring: #ff5000;
 
    --success: #00cc96;
    --success-foreground: #08091a;
    --warning: #fcd34d;
    --warning-foreground: #08091a;
+
+   /* Opaque navy to hide Chrome's peach autofill underneath the translucent --secondary */
+   --autofill: #1e2240;
+}
+
+/* Neutralize Chromium's autofill peach/yellow fill — both the standard -webkit-autofill
+   and the internal "previewed/selected" pseudo-classes used by WebView2 / Edge password
+   manager. Placed outside @layer with !important to beat any inline or layered style. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+input:-internal-autofill-selected,
+input:-internal-autofill-previewed {
+   -webkit-box-shadow: 0 0 0 1000px var(--autofill) inset !important;
+   -webkit-text-fill-color: var(--foreground) !important;
+   caret-color: var(--foreground) !important;
+   background-color: var(--autofill) !important;
+   transition: background-color 9999s ease-in-out 0s !important;
 }

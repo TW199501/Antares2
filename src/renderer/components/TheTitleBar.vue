@@ -110,7 +110,7 @@ const onResize = async () => {
 };
 
 watch(windowTitle, (val) => {
-   document.title = val || 'Antares SQL';
+   document.title = val || 'Antares2';
 });
 
 onMounted(async () => {

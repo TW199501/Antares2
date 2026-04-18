@@ -3,105 +3,128 @@
       <div ref="resizer" class="workspace-explorebar-resizer" />
       <div
          ref="explorebar"
-         class="workspace-explorebar column"
+         class="workspace-explorebar flex flex-col outline-none"
          :style="{width: localWidth ? localWidth+'px' : ''}"
          tabindex="0"
          @keypress="explorebarSearch"
          @keydown="explorebarSearch"
       >
-         <div class="workspace-explorebar-header">
+         <div class="flex items-center gap-1.5 px-2 pt-1.5 pb-1">
             <div
                v-if="customizations.database && databases.length"
-               class="workspace-explorebar-database-switch"
-               :title="t('database.switchDatabase')"
+               class="min-w-0 flex-1"
             >
-               <BaseSelect
-                  v-model="selectedDatabase"
-                  :options="databases"
-                  class="form-select select-sm text-bold my-0"
-                  @keypress.stop=""
-                  @keydown.stop=""
-               />
-               <span v-if="databaseComment" class="database-comment">{{ databaseComment }}</span>
-            </div>
-            <span v-else class="workspace-explorebar-title">{{ connectionName }}</span>
-            <span v-if="workspace.connectionStatus === 'connected'" class="workspace-explorebar-tools">
-               <div :title="t('database.createNewSchema')">
-                  <BaseIcon
-                     v-if="customizations.schemas"
-                     icon-name="mdiDatabasePlus"
-                     :size="18"
-                     class="c-hand mr-2"
-                     @click="showNewDBModal"
+               <div
+                  class="flex h-[22px] items-center rounded-md border border-input bg-muted/40 px-2 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
+                  :title="t('database.switchDatabase')"
+               >
+                  <BaseSelect
+                     v-model="selectedDatabase"
+                     :options="databases"
+                     class="w-full text-[11px] font-semibold"
+                     @keypress.stop=""
+                     @keydown.stop=""
                   />
                </div>
-               <div :title="t('general.refresh')">
+               <span
+                  v-if="databaseComment"
+                  class="mt-0.5 block pl-0.5 text-[10px] italic leading-tight text-muted-foreground"
+                  :title="databaseComment"
+               >{{ databaseComment }}</span>
+            </div>
+            <span
+               v-else
+               class="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-wide"
+            >{{ connectionName }}</span>
+            <div
+               v-if="workspace.connectionStatus === 'connected'"
+               class="flex shrink-0 items-center gap-0.5"
+            >
+               <button
+                  v-if="customizations.schemas"
+                  type="button"
+                  class="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  :title="t('database.createNewSchema')"
+                  @click="showNewDBModal"
+               >
+                  <BaseIcon icon-name="mdiDatabasePlus" :size="16" />
+               </button>
+               <button
+                  type="button"
+                  class="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  :title="t('general.refresh')"
+                  @click="refresh"
+               >
                   <BaseIcon
                      icon-name="mdiRefresh"
-                     :size="18"
-                     class="c-hand mr-2"
-                     :class="{'rotate':isRefreshing}"
-                     @click="refresh"
+                     :size="16"
+                     :class="{'rotate': isRefreshing}"
                   />
-               </div>
-               <div :title="t('connection.disconnect')">
-                  <BaseIcon
-                     icon-name="mdiPower"
-                     :size="18"
-                     class="c-hand"
-                     @click="disconnectWorkspace(connection.uid)"
-                  />
-               </div>
-            </span>
+               </button>
+               <button
+                  type="button"
+                  class="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
+                  :title="t('connection.disconnect')"
+                  @click="disconnectWorkspace(connection.uid)"
+               >
+                  <BaseIcon icon-name="mdiPower" :size="16" />
+               </button>
+            </div>
          </div>
-         <div v-if="workspace.connectionStatus === 'connected'" class="workspace-explorebar-search">
-            <div class="input-group has-icon-right explorebar-search-table">
+         <div
+            v-if="workspace.connectionStatus === 'connected'"
+            class="flex items-center gap-1 border-b border-border px-2 pb-1.5"
+         >
+            <div class="relative flex-[1_1_55%]">
                <input
                   ref="searchInput"
                   v-model="searchTerm"
-                  class="form-input input-sm"
                   type="text"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
                   :placeholder="t('database.searchForElements')"
                >
                <BaseIcon
                   v-if="!searchTerm"
-                  class="form-icon"
                   icon-name="mdiMagnify"
-                  :size="16"
+                  :size="14"
+                  class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
                />
                <BaseIcon
                   v-else
-                  class="form-icon c-hand pr-1"
                   icon-name="mdiBackspace"
-                  :size="16"
+                  :size="14"
+                  class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
                   @click="searchTerm = ''"
                />
             </div>
-            <div class="input-group has-icon-right explorebar-search-column">
+            <div class="relative flex-[1_1_45%]">
                <input
                   v-model="columnSearchTerm"
-                  class="form-input input-sm"
                   type="text"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
                   :placeholder="t('database.searchForColumns')"
                   @keypress.stop=""
                   @keydown.stop=""
                >
                <BaseIcon
                   v-if="!columnSearchTerm"
-                  class="form-icon"
                   icon-name="mdiTableColumn"
-                  :size="16"
+                  :size="14"
+                  class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
                />
                <BaseIcon
                   v-else
-                  class="form-icon c-hand pr-1"
                   icon-name="mdiBackspace"
-                  :size="16"
+                  :size="14"
+                  class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
                   @click="columnSearchTerm = ''"
                />
             </div>
          </div>
-         <div class="workspace-explorebar-body" @click="explorebar.focus()">
+         <div
+            class="workspace-explorebar-body min-h-0 flex-1 overflow-auto px-1 py-1"
+            @click="explorebar.focus()"
+         >
             <WorkspaceExploreBarSchema
                v-for="db of filteredSchemas"
                :key="db.name"
@@ -525,150 +548,41 @@ const toggleSearchMethod = () => {
 };
 </script>
 
-<style lang="scss">
-  .workspace-explorebar-resizer {
-    position: absolute;
-    width: 4px;
-    right: -2px;
-    top: 0;
-    height: calc(100vh - #{$excluding-size});
-    cursor: ew-resize;
-    z-index: 99;
-    transition: background 0.2s;
+<style lang="scss" scoped>
+.workspace-explorebar-resizer {
+  position: absolute;
+  width: 4px;
+  right: -2px;
+  top: 0;
+  height: calc(100vh - #{$excluding-size});
+  cursor: ew-resize;
+  z-index: 99;
+  transition: background 0.2s;
 
-    &:hover {
-      background: var(--primary-color-dark);
-    }
+  &:hover {
+    background: var(--primary);
   }
+}
 
-  .workspace-explorebar {
-    width: $explorebar-width;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    text-align: left;
-    z-index: 8;
-    flex: initial;
-    position: relative;
-    padding: 0;
+.workspace-explorebar {
+  width: $explorebar-width;
+  height: calc(100vh - #{$excluding-size});
+  text-align: left;
+  z-index: 8;
+  flex: initial;
+  position: relative;
+}
 
-    &:focus {
-      outline: none;
-    }
+.workspace-explorebar-body::-webkit-scrollbar {
+  width: 4px;
+}
 
-    .workspace-explorebar-header {
-      width: 100%;
-      padding: 0.3rem;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.6rem;
-      font-weight: 700;
-      text-transform: uppercase;
+.workspace-explorebar-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+  border-radius: 2px;
+}
 
-      .workspace-explorebar-title {
-        width: 80%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-        align-items: center;
-      }
-
-      .workspace-explorebar-tools {
-        display: flex;
-        align-items: center;
-
-         svg {
-          opacity: 0.6;
-          transition: opacity 0.2s;
-          display: flex;
-          align-items: center;
-
-          &:hover {
-            opacity: 1;
-          }
-        }
-      }
-    }
-
-    .workspace-explorebar-database-switch {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      z-index: 20;
-      margin-right: 5px;
-      margin-left: -4px;
-      margin-top: -3px;
-      margin-bottom: -0.5rem;
-
-      .form-select.select-sm {
-         font-size: 0.6rem;
-         height: 1.2rem;
-         line-height: 1rem;
-      }
-
-      .database-comment {
-         font-size: 0.58rem;
-         opacity: 0.55;
-         padding-left: 0.15rem;
-         white-space: nowrap;
-         overflow: hidden;
-         text-overflow: ellipsis;
-         line-height: 1.3;
-      }
-    }
-
-    .workspace-explorebar-search {
-      width: 100%;
-      display: flex;
-      gap: 3px;
-      font-size: 0.6rem;
-      height: 28px;
-      margin: 0 0 5px 0;
-      z-index: 10;
-
-      .explorebar-search-table {
-        flex: 1 1 55%;
-      }
-
-      .explorebar-search-column {
-        flex: 1 1 45%;
-      }
-
-      .has-icon-right {
-        padding: 0.1rem;
-
-        .form-icon {
-          opacity: 0.5;
-          transition: opacity 0.2s;
-        }
-
-        .form-input {
-          height: 1.2rem;
-          padding-left: 0.2rem;
-          border-radius: $border-radius;
-
-          &:focus + .form-icon {
-            opacity: 0.9;
-          }
-
-          &::placeholder {
-            opacity: 0.6;
-          }
-        }
-      }
-    }
-
-    .workspace-explorebar-body {
-      width: 100%;
-      height: calc((100vh - 63px) - #{$excluding-size});
-      overflow: overlay;
-      padding: 0 0.1rem;
-
-      &::-webkit-scrollbar {
-        width: 3px;
-      }
-    }
-  }
+.workspace-explorebar-body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+}
 </style>

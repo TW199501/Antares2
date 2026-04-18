@@ -42,7 +42,7 @@ if (stageStatus !== 0) {
 // The MSI step is expected to fail with ICE30; we catch the error below.
 const tauriStatus = run('tauri', ['build']);
 
-const NSIS = `src-tauri/target/release/bundle/nsis/Antares SQL_${version}_x64-setup.exe`;
+const NSIS = `src-tauri/target/release/bundle/nsis/Antares2_${version}_x64-setup.exe`;
 if (!existsSync(NSIS)) {
    console.error('NSIS installer was not produced — aborting.');
    process.exit(tauriStatus);

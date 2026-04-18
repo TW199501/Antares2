@@ -1,7 +1,20 @@
 <template>
    <div class="connection-panel-wrapper p-relative">
       <div class="connection-panel">
-         <div class="mx-auto min-w-[480px] max-w-lg rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)] backdrop-blur-sm">
+         <div class="mx-auto mb-5 flex max-w-lg items-center gap-3 px-1 text-foreground">
+            <div class="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+               <BaseIcon icon-name="mdiDatabase" :size="26" />
+            </div>
+            <div class="min-w-0">
+               <div class="text-lg font-semibold tracking-tight">
+                  Antares2
+               </div>
+               <div class="truncate text-sm text-muted-foreground">
+                  {{ t('connection.createNewConnection') }}
+               </div>
+            </div>
+         </div>
+         <div class="mx-auto min-w-[480px] max-w-lg rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)]">
             <Tabs v-model="selectedTab">
                <TabsList class="mb-5 w-full bg-muted/60">
                   <TabsTrigger value="general" class="flex-1">
@@ -24,7 +37,7 @@
                </TabsList>
 
                <TabsContent value="general">
-                  <fieldset class="m-0 flex flex-col gap-4 p-0" :disabled="isBusy">
+                  <fieldset class="m-0 flex flex-col gap-2 p-0" :disabled="isBusy">
                      <FormField v-slot="{ id }" :label="t('connection.connectionName')">
                         <input
                            :id="id"
@@ -155,17 +168,21 @@
                            <Checkbox v-model:checked="connection.ask" />
                            {{ t('connection.askCredentials') }}
                         </label>
+                        <label v-if="clientCustomizations.singleConnectionMode" class="flex cursor-pointer items-center gap-2 text-sm">
+                           <Checkbox v-model:checked="connection.singleConnectionMode" />
+                           {{ t('connection.singleConnection') }}
+                        </label>
                      </div>
                   </fieldset>
                </TabsContent>
 
                <TabsContent value="ssl">
-                  <fieldset class="m-0 flex flex-col gap-4 p-0">
+                  <fieldset class="m-0 flex flex-col gap-2 p-0">
                      <label class="flex cursor-pointer items-center gap-2 text-sm font-medium" @click.prevent="toggleSsl">
                         <Checkbox :checked="connection.ssl" />
                         {{ t('connection.enableSsl') }}
                      </label>
-                     <fieldset class="m-0 flex flex-col gap-4 border-0 p-0" :disabled="isBusy || !connection.ssl">
+                     <fieldset class="m-0 flex flex-col gap-2 border-0 p-0" :disabled="isBusy || !connection.ssl">
                         <FormField :label="t('connection.privateKey')">
                            <BaseUploadInput
                               :model-value="connection.key"
@@ -206,12 +223,12 @@
                </TabsContent>
 
                <TabsContent value="ssh">
-                  <fieldset class="m-0 flex flex-col gap-4 p-0">
+                  <fieldset class="m-0 flex flex-col gap-2 p-0">
                      <label class="flex cursor-pointer items-center gap-2 text-sm font-medium" @click.prevent="toggleSsh">
                         <Checkbox :checked="connection.ssh" />
                         {{ t('connection.enableSsh') }}
                      </label>
-                     <fieldset class="m-0 flex flex-col gap-4 border-0 p-0" :disabled="isBusy || !connection.ssh">
+                     <fieldset class="m-0 flex flex-col gap-2 border-0 p-0" :disabled="isBusy || !connection.ssh">
                         <FormField v-slot="{ id }" :label="`${t('connection.hostName')}/IP`">
                            <Input
                               :id="id"
@@ -379,7 +396,7 @@ const clients = [
 ];
 
 // Shadcn-equivalent class for raw <input> (used only when a template ref to the DOM node is required)
-const inputClass = 'flex h-9 w-full rounded-md border border-input bg-secondary px-3 py-1 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+const inputClass = 'flex h-9 w-full rounded-md border border-input bg-secondary px-3 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
 const connection = ref({
    name: '',
@@ -392,6 +409,7 @@ const connection = ref({
    password: '',
    ask: false,
    readonly: false,
+   singleConnectionMode: false,
    uid: uidGen('C'),
    ssl: false,
    cert: '',

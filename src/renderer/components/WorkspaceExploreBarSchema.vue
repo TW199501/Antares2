@@ -746,10 +746,163 @@ defineExpose({ selectSchema, schemaAccordion });
 
 <style lang="scss">
 .workspace-explorebar-database {
-  .selected {
-    font-weight: 700;
+  // Reset spectre list / accordion defaults inside tree
+  .menu,
+  .menu-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border: 0;
   }
 
+  .accordion {
+    padding: 0;
+    margin: 0;
+  }
+
+  summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  // Chevron rotation when open
+  .accordion[open] > .database-name > .icon:not(.loading),
+  .accordion[open] > .misc-name > .icon:not(.loading) {
+    transform: rotate(90deg);
+  }
+
+  .database-name > .icon,
+  .misc-name > .icon {
+    transition: transform 0.15s;
+  }
+
+  // Schema header row
+  .database-name {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 6px;
+    margin-bottom: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    border-radius: 4px;
+    color: var(--foreground);
+    position: relative;
+
+    &:hover {
+      background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+
+      .schema-size {
+        visibility: visible;
+      }
+    }
+  }
+
+  // Category folder (Views / Triggers / Routines ...)
+  .misc-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    margin: 2px 0 1px 0;
+    min-height: 22px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    color: var(--muted-foreground);
+    border-radius: 4px;
+    position: relative;
+
+    &:hover {
+      background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+      color: var(--foreground);
+    }
+  }
+
+  // Leaf row (table / view / function / trigger / routine / scheduler)
+  .menu-item {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+
+    > .table-name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      min-height: 20px;
+      font-size: 11px;
+      line-height: 1.2;
+      color: var(--foreground);
+      border-radius: 3px;
+      cursor: pointer;
+      text-decoration: none;
+
+      > span:not(.table-comment) {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .table-comment {
+        margin-left: 6px;
+        opacity: 0.75;
+        font-size: 10px;
+        font-style: italic;
+        color: var(--muted-foreground);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+      }
+
+      .table-icon,
+      .misc-icon,
+      .database-icon {
+        opacity: 0.75;
+        flex-shrink: 0;
+      }
+
+      .loading {
+        height: 14px;
+        width: 14px;
+        flex-shrink: 0;
+
+        &::after {
+          height: 0.55rem;
+          width: 0.55rem;
+        }
+      }
+    }
+
+    &:hover > .table-name {
+      background: color-mix(in srgb, var(--muted-foreground) 14%, transparent);
+    }
+
+    &.selected > .table-name {
+      background: color-mix(in srgb, var(--primary) 16%, transparent);
+      color: var(--primary);
+      font-weight: 600;
+
+      .table-icon,
+      .misc-icon {
+        opacity: 1;
+      }
+    }
+  }
+
+  // Only-child schema: hide the schema header, flatten nesting
   &:only-child {
     > .database-name {
       display: none !important;
@@ -764,135 +917,74 @@ defineExpose({ selectSchema, schemaAccordion });
       }
 
       > .database-misc {
-        margin-left: 0.4rem;
+        margin-left: 6px;
       }
     }
   }
 
-  .misc-name,
-  a.table-name {
-    display: flex;
-    align-items: center;
-    padding: 0.1rem 1rem 0.1rem 0.1rem;
-    cursor: pointer;
-    font-size: 0.7rem;
-
-    > span {
-      overflow: hidden;
-      white-space: nowrap;
-      display: block;
-      text-overflow: ellipsis;
-    }
-
-    .table-comment {
-      margin-left: 0.4rem;
-      opacity: 0.45;
-      font-size: 0.65rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex-shrink: 1;
-    }
-
-    .database-icon,
-    .table-icon,
-    .misc-icon {
-      opacity: 0.7;
-    }
-
-    .loading {
-      height: 18px;
-      width: 18px;
-
-      &::after {
-        height: 0.6rem;
-        width: 0.6rem;
-      }
-    }
-  }
-
-  .misc-name {
-    line-height: 1;
-    padding: 0.1rem 1rem 0.1rem 0.1rem;
-    position: relative;
-  }
-
-  .database-name,
-  .misc-name {
-    &:hover {
-      border-radius: $border-radius;
-
-      .schema-size {
-        visibility: visible;
-      }
-    }
-  }
-
-  .menu-item {
-    line-height: 1.2;
-    position: relative;
-
-    &:hover,
-    &.selected {
-      border-radius: $border-radius;
-    }
-  }
-
+  // Indentation for nested tables/misc inside a named schema
   .database-tables {
-    margin-left: 0.9rem;
+    margin-left: 14px;
   }
 
   .database-misc {
-    margin-left: 1.3rem;
+    margin-left: 18px;
 
     .open-folder {
       display: none;
     }
 
     .accordion[open] .accordion-header {
-       > .misc-icon {
-          display: none;
-          &.open-folder {
-             display: initial;
-          }
+      > .misc-icon:not(.open-folder) {
+        display: none;
       }
-   }
+
+      > .misc-icon.open-folder {
+        display: initial;
+      }
+    }
 
     .accordion-body {
-      margin-bottom: 0.2rem;
+      margin-bottom: 2px;
     }
   }
 
+  // Right-aligned indicators
   .schema-size,
   .table-size,
   .disabled-indicator {
     position: absolute;
-    right: 0;
-    top: 0;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
     cursor: pointer;
     display: flex;
     align-items: center;
-    height: 100%;
-    opacity: 0.4;
+    opacity: 0.45;
     transition: opacity 0.2s;
 
     &:hover {
       opacity: 1;
     }
 
-    &::after {
-      font-weight: 400;
-      font-size: 0.5rem;
-    }
-
     .pie {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
     }
+  }
+
+  .schema-size {
+    visibility: hidden;
+  }
+
+  .loading {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
   }
 }
 </style>

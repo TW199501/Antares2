@@ -15,7 +15,54 @@
 @import "db-icons";
 @import "themes/dark-theme";
 @import "themes/light-theme";
-@import "~spectre.css/src/spectre";
+/* Cherry-pick spectre modules. We intentionally skip `utilities/_colors.scss`
+   because its `.bg-primary`, `.bg-secondary`, `.bg-dark`, `.text-primary`,
+   `.text-secondary`, `.text-error` etc. utility classes (with `!important`)
+   collide head-on with Tailwind / shadcn-vue utility names and overwrite them
+   with spectre's palette (notably peach `.bg-secondary` #F9E0D2, which was
+   rendering every <Input> and secondary <Button> in Connection panels pink). */
+@import "~spectre.css/src/mixins";
+@import "~spectre.css/src/normalize";
+@import "~spectre.css/src/base";
+@import "~spectre.css/src/typography";
+@import "~spectre.css/src/asian";
+@import "~spectre.css/src/tables";
+@import "~spectre.css/src/buttons";
+@import "~spectre.css/src/forms";
+@import "~spectre.css/src/labels";
+@import "~spectre.css/src/codes";
+@import "~spectre.css/src/media";
+@import "~spectre.css/src/layout";
+@import "~spectre.css/src/hero";
+@import "~spectre.css/src/navbar";
+@import "~spectre.css/src/accordions";
+@import "~spectre.css/src/avatars";
+@import "~spectre.css/src/badges";
+@import "~spectre.css/src/breadcrumbs";
+@import "~spectre.css/src/bars";
+@import "~spectre.css/src/cards";
+@import "~spectre.css/src/chips";
+@import "~spectre.css/src/dropdowns";
+@import "~spectre.css/src/empty";
+@import "~spectre.css/src/menus";
+@import "~spectre.css/src/modals";
+@import "~spectre.css/src/navs";
+@import "~spectre.css/src/pagination";
+@import "~spectre.css/src/panels";
+@import "~spectre.css/src/popovers";
+@import "~spectre.css/src/steps";
+@import "~spectre.css/src/tabs";
+@import "~spectre.css/src/tiles";
+@import "~spectre.css/src/toasts";
+@import "~spectre.css/src/tooltips";
+@import "~spectre.css/src/animations";
+@import "~spectre.css/src/utilities/cursors";
+@import "~spectre.css/src/utilities/display";
+@import "~spectre.css/src/utilities/divider";
+@import "~spectre.css/src/utilities/loading";
+@import "~spectre.css/src/utilities/position";
+@import "~spectre.css/src/utilities/shapes";
+@import "~spectre.css/src/utilities/text";
 @import "~spectre.css/src/spectre-exp";
 
 body {

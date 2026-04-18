@@ -38,7 +38,7 @@
          <button
             v-else-if="updateStatus === 'link'"
             class="btn btn-primary"
-            @click="openOutside('https://antares-sql.app/download.html')"
+            @click="openOutside('https://github.com/TW199501/Antares2/releases/latest')"
          >
             {{ t('application.goToDownloadPage') }}
          </button>

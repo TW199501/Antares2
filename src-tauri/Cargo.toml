@@ -1,12 +1,12 @@
 [package]
-name = "antares-sql"
+name = "antares2"
 version = "0.8.0"
 description = "A modern, fast SQL client"
-authors = ["you"]
+authors = ["TW199501"]
 edition = "2021"
 
 [lib]
-name = "antares_sql_lib"
+name = "antares2_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]

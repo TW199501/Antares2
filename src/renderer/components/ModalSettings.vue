@@ -395,7 +395,7 @@
                            <a
                               class="c-hand"
                               :style="'align-items: center; display: inline-flex;'"
-                              @click="openOutside('https://github.com/antares-sql/antares')"
+                              @click="openOutside('https://github.com/TW199501/Antares2')"
                            ><BaseIcon
                               icon-name="mdiGithub"
                               class="d-inline mr-1"

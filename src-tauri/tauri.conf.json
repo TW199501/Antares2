@@ -1,7 +1,7 @@
 {
-   "productName": "Antares SQL",
+   "productName": "Antares2",
    "version": "0.8.0",
-   "identifier": "com.fabio286.antares",
+   "identifier": "com.tw199501.antares2",
    "build": {
       "beforeDevCommand": "npm run vite:dev",
       "devUrl": "http://localhost:5173",
@@ -27,7 +27,7 @@
    },
    "app": {
       "windows": [{
-         "title": "Antares SQL",
+         "title": "Antares2",
          "width": 1024,
          "height": 800,
          "minWidth": 900,
