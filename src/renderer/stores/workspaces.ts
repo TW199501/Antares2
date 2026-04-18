@@ -259,10 +259,16 @@ export const useWorkspacesStore = defineStore('workspaces', {
                         }, null);
                      }
 
-                     const selectedTab = cachedTabs.length
-                        ? connection.database
-                           ? cachedTabs.filter(tab => tab.type === 'query' || tab.database === connection.database)[0]?.uid
-                           : cachedTabs[0].uid
+                     // Filter out data-viewer tabs that belong to other databases —
+                     // keeping them alive after a DB switch triggers `Invalid object name`
+                     // errors because each tab auto-refetches against the now-current DB.
+                     // Query tabs are DB-agnostic (user-written SQL) so they survive.
+                     const filteredTabs = connection.database
+                        ? cachedTabs.filter(tab => tab.type === 'query' || tab.database === connection.database)
+                        : cachedTabs;
+
+                     const selectedTab = filteredTabs.length
+                        ? filteredTabs[0].uid
                         : null;
 
                      this.workspaces = (this.workspaces as Workspace[]).map(workspace => workspace.uid === connection.uid
@@ -274,7 +280,7 @@ export const useWorkspacesStore = defineStore('workspaces', {
                            customizations: clientCustomizations,
                            structure: response,
                            connectionStatus: 'connected',
-                           tabs: cachedTabs,
+                           tabs: filteredTabs,
                            selectedTab,
                            version
                         }
