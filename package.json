@@ -17,11 +17,19 @@
     "verify:tauri-migration": "node ./scripts/checkTauriMigration.js",
     "test:e2e": "npx playwright test",
     "translation:check": "tsx ./scripts/translationCheck.ts",
+    "migrate:appdata": "node ./scripts/migrate-appdata.mjs",
     "contributors:add": "all-contributors add",
     "contributors:generate": "all-contributors generate",
     "prepare": "husky"
   },
-  "author": "Fabio Di Stasio <info@fabiodistasio.it>",
+  "author": "TW199501",
+  "contributors": [
+    {
+      "name": "Fabio Di Stasio",
+      "email": "info@fabiodistasio.it",
+      "url": "https://github.com/Fabio286"
+    }
+  ],
   "dependencies": {
     "@fabio286/ssh2-promise": "^1.0.4-b",
     "@faker-js/faker": "^10.4.0",
