@@ -108,7 +108,6 @@
     "playwright": "^1.28.1",
     "playwright-core": "^1.59.1",
     "sass": "^1.99.0",
-    "standard-version": "^9.5.0",
     "stylelint": "^15.11.0",
     "stylelint-config-recommended": "^13.0.0",
     "stylelint-config-recommended-vue": "^1.5.0",
