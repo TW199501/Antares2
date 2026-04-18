@@ -12,6 +12,7 @@ NOTES.md
 
 # Tauri build artifacts
 src-tauri/target/
+src-tauri/resources/
 
 # Large binary executables (too big for GitHub)
 sidecar/node.exe

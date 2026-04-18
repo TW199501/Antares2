@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(1    python3:*)",
+      "Bash(mv rW3Dm.png 512x512.png)",
+      "Bash(mv 9cRyd.png 256x256.png)",
+      "Bash(mv wgayn.png 128x128.png)",
+      "Bash(mv oudpQ.png 64x64.png)",
+      "Bash(mv xb56x.png 32x32.png)",
+      "Bash(mv -f nmFXB.png 1024x1024.png)",
+      "Bash(ls -la *.png)"
+    ]
+  }
+}

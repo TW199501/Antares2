@@ -409,7 +409,7 @@ watch(queryName, (val) => {
 
 watch(() => props.isSelected, (val) => {
    if (val) {
-      changeBreadcrumbs({ schema: selectedSchema.value, query: `Query #${props.tab.index}` });
+      changeBreadcrumbs({ schema: selectedSchema.value, query: t('database.queryTabLabel', { n: props.tab.index }) });
       setTimeout(() => {
          if (queryEditor.value)
             queryEditor.value.editor.focus();
@@ -418,7 +418,7 @@ watch(() => props.isSelected, (val) => {
 });
 
 watch(selectedSchema, () => {
-   changeBreadcrumbs({ schema: selectedSchema.value, query: `Query #${props.tab.index}` });
+   changeBreadcrumbs({ schema: selectedSchema.value, query: t('database.queryTabLabel', { n: props.tab.index }) });
 });
 
 watch(databaseSchemas, () => {

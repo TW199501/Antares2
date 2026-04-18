@@ -10,7 +10,7 @@ export class SQLiteClient extends BaseClient {
    private _schema?: string;
    private _connectionsToCommit: Map<string, sqlite.Database>;
    protected _connection?: sqlite.Database;
-   _params: { databasePath: string; readonly: boolean};
+   declare _params: { databasePath: string; readonly: boolean};
 
    constructor (args: antares.ClientParams) {
       super(args);

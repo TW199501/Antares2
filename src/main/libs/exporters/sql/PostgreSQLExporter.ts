@@ -9,6 +9,8 @@ import { PostgreSQLClient } from '../../clients/PostgreSQLClient';
 import { SqlExporter } from './SqlExporter';
 
 export default class PostgreSQLExporter extends SqlExporter {
+   protected declare _client: PostgreSQLClient;
+
    constructor (client: PostgreSQLClient, tables: exporter.TableParams[], options: exporter.ExportOptions) {
       super(tables, options);
 

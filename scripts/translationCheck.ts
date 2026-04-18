@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { enUS } from '../src/renderer/i18n/en-US';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import { localesNames } from '../src/renderer/i18n/supported-locales';
 
 const locale = process.argv[2];
@@ -10,41 +12,40 @@ if (!locale) {
 }
 
 if (!Object.keys(localesNames).includes(locale)) {
-   console.log(`Translation ${locale} not fount in supported locales.`);
+   console.log(`Translation ${locale} not found in supported locales.`);
    process.exit();
 }
 
 console.log('Checking missing translations for:', locale);
 
-(async () => {
-   let fullCount = 0;
-   let checkCount = 0;
+const i18nDir = join(__dirname, '..', 'src', 'renderer', 'i18n');
+const enUS = JSON.parse(readFileSync(join(i18nDir, 'en-US.json'), 'utf-8'));
+const i18nFile = JSON.parse(readFileSync(join(i18nDir, `${locale}.json`), 'utf-8'));
 
-   const i18nModule = await import(`../src/renderer/i18n/${locale}.ts`);
-   const i18nFile = i18nModule[locale.replace('-', '')] as typeof enUS;
+let fullCount = 0;
+let checkCount = 0;
 
-   for (const group in enUS) {
-      // @ts-ignore
-      fullCount += Object.keys(enUS[group]).length;
+for (const group in enUS) {
+   // @ts-ignore
+   fullCount += Object.keys(enUS[group]).length;
 
-      if (!Object.keys(i18nFile).includes(group)) {
-         console.log(`Group "\u001b[31m${group}\u001b[0m" missing!`);
-         continue;
-      }
-
-      // @ts-ignore
-      for (const term in enUS[group]) {
-         if (!Object.keys(i18nFile[group]).includes(term))
-            console.log(`Translation "\u001b[33m${group}.${term}\u001b[0m" missing!`);
-         // @ts-ignore
-         else if (i18nFile[group][term] === enUS[group][term]) {
-            console.log(`Term "\u001b[36m${group}.${term}\u001b[0m" not translated!`);
-            checkCount++;
-         }
-         else
-            checkCount++;
-      }
+   if (!Object.keys(i18nFile).includes(group)) {
+      console.log(`Group "\u001b[31m${group}\u001b[0m" missing!`);
+      continue;
    }
 
-   console.log(checkCount, 'of', fullCount, 'strings are present in', locale, `(\u001b[32m${(checkCount*100/fullCount).toFixed(1)}%\u001b[0m)`);
-})();
+   // @ts-ignore
+   for (const term in enUS[group]) {
+      if (!Object.keys(i18nFile[group]).includes(term))
+         console.log(`Translation "\u001b[33m${group}.${term}\u001b[0m" missing!`);
+      // @ts-ignore
+      else if (i18nFile[group][term] === enUS[group][term]) {
+         console.log(`Term "\u001b[36m${group}.${term}\u001b[0m" not translated!`);
+         checkCount++;
+      }
+      else
+         checkCount++;
+   }
+}
+
+console.log(checkCount, 'of', fullCount, 'strings are present in', locale, `(\u001b[32m${(checkCount*100/fullCount).toFixed(1)}%\u001b[0m)`);

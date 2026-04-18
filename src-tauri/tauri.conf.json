@@ -12,24 +12,18 @@
       "active": true,
       "targets": ["nsis", "msi"],
       "resources": {
-         "../sidecar/node.exe": "sidecar/node.exe",
-         "../sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
-         "../workers/**/*": "workers/",
-         "../node_modules/better-sqlite3/**/*": "node_modules/better-sqlite3/",
-         "../node_modules/ssh2/**/*": "node_modules/ssh2/",
-         "../node_modules/@heroku/socksv5/**/*": "node_modules/@heroku/socksv5/",
-         "../node_modules/@fabio286/ssh2-promise/**/*": "node_modules/@fabio286/ssh2-promise/",
-         "../node_modules/bindings/**/*": "node_modules/bindings/",
-         "../node_modules/file-uri-to-path/**/*": "node_modules/file-uri-to-path/",
-         "../node_modules/node-firebird/**/*": "node_modules/node-firebird/"
+         "resources/sidecar/node.exe": "sidecar/node.exe",
+         "resources/sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
+         "resources/workers": "workers",
+         "resources/node_modules/better-sqlite3": "node_modules/better-sqlite3",
+         "resources/node_modules/ssh2": "node_modules/ssh2",
+         "resources/node_modules/@heroku/socksv5": "node_modules/@heroku/socksv5",
+         "resources/node_modules/@fabio286/ssh2-promise": "node_modules/@fabio286/ssh2-promise",
+         "resources/node_modules/bindings": "node_modules/bindings",
+         "resources/node_modules/file-uri-to-path": "node_modules/file-uri-to-path",
+         "resources/node_modules/node-firebird": "node_modules/node-firebird"
       },
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico", "icons/icon.icns"]
-   },
-   "plugins": {
-      "updater": {
-         "pubkey": "",
-         "endpoints": ["TODO: https://your-update-server/{{target}}/{{arch}}/{{current_version}}"]
-      }
    },
    "app": {
       "windows": [{

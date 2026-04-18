@@ -1,5 +1,6 @@
+import { EventEmitter } from 'node:events';
+
 import * as importer from 'common/interfaces/importer';
-import * as EventEmitter from 'events';
 import * as fs from 'fs';
 
 export class BaseImporter extends EventEmitter {

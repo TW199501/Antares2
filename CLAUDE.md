@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-Antares SQL is a cross-platform desktop SQL client. It supports MySQL/MariaDB, PostgreSQL, SQLite, Firebird SQL, and SQL Server. The app was originally Electron-based; it has been migrated to **Tauri v2** (Rust shell + Vue.js renderer). The CONTRIBUTING.md still references Electron — ignore those references.
+Antares SQL is a cross-platform desktop SQL client. It supports MySQL/MariaDB, PostgreSQL, SQLite, Firebird SQL, and SQL Server. The app was originally Electron-based; it has been migrated to **Tauri v2** (Rust shell + Vue.js renderer). Any references to Electron elsewhere in the repo (old docs, comments) are historical — the current runtime is Tauri.
 
 ## Commands
 
@@ -39,7 +39,7 @@ pnpm verify:tauri-migration
 >
 > **Package manager:** Use `pnpm` only. The project has `pnpm-lock.yaml`. Delete `package-lock.json` if present.
 >
-> `pnpm tauri:build` automatically runs `node scripts/build-sidecar.mjs` first to rebuild the sidecar bundle before the Rust build. Run `pnpm sidecar:build` standalone to rebuild only the bundle without a full Tauri build.
+> `pnpm tauri:build` runs `scripts/tauri-build.mjs`, which rebuilds the sidecar bundle (`scripts/build-sidecar.mjs`) before invoking the Rust build. Run `pnpm sidecar:build` standalone to rebuild only the bundle without a full Tauri build.
 
 ## Architecture
 
@@ -100,7 +100,7 @@ Pinia stores live in `src/renderer/stores/`. Settings are persisted via `src/ren
 
 ### i18n
 
-vue-i18n runs in **Composition API mode** (`legacy: false`). Locale files are in `src/renderer/i18n/<locale>.ts`. When adding new strings, add keys to `en-US.ts` first; the translation check script compares all locales against it.
+vue-i18n runs in **Composition API mode** (`legacy: false`). Locale files are JSON in `src/renderer/i18n/<locale>.json`; supported locales are `en-US`, `zh-CN`, `zh-TW`, `ja-JP`, `ko-KR` (declared in `supported-locales.ts` and wired up in `index.ts`). When adding new strings, add keys to `en-US.json` first — it is the source of truth and typed as `MessageSchema`. `pnpm translation:check <locale>` (e.g. `pnpm translation:check zh-TW`) diffs a single locale against `en-US.json`; the argument is required.
 
 ## Conventions
 

@@ -5,7 +5,7 @@ import { MySQLClient } from '../../clients/MySQLClient';
 import { SqlExporter } from './SqlExporter';
 
 export default class MysqlExporter extends SqlExporter {
-   protected _client: MySQLClient;
+   protected declare _client: MySQLClient;
 
    constructor (client: MySQLClient, tables: exporter.TableParams[], options: exporter.ExportOptions) {
       super(tables, options);

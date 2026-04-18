@@ -242,7 +242,7 @@ const adjustSVGContent = (svgContent: string) => {
 
       const svg = doc.documentElement;
       if (svg.tagName.toLowerCase() !== 'svg') {
-         addNotification({ status: 'error', message: t('application.invalidFIle') });
+         addNotification({ status: 'error', message: t('application.invalidFile') });
          return null;
       }
 

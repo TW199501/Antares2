@@ -16,7 +16,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
 
-function run(cmd, args, opts = {}) {
+function run (cmd, args, opts = {}) {
    console.log(`\n> ${cmd} ${args.join(' ')}`);
    const r = spawnSync(cmd, args, { stdio: 'inherit', shell: true, ...opts });
    return r.status ?? 1;
@@ -27,6 +27,15 @@ const sidecarStatus = run('node', ['scripts/build-sidecar.mjs']);
 if (sidecarStatus !== 0) {
    console.error('Sidecar build failed.');
    process.exit(sidecarStatus);
+}
+
+// ── Step 1b: stage resources ────────────────────────────────────────────────
+// Tauri's object-form `**/*` glob flattens subdirs; we pre-stage with preserved
+// structure into src-tauri/resources/ and reference that in tauri.conf.json.
+const stageStatus = run('node', ['scripts/stage-resources.mjs']);
+if (stageStatus !== 0) {
+   console.error('Resource staging failed.');
+   process.exit(stageStatus);
 }
 
 // ── Step 2: tauri build ──────────────────────────────────────────────────────

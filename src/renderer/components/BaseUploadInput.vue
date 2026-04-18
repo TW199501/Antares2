@@ -5,7 +5,7 @@
             icon-name="mdiFolderOpen"
             class="mr-1 mt-1"
             :size="18"
-         />{{ message }}
+         />{{ message ?? t('general.browse') }}
       </span>
       <span class="text-ellipsis file-uploader-value">
          {{ lastPart(modelValue, 19) }}
@@ -22,15 +22,17 @@
 
 <script setup lang="ts">
 import { open as tauriOpen } from '@tauri-apps/plugin-dialog';
+import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import { useFilters } from '@/composables/useFilters';
 
+const { t } = useI18n();
 const { lastPart } = useFilters();
 
 const props = defineProps({
    message: {
-      default: 'Browse',
+      default: undefined,
       type: String
    },
    filters: {
