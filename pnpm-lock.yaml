@@ -56,6 +56,9 @@ importers:
       '@turf/helpers':
         specifier: ^7.3.4
         version: 7.3.4
+      '@tw199501/specsnap-core':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@vue/compiler-sfc':
         specifier: ^3.5.32
         version: 3.5.32
@@ -1336,6 +1339,9 @@ packages:
 
   '@turf/helpers@7.3.4':
     resolution: {integrity: sha512-U/S5qyqgx3WTvg4twaH0WxF3EixoTCfDsmk98g1E3/5e2YKp7JKYZdz0vivsS5/UZLJeZDEElOSFH4pUgp+l7g==}
+
+  '@tw199501/specsnap-core@0.0.2':
+    resolution: {integrity: sha512-Mtku14Dc7wDQqazBDvFXz9HRRYsdR2hVD2i6IheGlYs9wqvj1JYuo5k5TQSz7x1YtaU0HFqBkIYIw/mrwyV1Vw==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -5161,6 +5167,8 @@ snapshots:
     dependencies:
       '@types/geojson': 7946.0.16
       tslib: 2.8.1
+
+  '@tw199501/specsnap-core@0.0.2': {}
 
   '@tybys/wasm-util@0.10.1':
     dependencies:

@@ -427,7 +427,20 @@
     "fullScreen": "전체 화면",
     "zoomIn": "확대",
     "zoomOut": "축소",
-    "zoomReset": "확대/축소 초기화"
+    "zoomReset": "확대/축소 초기화",
+    "specsnap": {
+      "inspector": "SpecSnap 인스펙터",
+      "startInspect": "검사 시작",
+      "done": "완료",
+      "clear": "지우기",
+      "markdown": "Markdown",
+      "json": "JSON",
+      "copy": "복사",
+      "copied": "복사됨!",
+      "inspecting": "검사 중 — 요소를 클릭하세요",
+      "selectedCount": "{n}개 요소 선택됨",
+      "hint": "요소를 클릭하여 선택하세요. 다시 클릭하면 선택 해제됩니다. ESC로 종료하세요."
+    }
   },
   "faker": {
     "address": "주소",

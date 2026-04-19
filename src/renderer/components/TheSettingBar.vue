@@ -62,6 +62,21 @@
                v-tooltip="{
                   strategy: 'fixed',
                   placement: 'right',
+                  content: t('application.specsnap.inspector')
+               }"
+               class="settingbar-element btn btn-link"
+               @click="showSpecsnap()"
+            >
+               <BaseIcon
+                  icon-name="mdiCrosshairsGps"
+                  class="settingbar-element-icon text-light"
+                  :size="24"
+               />
+            </li>
+            <li
+               v-tooltip="{
+                  strategy: 'fixed',
+                  placement: 'right',
                   content: t('application.note', 2)
                }"
                class="settingbar-element btn btn-link"
@@ -123,7 +138,7 @@ const { updateStatus } = storeToRefs(applicationStore);
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 const { connectionsOrder } = storeToRefs(connectionsStore);
 
-const { showSettingModal, showScratchpad } = applicationStore;
+const { showSettingModal, showScratchpad, showSpecsnap } = applicationStore;
 const { updateConnectionsOrder, initConnectionsOrder } = connectionsStore;
 const { selectWorkspace } = workspacesStore;
 

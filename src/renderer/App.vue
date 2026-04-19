@@ -15,6 +15,7 @@
             <TheFooter />
             <TheNotificationsBoard />
             <TheScratchpad v-if="isScratchpad" />
+            <TheSpecSnapInspector v-if="isSpecsnap" />
             <ModalSettings v-if="isSettingModal" />
             <BaseTextEditor class="d-none" value="" />
          </div>
@@ -53,6 +54,7 @@ const WorkspaceAddConnectionPanel = defineAsyncComponent(() => import(/* webpack
 const ModalSettings = defineAsyncComponent(() => import(/* webpackChunkName: "ModalSettings" */'@/components/ModalSettings.vue'));
 const ModalAllConnections = defineAsyncComponent(() => import(/* webpackChunkName: "ModalAllConnections" */'@/components/ModalAllConnections.vue'));
 const TheScratchpad = defineAsyncComponent(() => import(/* webpackChunkName: "TheScratchpad" */'@/components/TheScratchpad.vue'));
+const TheSpecSnapInspector = defineAsyncComponent(() => import(/* webpackChunkName: "TheSpecSnapInspector" */'@/components/TheSpecSnapInspector.vue'));
 const BaseTextEditor = defineAsyncComponent(() => import(/* webpackChunkName: "BaseTextEditor" */'@/components/BaseTextEditor.vue'));
 
 const applicationStore = useApplicationStore();
@@ -62,7 +64,8 @@ const workspacesStore = useWorkspacesStore();
 
 const {
    isSettingModal,
-   isScratchpad
+   isScratchpad,
+   isSpecsnap
 } = storeToRefs(applicationStore);
 const { connections } = storeToRefs(connectionsStore);
 const { applicationTheme, disableBlur } = storeToRefs(settingsStore);

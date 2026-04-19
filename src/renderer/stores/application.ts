@@ -19,6 +19,7 @@ export const useApplicationStore = defineStore('application', {
       isNewModal: false,
       isSettingModal: false,
       isScratchpad: false,
+      isSpecsnap: false,
       selectedSettingTab: 'general',
       updateStatus: 'noupdate' as UpdateStatus,
       downloadProgress: 0,
@@ -75,6 +76,12 @@ export const useApplicationStore = defineStore('application', {
       },
       hideScratchpad () {
          this.isScratchpad = false;
+      },
+      showSpecsnap () {
+         this.isSpecsnap = true;
+      },
+      hideSpecsnap () {
+         this.isSpecsnap = false;
       },
       async checkForUpdates () {
          const { allowPrerelease } = useSettingsStore();

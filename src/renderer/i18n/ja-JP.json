@@ -427,7 +427,20 @@
     "fullScreen": "フルスクリーン",
     "zoomIn": "ズームイン",
     "zoomOut": "ズームアウト",
-    "zoomReset": "ズームをリセット"
+    "zoomReset": "ズームをリセット",
+    "specsnap": {
+      "inspector": "SpecSnap インスペクター",
+      "startInspect": "検査開始",
+      "done": "完了",
+      "clear": "クリア",
+      "markdown": "Markdown",
+      "json": "JSON",
+      "copy": "コピー",
+      "copied": "コピーしました！",
+      "inspecting": "検査中 — 要素をクリック",
+      "selectedCount": "{n} 個の要素を選択済み",
+      "hint": "要素をクリックして選択します。もう一度クリックすると選択解除。ESCで終了。"
+    }
   },
   "faker": {
     "address": "住所",

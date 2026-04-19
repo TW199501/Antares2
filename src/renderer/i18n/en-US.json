@@ -427,7 +427,20 @@
     "fullScreen": "Full screen",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomReset": "Reset zoom"
+    "zoomReset": "Reset zoom",
+    "specsnap": {
+      "inspector": "SpecSnap Inspector",
+      "startInspect": "Start Inspect",
+      "done": "Done",
+      "clear": "Clear",
+      "markdown": "Markdown",
+      "json": "JSON",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "inspecting": "Inspecting — click any element",
+      "selectedCount": "{n} element selected | {n} elements selected",
+      "hint": "Click an element to select it. Click again to deselect. Press ESC to finish."
+    }
   },
   "faker": {
     "address": "Address",

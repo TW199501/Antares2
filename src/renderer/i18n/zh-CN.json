@@ -427,7 +427,20 @@
     "fullScreen": "全屏",
     "zoomIn": "放大",
     "zoomOut": "缩小",
-    "zoomReset": "重置缩放"
+    "zoomReset": "重置缩放",
+    "specsnap": {
+      "inspector": "SpecSnap 检查器",
+      "startInspect": "开始检查",
+      "done": "完成",
+      "clear": "清空",
+      "markdown": "Markdown",
+      "json": "JSON",
+      "copy": "复制",
+      "copied": "已复制！",
+      "inspecting": "检查中 — 点击任意元素",
+      "selectedCount": "已选 {n} 个元素",
+      "hint": "点击元素以选取。再次点击以取消选取。按 ESC 结束。"
+    }
   },
   "faker": {
     "address": "地址",
