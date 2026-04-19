@@ -15,11 +15,11 @@ const inputId = useId();
 </script>
 
 <template>
-   <div :class="cn('flex flex-col gap-1.5', props.class)">
+   <div :class="cn('flex flex-col gap-[6px]', props.class)">
       <Label
          v-if="label"
          :for="inputId"
-         class="text-xs font-medium"
+         class="text-[12px] font-medium"
       >
          {{ label }}
       </Label>

@@ -1,19 +1,19 @@
 <template>
    <div class="connection-panel">
-      <div class="mx-auto mb-5 flex max-w-lg items-center gap-3 px-1 text-foreground">
+      <div class="mx-auto mb-5 flex w-[520px] items-center gap-3 px-1 text-foreground">
          <div class="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
             <BaseIcon icon-name="mdiDatabase" :size="26" />
          </div>
          <div class="min-w-0">
-            <div class="truncate text-lg font-semibold tracking-tight">
+            <div class="truncate text-[18px] font-semibold tracking-tight">
                {{ localConnection.name || t('connection.editConnection') }}
             </div>
-            <div class="truncate text-sm text-muted-foreground">
+            <div class="truncate text-[13px] text-muted-foreground">
                {{ t('connection.editConnection') }}
             </div>
          </div>
       </div>
-      <div class="mx-auto min-w-[480px] max-w-lg rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)]">
+      <div class="mx-auto w-[520px] rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)]">
          <Tabs v-model="selectedTab">
             <TabsList class="mb-5 w-full bg-muted/60">
                <TabsTrigger value="general" class="flex-1">
@@ -35,7 +35,7 @@
                </TabsTrigger>
             </TabsList>
             <TabsContent value="general">
-               <fieldset class="m-0 flex flex-col gap-2 p-0" :disabled="isBusy">
+               <fieldset class="m-0 flex flex-col gap-[16px] p-0" :disabled="isBusy">
                   <FormField v-slot="{ id }" :label="t('connection.connectionName')">
                      <input
                         :id="id"
@@ -70,18 +70,34 @@
                      >
                   </FormField>
 
-                  <FormField
-                     v-if="!clientCustomizations.fileConnection"
-                     v-slot="{ id }"
-                     :label="`${t('connection.hostName')}/IP`"
-                  >
-                     <input
-                        :id="id"
-                        v-model="localConnection.host"
-                        type="text"
-                        :class="inputClass"
+                  <div v-if="!clientCustomizations.fileConnection" class="flex gap-3">
+                     <FormField
+                        v-slot="{ id }"
+                        class="flex-1"
+                        :label="`${t('connection.hostName')}/IP`"
                      >
-                  </FormField>
+                        <input
+                           :id="id"
+                           v-model="localConnection.host"
+                           type="text"
+                           :class="inputClass"
+                        >
+                     </FormField>
+                     <FormField
+                        v-slot="{ id }"
+                        class="w-[120px] shrink-0"
+                        :label="t('connection.port')"
+                     >
+                        <input
+                           :id="id"
+                           v-model="localConnection.port"
+                           type="number"
+                           min="1"
+                           max="65535"
+                           :class="inputClass"
+                        >
+                     </FormField>
+                  </div>
 
                   <FormField
                      v-if="clientCustomizations.fileConnection"
@@ -93,21 +109,6 @@
                         @clear="pathClear('databasePath')"
                         @select="(path) => pathSelection(path, 'databasePath')"
                      />
-                  </FormField>
-
-                  <FormField
-                     v-if="!clientCustomizations.fileConnection"
-                     v-slot="{ id }"
-                     :label="t('connection.port')"
-                  >
-                     <input
-                        :id="id"
-                        v-model="localConnection.port"
-                        type="number"
-                        min="1"
-                        max="65535"
-                        :class="inputClass"
-                     >
                   </FormField>
 
                   <FormField
@@ -124,33 +125,34 @@
                      >
                   </FormField>
 
-                  <FormField
-                     v-if="!clientCustomizations.fileConnection"
-                     v-slot="{ id }"
-                     :label="t('connection.user')"
-                  >
-                     <input
-                        :id="id"
-                        v-model="localConnection.user"
-                        type="text"
-                        :disabled="localConnection.ask"
-                        :class="inputClass"
+                  <div v-if="!clientCustomizations.fileConnection" class="flex gap-3">
+                     <FormField
+                        v-slot="{ id }"
+                        class="flex-1"
+                        :label="t('connection.user')"
                      >
-                  </FormField>
-
-                  <FormField
-                     v-if="!clientCustomizations.fileConnection"
-                     v-slot="{ id }"
-                     :label="t('connection.password')"
-                  >
-                     <input
-                        :id="id"
-                        v-model="localConnection.password"
-                        type="password"
-                        :disabled="localConnection.ask"
-                        :class="inputClass"
+                        <input
+                           :id="id"
+                           v-model="localConnection.user"
+                           type="text"
+                           :disabled="localConnection.ask"
+                           :class="inputClass"
+                        >
+                     </FormField>
+                     <FormField
+                        v-slot="{ id }"
+                        class="flex-1"
+                        :label="t('connection.password')"
                      >
-                  </FormField>
+                        <input
+                           :id="id"
+                           v-model="localConnection.password"
+                           type="password"
+                           :disabled="localConnection.ask"
+                           :class="inputClass"
+                        >
+                     </FormField>
+                  </div>
 
                   <FormField
                      v-if="clientCustomizations.connectionSchema"
@@ -430,7 +432,7 @@ const clients = [
    { name: 'Firebird SQL', slug: 'firebird' }
 ];
 
-const inputClass = 'flex h-9 w-full rounded-md border border-input bg-secondary px-3 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+const inputClass = 'flex h-[34px] w-full rounded-md border border-input bg-secondary px-3 text-[13px] text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
 const firstInput: Ref<HTMLInputElement> = ref(null);
 const localConnection: Ref<ConnectionParams & { connString: string }> = ref(null);
