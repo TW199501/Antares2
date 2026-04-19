@@ -24,34 +24,47 @@
             />
          </div>
 
-         <!-- Controls -->
+         <!-- Controls: inspect toggle + clear + copy on one row -->
          <div class="specsnap-controls">
-            <div class="btn-group" style="flex: 1;">
-               <button
-                  class="btn btn-sm"
-                  :class="isInspecting ? 'btn-error' : 'btn-primary'"
-                  style="flex: 1;"
-                  @click="toggleInspect"
-               >
-                  <BaseIcon
-                     :icon-name="isInspecting ? 'mdiClose' : 'mdiCursorPointer'"
-                     :size="14"
-                     class="mr-1"
-                  />
-                  {{ isInspecting
-                     ? t('application.specsnap.done')
-                     : (selections.length > 0
-                        ? t('application.specsnap.selectedCount', { n: selections.length })
-                        : t('application.specsnap.startInspect'))
-                  }}
-               </button>
-            </div>
+            <button
+               class="btn btn-sm specsnap-inspect-btn"
+               :class="isInspecting ? 'btn-error' : 'btn-primary'"
+               @click="toggleInspect"
+            >
+               <BaseIcon
+                  :icon-name="isInspecting ? 'mdiCheck' : 'mdiCursorPointer'"
+                  :size="14"
+                  class="mr-1"
+               />
+               {{ isInspecting
+                  ? t('application.specsnap.done')
+                  : (selections.length > 0
+                     ? t('application.specsnap.selectedCount', { n: selections.length })
+                     : t('application.specsnap.startInspect'))
+               }}
+            </button>
             <button
                class="btn btn-sm btn-link specsnap-clear-btn"
                :disabled="selections.length === 0"
                @click="clearSelections"
             >
                {{ t('application.specsnap.clear') }}
+            </button>
+            <button
+               class="btn btn-sm specsnap-copy-btn"
+               :class="copyFlash ? 'btn-success' : 'btn-primary'"
+               :disabled="selections.length === 0"
+               @click="copyActive"
+            >
+               <BaseIcon
+                  :icon-name="copyFlash ? 'mdiCheck' : 'mdiContentCopy'"
+                  :size="14"
+                  class="mr-1"
+               />
+               {{ copyFlash
+                  ? t('application.specsnap.copied')
+                  : `${t('application.specsnap.copy')} ${activeTab === 'md' ? 'Markdown' : 'JSON'}`
+               }}
             </button>
          </div>
 
@@ -111,22 +124,6 @@
                />
                <p>{{ t('application.specsnap.startInspect') }}</p>
             </div>
-         </div>
-
-         <!-- Action row -->
-         <div class="specsnap-actions">
-            <button
-               class="btn btn-sm btn-primary"
-               :disabled="selections.length === 0"
-               @click="copyActive"
-            >
-               <BaseIcon
-                  :icon-name="copyFlash ? 'mdiCheck' : 'mdiContentCopy'"
-                  :size="14"
-                  class="mr-1"
-               />
-               {{ copyFlash ? t('application.specsnap.copied') : t('application.specsnap.copy') }}
-            </button>
          </div>
       </div>
    </Teleport>
@@ -567,14 +564,28 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    }
 }
 
+.specsnap-inspect-btn {
+   flex: 1;
+   min-width: 0;
+   font-size: 12px;
+   white-space: nowrap;
+}
+
 .specsnap-clear-btn {
    flex-shrink: 0;
    font-size: 12px;
    opacity: 0.7;
+   padding: 0 8px;
 
    &:hover:not(:disabled) {
       opacity: 1;
    }
+}
+
+.specsnap-copy-btn {
+   flex-shrink: 0;
+   font-size: 12px;
+   white-space: nowrap;
 }
 
 .specsnap-hint {
@@ -684,16 +695,4 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    opacity: 0.5;
 }
 
-.specsnap-actions {
-   display: flex;
-   align-items: center;
-   justify-content: flex-end;
-   padding: 6px 10px;
-   border-top: 1px solid rgba(0, 0, 0, 0.1);
-   flex-shrink: 0;
-
-   .theme-dark & {
-      border-color: rgba(255 255 255 / 8%);
-   }
-}
 </style>
