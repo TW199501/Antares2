@@ -115,33 +115,34 @@
             <div class="workspace-query-info">
                <div
                   v-if="results.length"
-                  class="d-flex"
                   :title="t('database.queryDuration')"
                >
                   <BaseIcon
-                     class="mr-1 mt-1"
                      icon-name="mdiTimerSand"
                      :rotate="180"
-                     :size="16"
-                  /> <b>{{ results[0].duration / 1000 }}s</b>
+                     :size="14"
+                  />
+                  <b>{{ results[0].duration / 1000 }}s</b>
                </div>
                <div v-if="results.length && results[0].rows">
-                  {{ t('general.results') }}: <b>{{ localeString(results[0].rows.length) }}</b>
+                  <span>{{ t('general.results') }}:</span>
+                  <b>{{ localeString(results[0].rows.length) }}</b>
                </div>
                <div v-if="hasApproximately || (page > 1 && approximateCount)">
-                  {{ t('database.total') }}: <b
+                  <span>{{ t('database.total') }}:</span>
+                  <b
                      :title="!customizations.tableRealCount ? t('database.approximately') : ''"
                   >
                      <span v-if="!customizations.tableRealCount">≈</span>
                      {{ localeString(approximateCount) }}
                   </b>
                </div>
-               <div class="d-flex" :title="t('database.schema')">
+               <div :title="t('database.schema')">
                   <BaseIcon
-                     class="mt-1 mr-1"
                      icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
+                     :size="14"
+                  />
+                  <b>{{ schema }}</b>
                </div>
             </div>
          </div>

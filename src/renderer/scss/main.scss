@@ -215,11 +215,15 @@ option:checked {
 
       .workspace-query-info {
         display: flex;
+        align-items: center;
         overflow: hidden;
         white-space: nowrap;
+        gap: 0.6rem;
 
-        > div + div {
-          padding-left: 0.6rem;
+        > div {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
         }
       }
     }
