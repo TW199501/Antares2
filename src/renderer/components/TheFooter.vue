@@ -51,14 +51,6 @@
                />
                <small>{{ t('application.console') }}</small>
             </li>
-            <li class="footer-element footer-link" @click="openOutside('https://www.paypal.com/paypalme/fabiodistasio')">
-               <BaseIcon
-                  icon-name="mdiCoffee"
-                  class="mr-1"
-                  :size="18"
-               />
-               <small>{{ t('general.donate') }}</small>
-            </li>
             <li
                class="footer-element footer-link"
                :title="t('application.reportABug')"
@@ -154,6 +146,20 @@ changeAccentColor();
     bottom: 0;
     left: 0;
     right: 0;
+
+    // Force text color to cascade past spectre's body / small defaults.
+    // .text-light / .text-dark are set on #footer by accent-color logic.
+    &.text-light,
+    &.text-light small,
+    &.text-light .footer-element {
+      color: #fff;
+    }
+
+    &.text-dark,
+    &.text-dark small,
+    &.text-dark .footer-element {
+      color: #3b4351;
+    }
 
     .footer-elements {
       list-style: none;
