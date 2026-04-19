@@ -389,9 +389,7 @@ function renderOverlay (): void {
 const BLOCKED_SELECTORS = [
    '#specsnap-panel',
    '#specsnap-overlay',
-   '#settingbar',
-   'html',
-   'body'
+   '#settingbar'
 ];
 
 function isBlocked (el: Element): boolean {
@@ -515,9 +513,9 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    display: flex;
    flex-direction: column;
    z-index: 99999;
-   border-radius: $border-radius;
-   border: 1px solid $border-color-dark;
-   background: $bg-color;
+   border-radius: 4px;
+   border: 1px solid rgba(0, 0, 0, 0.1);
+   background: #ffffff;
    box-shadow: 0 8px 32px rgba(0 0 0 / 28%);
    overflow: hidden;
    font-size: 13px;
@@ -533,8 +531,8 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    align-items: center;
    justify-content: space-between;
    padding: 6px 10px 6px 12px;
-   border-bottom: 1px solid $border-color-dark;
-   background: $bg-color-light;
+   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+   background: #f8f9fa;
    flex-shrink: 0;
 
    .theme-dark & {
@@ -561,7 +559,7 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    align-items: center;
    gap: 6px;
    padding: 8px 10px;
-   border-bottom: 1px solid $border-color-dark;
+   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
    flex-shrink: 0;
 
    .theme-dark & {
@@ -583,7 +581,7 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    padding: 4px 12px;
    font-size: 11px;
    opacity: 0.6;
-   border-bottom: 1px solid $border-color-dark;
+   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
    flex-shrink: 0;
    line-height: 1.4;
    min-height: 26px;
@@ -613,7 +611,7 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
 
 .specsnap-tabs {
    display: flex;
-   border-bottom: 1px solid $border-color-dark;
+   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
    flex-shrink: 0;
 
    .theme-dark & {
@@ -691,7 +689,7 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    align-items: center;
    justify-content: flex-end;
    padding: 6px 10px;
-   border-top: 1px solid $border-color-dark;
+   border-top: 1px solid rgba(0, 0, 0, 0.1);
    flex-shrink: 0;
 
    .theme-dark & {
