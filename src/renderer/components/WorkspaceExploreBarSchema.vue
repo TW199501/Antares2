@@ -813,12 +813,11 @@ defineExpose({ selectSchema, schemaAccordion });
     gap: 4px;
     padding: 3px 6px;
     margin: 2px 0 1px 0;
-    min-height: 22px;
-    font-size: 10px;
+    min-height: 24px;
+    font-size: 12px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    line-height: 1.2;
+    letter-spacing: 0.02em;
+    line-height: 1.25;
     color: var(--muted-foreground);
     border-radius: 4px;
     position: relative;
@@ -905,8 +904,8 @@ defineExpose({ selectSchema, schemaAccordion });
       font-weight: 600;
 
       .table-comment {
-        color: var(--primary);
-        background: color-mix(in srgb, var(--primary) 22%, transparent);
+        color: var(--primary-foreground);
+        background: var(--primary);
       }
 
       .table-icon,
