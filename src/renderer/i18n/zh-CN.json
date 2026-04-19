@@ -428,6 +428,9 @@
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "zoomReset": "重置缩放",
+    "tableAutoRefresh": "数据表自动刷新",
+    "tableAutoRefreshDescription": "每 N 秒重新执行当前查询，无需手动刷新即可查看后端变更。",
+    "tableAutoRefreshHint": "0 = 关闭。最大 3600 秒。建议 ≥10 秒以避免画面闪烁。",
     "specsnap": {
       "inspector": "SpecSnap 检查器",
       "startInspect": "开始检查",

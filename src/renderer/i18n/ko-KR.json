@@ -428,6 +428,9 @@
     "zoomIn": "확대",
     "zoomOut": "축소",
     "zoomReset": "확대/축소 초기화",
+    "tableAutoRefresh": "테이블 자동 새로 고침",
+    "tableAutoRefreshDescription": "N초마다 현재 쿼리를 다시 실행하여 수동 새로 고침 없이 백엔드 변경 사항을 반영합니다.",
+    "tableAutoRefreshHint": "0 = 꺼짐. 최대 3600초. 화면 깜빡임 방지를 위해 ≥10초 권장.",
     "specsnap": {
       "inspector": "SpecSnap 인스펙터",
       "startInspect": "검사 시작",

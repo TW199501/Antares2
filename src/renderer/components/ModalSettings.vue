@@ -122,6 +122,38 @@
                                     />
                                  </div>
                               </div>
+                              <div class="form-group column col-12">
+                                 <div class="col-5 col-sm-12">
+                                    <label class="form-label">
+                                       <BaseIcon
+                                          icon-name="mdiRefresh"
+                                          class="mr-1"
+                                          :size="18"
+                                       />
+                                       {{ t('application.tableAutoRefresh') }}
+                                    </label>
+                                 </div>
+                                 <div class="col-3 col-sm-12">
+                                    <div class="input-group">
+                                       <input
+                                          v-model.number="localTableAutoRefreshInterval"
+                                          type="number"
+                                          min="0"
+                                          max="3600"
+                                          step="1"
+                                          class="form-input"
+                                          @change="onChangeAutoRefresh"
+                                       >
+                                       <span class="input-group-addon">{{ t('general.seconds') }}</span>
+                                    </div>
+                                 </div>
+                                 <div class="col-4 col-sm-12 px-2 p-vcentered">
+                                    <small class="d-block" style="line-height: 1.2; font-size: 70%;">
+                                       {{ t('application.tableAutoRefreshDescription') }}<br>
+                                       {{ t('application.tableAutoRefreshHint') }}
+                                    </small>
+                                 </div>
+                              </div>
                               <div class="form-group column col-12 mb-0">
                                  <div class="col-5 col-sm-12">
                                     <label class="form-label">
@@ -480,7 +512,8 @@ const {
    disableBlur,
    applicationTheme,
    editorTheme,
-   editorFontSize
+   editorFontSize,
+   tableAutoRefreshInterval: tableAutoRefreshIntervalFromStore
 } = storeToRefs(settingsStore);
 
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
@@ -498,7 +531,8 @@ const {
    changeEditorFontSize,
    updateNotificationsTimeout,
    changeDefaultCopyType,
-   changeShowTableSize
+   changeShowTableSize,
+   changeTableAutoRefreshInterval
 } = settingsStore;
 const {
    hideSettingModal: closeModal,
@@ -534,6 +568,7 @@ const defaultCopyType: Ref<string> = ref(null);
 const localPageSize: Ref<number> = ref(null);
 const localTimeout: Ref<number> = ref(null);
 const localEditorTheme: Ref<string> = ref(null);
+const localTableAutoRefreshInterval: Ref<number> = ref(null);
 const selectedTab: Ref<string> = ref('general');
 
 const editorThemes = computed(() => [
@@ -660,11 +695,16 @@ const toggleExecuteSelected = () => {
    changeExecuteSelected(!selectedExecuteSelected.value);
 };
 
+const onChangeAutoRefresh = () => {
+   changeTableAutoRefreshInterval(+localTableAutoRefreshInterval.value || 0);
+};
+
 localLocale.value = selectedLocale.value;
 defaultCopyType.value = selectedCopyType.value;
 localPageSize.value = pageSize.value as number;
 localTimeout.value = notificationsTimeout.value as number;
 localEditorTheme.value = editorTheme.value as string;
+localTableAutoRefreshInterval.value = tableAutoRefreshIntervalFromStore.value as number;
 selectedTab.value = selectedSettingTab.value;
 window.addEventListener('keydown', onKey);
 

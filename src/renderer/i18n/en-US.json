@@ -428,6 +428,9 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "zoomReset": "Reset zoom",
+    "tableAutoRefresh": "Auto-refresh tables",
+    "tableAutoRefreshDescription": "Re-run the current query every N seconds so the view reflects backend changes without manual refresh.",
+    "tableAutoRefreshHint": "0 = off. Max 3600. Recommend ≥10 to avoid flicker.",
     "specsnap": {
       "inspector": "SpecSnap Inspector",
       "startInspect": "Start Inspect",
