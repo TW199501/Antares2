@@ -6,9 +6,16 @@
 
    <!-- Panel -->
    <Teleport to="#main-content">
-      <div id="specsnap-panel" ref="panelRef">
-         <!-- Header -->
-         <div class="specsnap-header">
+      <div
+         id="specsnap-panel"
+         ref="panelRef"
+         :style="dragStyle"
+      >
+         <!-- Header (drag handle) -->
+         <div
+            ref="headerRef"
+            class="specsnap-header"
+         >
             <div class="specsnap-title">
                <BaseIcon
                   icon-name="mdiCrosshairsGps"
@@ -131,6 +138,7 @@
 
 <script setup lang="ts">
 import { captureSession, type Gap, toJSON, toMarkdown } from '@tw199501/specsnap-core';
+import { useDraggable } from '@vueuse/core';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -149,6 +157,20 @@ const activeTab = ref<'md' | 'json'>('md');
 const copyFlash = ref(false);
 const overlayRef = ref<HTMLDivElement | null>(null);
 const panelRef = ref<HTMLDivElement | null>(null);
+const headerRef = ref<HTMLDivElement | null>(null);
+
+// ─── Draggable (drag by header) ───────────────────────────────────────────────
+
+const PANEL_WIDTH = 420;
+const PANEL_HEIGHT = 540;
+const { style: dragStyle } = useDraggable(panelRef, {
+   handle: headerRef,
+   initialValue: {
+      x: Math.max(0, window.innerWidth - PANEL_WIDTH - 16),
+      y: Math.max(0, window.innerHeight - PANEL_HEIGHT - 48)
+   },
+   preventDefault: true
+});
 
 // ─── Derived output ───────────────────────────────────────────────────────────
 
@@ -503,8 +525,8 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
 
 #specsnap-panel {
    position: fixed;
-   bottom: 40px;
-   right: 16px;
+   top: 0;
+   left: 0;
    width: 420px;
    height: 540px;
    display: flex;
@@ -531,6 +553,8 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
    background: #f8f9fa;
    flex-shrink: 0;
+   cursor: move;
+   user-select: none;
 
    .theme-dark & {
       background: rgba(255 255 255 / 4%);
@@ -562,6 +586,13 @@ body.specsnap-inspecting *:not(#specsnap-panel, #specsnap-panel *):not(#settingb
    .theme-dark & {
       border-color: rgba(255 255 255 / 8%);
    }
+}
+
+.specsnap-controls .btn {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   line-height: 1;
 }
 
 .specsnap-inspect-btn {
