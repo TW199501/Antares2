@@ -48,17 +48,25 @@
             >
                <button
                   v-if="customizations.schemas"
+                  v-tooltip="{
+                     strategy: 'fixed',
+                     placement: 'bottom',
+                     content: t('database.createNewSchema')
+                  }"
                   type="button"
                   class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  :title="t('database.createNewSchema')"
                   @click="showNewDBModal"
                >
                   <BaseIcon icon-name="mdiDatabasePlus" :size="20" />
                </button>
                <button
+                  v-tooltip="{
+                     strategy: 'fixed',
+                     placement: 'bottom',
+                     content: t('general.refresh')
+                  }"
                   type="button"
                   class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  :title="t('general.refresh')"
                   @click="refresh"
                >
                   <BaseIcon
@@ -68,9 +76,13 @@
                   />
                </button>
                <button
+                  v-tooltip="{
+                     strategy: 'fixed',
+                     placement: 'bottom',
+                     content: t('connection.disconnect')
+                  }"
                   type="button"
                   class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
-                  :title="t('connection.disconnect')"
                   @click="disconnectWorkspace(connection.uid)"
                >
                   <BaseIcon icon-name="mdiPower" :size="20" />

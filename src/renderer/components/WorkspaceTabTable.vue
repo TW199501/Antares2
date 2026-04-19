@@ -17,17 +17,6 @@
                   </TabsList>
                </Tabs>
                <div v-show="viewMode === 'data'" class="d-flex align-items-center gap-1">
-                  <!-- Manual refresh -->
-                  <Button
-                     variant="outline"
-                     class="h-[28px] gap-1.5 px-[10px] text-[12px]"
-                     :disabled="isQuering"
-                     :title="`${t('general.refresh')}`"
-                     @click="reloadTable"
-                  >
-                     <BaseIcon :icon-name="settingsStore.tableAutoRefreshInterval ? 'mdiHistory' : 'mdiRefresh'" :size="16" />
-                  </Button>
-
                   <!-- Page navigation -->
                   <div class="flex">
                      <Button
