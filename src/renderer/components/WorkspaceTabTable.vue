@@ -4,36 +4,18 @@
          <div class="workspace-query-runner-footer">
             <div class="workspace-query-buttons">
                <!-- 資料 / 屬性 切換 -->
-               <div class="view-mode-toggle" role="tablist">
-                  <button
-                     class="view-mode-toggle-btn"
-                     :class="{ active: viewMode === 'data' }"
-                     role="tab"
-                     :aria-selected="viewMode === 'data'"
-                     @click="viewMode = 'data'"
-                  >
-                     <BaseIcon
-                        icon-name="mdiTable"
-                        class="mr-1"
-                        :size="14"
-                     />
-                     {{ t('general.data') }}
-                  </button>
-                  <button
-                     class="view-mode-toggle-btn"
-                     :class="{ active: viewMode === 'props' }"
-                     role="tab"
-                     :aria-selected="viewMode === 'props'"
-                     @click="viewMode = 'props'"
-                  >
-                     <BaseIcon
-                        icon-name="mdiWrenchCog"
-                        class="mr-1"
-                        :size="14"
-                     />
-                     {{ t('general.properties') }}
-                  </button>
-               </div>
+               <Tabs v-model="viewMode" class="mr-3">
+                  <TabsList class="h-[28px] gap-0 p-[2px]">
+                     <TabsTrigger value="data" class="h-[24px] gap-1 px-[10px] py-0 text-[12px]">
+                        <BaseIcon icon-name="mdiTable" :size="14" />
+                        {{ t('general.data') }}
+                     </TabsTrigger>
+                     <TabsTrigger value="props" class="h-[24px] gap-1 px-[10px] py-0 text-[12px]">
+                        <BaseIcon icon-name="mdiWrenchCog" :size="14" />
+                        {{ t('general.properties') }}
+                     </TabsTrigger>
+                  </TabsList>
+               </Tabs>
                <div v-show="viewMode === 'data'" class="d-flex align-items-center">
                   <div class="dropdown">
                      <div class="btn-group">
@@ -268,6 +250,7 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import ModalFakerRows from '@/components/ModalFakerRows.vue';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WorkspaceTabPropsTable from '@/components/WorkspaceTabPropsTable.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
 import WorkspaceTabTableFilters from '@/components/WorkspaceTabTableFilters.vue';
@@ -605,57 +588,3 @@ onBeforeUnmount(() => {
    window.removeEventListener('antares:prev-page', prevPageListener);
 });
 </script>
-
-<style lang="scss" scoped>
-.view-mode-toggle {
-   display: inline-flex;
-   align-items: center;
-   padding: 2px;
-   margin-right: 12px;
-   border: 1px solid rgba(0, 0, 0, 0.12);
-   border-radius: 6px;
-   background: rgba(0, 0, 0, 0.04);
-
-   .theme-dark & {
-      border-color: rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.04);
-   }
-}
-
-.view-mode-toggle-btn {
-   display: inline-flex;
-   align-items: center;
-   justify-content: center;
-   height: 24px;
-   padding: 0 10px;
-   margin: 0;
-   background: transparent;
-   border: none;
-   border-radius: 4px;
-   color: inherit;
-   font-size: 12px;
-   line-height: 1;
-   white-space: nowrap;
-   cursor: pointer;
-   transition: background 0.12s, color 0.12s;
-
-   &:hover:not(.active) {
-      background: rgba(0, 0, 0, 0.06);
-
-      .theme-dark & {
-         background: rgba(255, 255, 255, 0.06);
-      }
-   }
-
-   &.active {
-      background: $primary-color;
-      color: #fff;
-      font-weight: 500;
-   }
-
-   &:focus-visible {
-      outline: 2px solid $primary-color;
-      outline-offset: -2px;
-   }
-}
-</style>
