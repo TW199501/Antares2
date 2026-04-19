@@ -4,28 +4,32 @@
          <div class="workspace-query-runner-footer">
             <div class="workspace-query-buttons">
                <!-- 資料 / 屬性 切換 -->
-               <div class="view-mode-toggle">
+               <div class="view-mode-toggle" role="tablist">
                   <button
-                     class="btn btn-sm"
-                     :class="viewMode === 'data' ? 'btn-primary' : 'btn-dark'"
+                     class="view-mode-toggle-btn"
+                     :class="{ active: viewMode === 'data' }"
+                     role="tab"
+                     :aria-selected="viewMode === 'data'"
                      @click="viewMode = 'data'"
                   >
                      <BaseIcon
                         icon-name="mdiTable"
                         class="mr-1"
-                        :size="16"
+                        :size="14"
                      />
                      {{ t('general.data') }}
                   </button>
                   <button
-                     class="btn btn-sm"
-                     :class="viewMode === 'props' ? 'btn-primary' : 'btn-dark'"
+                     class="view-mode-toggle-btn"
+                     :class="{ active: viewMode === 'props' }"
+                     role="tab"
+                     :aria-selected="viewMode === 'props'"
                      @click="viewMode = 'props'"
                   >
                      <BaseIcon
                         icon-name="mdiWrenchCog"
                         class="mr-1"
-                        :size="16"
+                        :size="14"
                      />
                      {{ t('general.properties') }}
                   </button>
@@ -604,12 +608,54 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .view-mode-toggle {
-   display: flex;
-   gap: 2px;
-   margin-right: 8px;
+   display: inline-flex;
+   align-items: center;
+   padding: 2px;
+   margin-right: 12px;
+   border: 1px solid rgba(0, 0, 0, 0.12);
+   border-radius: 6px;
+   background: rgba(0, 0, 0, 0.04);
 
-   .btn {
-      border-radius: 4px;
+   .theme-dark & {
+      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+   }
+}
+
+.view-mode-toggle-btn {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   height: 24px;
+   padding: 0 10px;
+   margin: 0;
+   background: transparent;
+   border: none;
+   border-radius: 4px;
+   color: inherit;
+   font-size: 12px;
+   line-height: 1;
+   white-space: nowrap;
+   cursor: pointer;
+   transition: background 0.12s, color 0.12s;
+
+   &:hover:not(.active) {
+      background: rgba(0, 0, 0, 0.06);
+
+      .theme-dark & {
+         background: rgba(255, 255, 255, 0.06);
+      }
+   }
+
+   &.active {
+      background: $primary-color;
+      color: #fff;
+      font-weight: 500;
+   }
+
+   &:focus-visible {
+      outline: 2px solid $primary-color;
+      outline-offset: -2px;
    }
 }
 </style>
