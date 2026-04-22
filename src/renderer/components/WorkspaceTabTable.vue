@@ -38,17 +38,6 @@
                   {{ useCommentHeader ? '中' : 'A' }}
                </button>
                <div v-show="viewMode === 'data'" class="d-flex align-items-center gap-1">
-                  <!-- Filter toggle -->
-                  <Button
-                     :variant="isSearch ? 'default' : 'outline'"
-                     class="h-[32px] px-[10px] !text-[14px]"
-                     :title="t('general.filter')"
-                     :disabled="isQuering"
-                     @click="isSearch = !isSearch"
-                  >
-                     <BaseIcon icon-name="mdiMagnify" :size="16" />
-                  </Button>
-
                   <!-- Insert row -->
                   <Button
                      v-if="isTable && !connection.readonly"
@@ -166,39 +155,46 @@
             </div>
          </div>
       </div>
-      <WorkspaceTabTableFilters
-         v-if="isSearch"
-         :fields="fields"
-         :is-quering="isQuering"
-         :conn-client="connection.client"
-         @filter="updateFilters"
-         @filter-change="onFilterChange"
-      />
-      <div v-show="viewMode === 'data'" class="workspace-query-results p-relative column col-12">
+      <div v-show="viewMode === 'data'" class="workspace-query-results column col-12 relative">
          <BaseLoader v-if="isQuering" />
-         <WorkspaceTabQueryTable
-            v-if="results"
-            ref="queryTable"
-            :results="results"
-            :is-quering="isQuering"
-            :page="page"
-            :tab-uid="tabUid"
-            :conn-uid="connection.uid"
-            :is-selected="isSelected"
-            mode="table"
-            :element-type="elementType"
-            :use-comment-header="useCommentHeader"
-            @update-field="updateField"
-            @delete-selected="deleteSelected"
-            @duplicate-row="showFakerModal"
-            @hard-sort="hardSort"
-         />
-         <div
-            v-if="!isQuering && !results[0]?.rows.length"
-            class="pointer-events-none absolute inset-x-0 top-[60px] flex justify-center text-[12px] text-muted-foreground"
+         <BaseSplitV
+            :top-height="tableQueryAreaHeight"
+            :default-top-height="300"
+            class="h-full"
+            @update:top-height="tableQueryAreaHeight = $event"
+            @resize-end="setTableQueryAreaHeight($event)"
          >
-            {{ t('database.noResultsPresent') }}
-         </div>
+            <template #top>
+               <WorkspaceTabTableQueryArea />
+            </template>
+            <template #bottom>
+               <div class="relative h-full">
+                  <WorkspaceTabQueryTable
+                     v-if="results"
+                     ref="queryTable"
+                     :results="results"
+                     :is-quering="isQuering"
+                     :page="page"
+                     :tab-uid="tabUid"
+                     :conn-uid="connection.uid"
+                     :is-selected="isSelected"
+                     mode="table"
+                     :element-type="elementType"
+                     :use-comment-header="useCommentHeader"
+                     @update-field="updateField"
+                     @delete-selected="deleteSelected"
+                     @duplicate-row="showFakerModal"
+                     @hard-sort="hardSort"
+                  />
+                  <div
+                     v-if="!isQuering && !results[0]?.rows.length"
+                     class="pointer-events-none absolute inset-x-0 top-[12px] flex justify-center text-[12px] text-muted-foreground"
+                  >
+                     {{ t('database.noResultsPresent') }}
+                  </div>
+               </div>
+            </template>
+         </BaseSplitV>
       </div>
       <WorkspaceTabPropsTable
          v-if="viewMode === 'props'"
@@ -231,13 +227,14 @@ import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
+import BaseSplitV from '@/components/BaseSplitV.vue';
 import ModalFakerRows from '@/components/ModalFakerRows.vue';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WorkspaceTabPropsTable from '@/components/WorkspaceTabPropsTable.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
-import WorkspaceTabTableFilters from '@/components/WorkspaceTabTableFilters.vue';
+import WorkspaceTabTableQueryArea from '@/components/WorkspaceTabTableQueryArea.vue';
 import { useFilters } from '@/composables/useFilters';
 import { useResultTables } from '@/composables/useResultTables';
 import Tables from '@/ipc-api/Tables';
@@ -273,7 +270,8 @@ const { addNotification } = useNotificationsStore();
 const settingsStore = useSettingsStore();
 const workspacesStore = useWorkspacesStore();
 
-const { dataTabLimit: limit, tableAutoRefreshInterval } = storeToRefs(settingsStore);
+const { dataTabLimit: limit, tableAutoRefreshInterval, tableQueryAreaHeight } = storeToRefs(settingsStore);
+const { setTableQueryAreaHeight } = settingsStore;
 
 const { changeBreadcrumbs, getWorkspace, newTab } = workspacesStore;
 

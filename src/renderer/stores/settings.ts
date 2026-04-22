@@ -31,6 +31,7 @@ export const useSettingsStore = defineStore('settings', {
       defaultCopyType: 'cell' as string,
       aiApiKey: '' as string,
       tableAutoRefreshInterval: 0 as number,
+      tableQueryAreaHeight: 300 as number,
       _loaded: false
    }),
    actions: {
@@ -55,6 +56,7 @@ export const useSettingsStore = defineStore('settings', {
          if (settings.default_copy_type !== undefined) this.defaultCopyType = settings.default_copy_type;
          if (settings.ai_api_key !== undefined) this.aiApiKey = settings.ai_api_key;
          if (settings.table_auto_refresh_interval !== undefined) this.tableAutoRefreshInterval = settings.table_auto_refresh_interval;
+         if (settings.table_query_area_height !== undefined) this.tableQueryAreaHeight = settings.table_query_area_height;
          if (shortcuts.shortcuts !== undefined) this.shortcuts = shortcuts.shortcuts;
 
          this._loaded = true;
@@ -77,7 +79,8 @@ export const useSettingsStore = defineStore('settings', {
             disable_blur: this.disableBlur,
             default_copy_type: this.defaultCopyType,
             ai_api_key: this.aiApiKey,
-            table_auto_refresh_interval: this.tableAutoRefreshInterval
+            table_auto_refresh_interval: this.tableAutoRefreshInterval,
+            table_query_area_height: this.tableQueryAreaHeight
          });
       },
       async persistShortcuts () {
@@ -90,6 +93,10 @@ export const useSettingsStore = defineStore('settings', {
       },
       changePageSize (limit: number) {
          this.dataTabLimit = limit;
+         this.persistSettings();
+      },
+      setTableQueryAreaHeight (height: number) {
+         this.tableQueryAreaHeight = height;
          this.persistSettings();
       },
       changeAllowPrerelease (allow: boolean) {
