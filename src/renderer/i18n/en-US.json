@@ -291,6 +291,8 @@
     "fillCell": "Fill cell",
     "executeSelectedQuery": "Execute selected query",
     "noResultsPresent": "No results present",
+    "showColumnComments": "Show column comments",
+    "showColumnNames": "Show column names",
     "sqlExportOptions": "SQL export options",
     "targetTable": "Target table",
     "switchDatabase": "Switch the database",

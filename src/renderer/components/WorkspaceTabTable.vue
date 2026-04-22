@@ -4,24 +4,45 @@
          <div class="workspace-query-runner-footer">
             <div class="workspace-query-buttons">
                <!-- 資料 / 屬性 切換 -->
-               <Tabs v-model="viewMode" class="mr-3">
-                  <TabsList class="h-[28px] gap-0 p-[2px]">
-                     <TabsTrigger value="data" class="h-[24px] gap-1 px-[10px] py-0 text-[12px]">
+               <Tabs v-model="viewMode" class="mr-2">
+                  <TabsList class="h-[32px] gap-0 p-[2px]">
+                     <TabsTrigger
+                        value="data"
+                        class="h-[28px] gap-1 px-[10px] py-0 text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                     >
                         <BaseIcon icon-name="mdiTable" :size="14" />
                         {{ t('general.data') }}
                      </TabsTrigger>
-                     <TabsTrigger value="props" class="h-[24px] gap-1 px-[10px] py-0 text-[12px]">
+                     <TabsTrigger
+                        value="props"
+                        class="h-[28px] gap-1 px-[10px] py-0 text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                     >
                         <BaseIcon icon-name="mdiWrenchCog" :size="14" />
                         {{ t('general.properties') }}
                      </TabsTrigger>
                   </TabsList>
                </Tabs>
+               <!-- Column header 英文名 / 中文 comment 切換 (僅 data 模式有效) -->
+               <button
+                  v-show="viewMode === 'data'"
+                  type="button"
+                  :class="[
+                     'mr-3 flex h-[32px] w-[32px] items-center justify-center rounded-md text-[14px] font-semibold transition-colors',
+                     useCommentHeader
+                        ? 'border border-primary bg-primary text-primary-foreground'
+                        : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
+                  ]"
+                  :title="useCommentHeader ? t('application.showColumnNames') : t('application.showColumnComments')"
+                  @click="useCommentHeader = !useCommentHeader"
+               >
+                  {{ useCommentHeader ? '中' : 'A' }}
+               </button>
                <div v-show="viewMode === 'data'" class="d-flex align-items-center gap-1">
                   <!-- Page navigation -->
                   <div class="flex">
                      <Button
                         variant="outline"
-                        class="h-[28px] rounded-r-none px-[8px] text-[12px]"
+                        class="h-[32px] rounded-r-none px-[8px] text-[14px]"
                         :disabled="isQuering || page === 1"
                         :title="t('application.previousResultsPage')"
                         @click="pageChange('prev')"
@@ -30,7 +51,7 @@
                      </Button>
                      <div class="dropdown" :class="{'active': isPageMenu}">
                         <div @click="openPageMenu">
-                           <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3" style="height: 28px; border-radius: 0;">
+                           <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3 text-[14px]" style="height: 32px; border-radius: 0;">
                               {{ page }}
                            </div>
                            <div class="menu px-3">
@@ -48,7 +69,7 @@
                      </div>
                      <Button
                         variant="outline"
-                        class="h-[28px] rounded-l-none px-[8px] text-[12px]"
+                        class="h-[32px] rounded-l-none px-[8px] text-[14px]"
                         :disabled="isQuering || (results.length && results[0].rows.length < limit)"
                         :title="t('application.nextResultsPage')"
                         @click="pageChange('next')"
@@ -62,7 +83,7 @@
                   <!-- Filter toggle -->
                   <Button
                      :variant="isSearch ? 'default' : 'outline'"
-                     class="h-[28px] px-[10px] text-[12px]"
+                     class="h-[32px] px-[10px] text-[14px]"
                      :title="t('general.filter')"
                      :disabled="isQuering"
                      @click="isSearch = !isSearch"
@@ -74,7 +95,7 @@
                   <Button
                      v-if="isTable && !connection.readonly"
                      variant="outline"
-                     class="h-[28px] gap-1.5 px-[10px] text-[12px]"
+                     class="h-[32px] gap-1.5 px-[10px] text-[14px]"
                      :disabled="isQuering"
                      @click="showFakerModal()"
                   >
@@ -87,7 +108,7 @@
                      <DropdownMenuTrigger as-child>
                         <Button
                            variant="outline"
-                           class="h-[28px] gap-1.5 px-[10px] text-[12px]"
+                           class="h-[32px] gap-1.5 px-[10px] text-[14px]"
                            :disabled="isQuering"
                         >
                            <BaseIcon icon-name="mdiFileExport" :size="16" />
@@ -157,14 +178,6 @@
       />
       <div v-show="viewMode === 'data'" class="workspace-query-results p-relative column col-12">
          <BaseLoader v-if="isQuering" />
-         <div v-if="!isQuering && !results[0]?.rows.length" class="empty">
-            <div class="empty-icon">
-               <BaseIcon icon-name="mdiIsland" :size="56" />
-            </div>
-            <p class="h4 empty-subtitle">
-               {{ t('database.noResultsPresent') }}
-            </p>
-         </div>
          <WorkspaceTabQueryTable
             v-if="results"
             ref="queryTable"
@@ -176,11 +189,18 @@
             :is-selected="isSelected"
             mode="table"
             :element-type="elementType"
+            :use-comment-header="useCommentHeader"
             @update-field="updateField"
             @delete-selected="deleteSelected"
             @duplicate-row="showFakerModal"
             @hard-sort="hardSort"
          />
+         <div
+            v-if="!isQuering && !results[0]?.rows.length"
+            class="pointer-events-none absolute inset-x-0 top-[60px] flex justify-center text-[12px] text-muted-foreground"
+         >
+            {{ t('database.noResultsPresent') }}
+         </div>
       </div>
       <WorkspaceTabPropsTable
          v-if="viewMode === 'props'"
@@ -265,6 +285,7 @@ const isPageMenu = ref(false);
 const isSearch = ref(false);
 const results = ref([]);
 const viewMode = ref<'data' | 'props'>('data');
+const useCommentHeader = ref(false);
 const lastTable = ref(null);
 const isFakerModal = ref(false);
 const refreshInterval = ref(null);

@@ -283,6 +283,8 @@
     "fillCell": "填充單元格",
     "executeSelectedQuery": "執行所選查詢",
     "noResultsPresent": "沒有結果",
+    "showColumnComments": "顯示欄位註解",
+    "showColumnNames": "顯示欄位名稱",
     "sqlExportOptions": "SQL 導出選項",
     "targetTable": "目標表",
     "switchDatabase": "切換資料庫",

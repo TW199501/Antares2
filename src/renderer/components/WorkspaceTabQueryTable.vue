@@ -54,7 +54,7 @@
                               :class="`key-${field.key}`"
                            />
                         </div>
-                        <span>{{ field.alias || field.name }}</span>
+                        <span :title="field.alias || field.name">{{ headerLabel(field) }}</span>
                         <BaseIcon
                            v-if="isSortable && currentSort[resultsetIndex]?.field === field.name || currentSort[resultsetIndex]?.field === `${field.tableAlias || field.table}.${field.name}`"
                            :icon-name="currentSort[resultsetIndex].dir === 'asc' ? 'mdiSortAscending' : 'mdiSortDescending'"
@@ -298,7 +298,8 @@ const props = defineProps({
       required: false
    },
    isSelected: Boolean,
-   elementType: { type: String, default: 'table' }
+   elementType: { type: String, default: 'table' },
+   useCommentHeader: { type: Boolean, default: false }
 });
 
 const emit = defineEmits<{
@@ -398,6 +399,14 @@ const filteredFields = computed(() => fields.value.reduce((acc, cur) => {
    return acc;
 }, [] as TableField[]));
 const keyUsage = computed(() => resultsWithRows.value.length ? resultsWithRows.value[resultsetIndex.value].keys : []);
+
+// Column header 顯示策略：useCommentHeader=true 時顯示 DB 欄位註解，沒註解就空白（讓使用者看出 schema 缺口）。
+// 原欄位名透過 <span title=…> 放在 tooltip 保留可操作性。
+function headerLabel (field: TableField): string {
+   if (props.useCommentHeader)
+      return field.comment ?? '';
+   return field.alias || field.name;
+}
 
 const fieldsObj = computed(() => {
    if (sortedResults.value.length) {
