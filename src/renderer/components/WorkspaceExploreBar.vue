@@ -98,7 +98,7 @@
                   ref="searchInput"
                   v-model="searchTerm"
                   type="text"
-                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-[12px] placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
                   :placeholder="t('database.searchForElements')"
                >
                <BaseIcon
@@ -119,7 +119,7 @@
                <input
                   v-model="columnSearchTerm"
                   type="text"
-                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-[12px] placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
                   :placeholder="t('database.searchForColumns')"
                   @keypress.stop=""
                   @keydown.stop=""
