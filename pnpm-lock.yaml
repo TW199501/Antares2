@@ -92,6 +92,9 @@ importers:
       fastify:
         specifier: ^5.8.4
         version: 5.8.4
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
       floating-vue:
         specifier: ^5.2.2
         version: 5.2.2(vue@3.5.32(typescript@6.0.2))
@@ -2301,6 +2304,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
 
   figures@3.2.0:
     resolution: {integrity: sha512-yaduQFRKLXYOGgEn6AZau90j3ggSOyiqXU0F9JZfeXYhNa+Jk4X+s45A2zg5jns87GAFa34BBm2kXw4XpNcbdg==}
@@ -6399,6 +6405,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
+
+  fflate@0.8.2: {}
 
   figures@3.2.0:
     dependencies:

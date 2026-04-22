@@ -59,6 +59,7 @@
     "cpu-features": "^0.0.10",
     "encoding": "^0.1.13",
     "fastify": "^5.8.4",
+    "fflate": "^0.8.2",
     "floating-vue": "^5.2.2",
     "json2php": "^0.0.12",
     "leaflet": "^1.9.4",
