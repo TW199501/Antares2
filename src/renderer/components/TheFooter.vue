@@ -164,7 +164,10 @@ const workspace = computed(() => getWorkspace(workspaceUid.value));
 const accentColor = computed(() => {
    if (getConnectionFolder(workspaceUid.value)?.color)
       return getConnectionFolder(workspaceUid.value).color;
-   return '#E36929';
+   // Brand primary from pencil-new.pen / tailwind.css --primary. Was legacy
+   // Antares orange #E36929 — the old value ignored the design token and
+   // drifted every time the brand color changed.
+   return '#FF5000';
 });
 const connectionInfos = computed(() => getConnectionByUid(workspaceUid.value));
 const version: ComputedRef<DatabaseInfos> = computed(() => {
