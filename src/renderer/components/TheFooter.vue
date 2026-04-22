@@ -251,26 +251,27 @@ changeAccentColor();
       gap: 2px;
       font-size: 12px;
 
-      // Reverse-video of the sidebar tag style (primary-bg + white-text).
-      // Footer is already primary-colored, so the invert = white-bg + primary-
-      // colored text. Matches the visual weight user chose as reference.
+      // Darker-primary chip on the lighter primary footer.
+      // White icon + text shows clearly without inverting the surface
+      // hierarchy. --primary-color-dark is already defined in main.scss
+      // as the brand color mixed with 30% black.
       .footer-pager-btn {
         height: 24px;
         display: inline-flex;
         align-items: center;
         gap: 4px;
         padding: 0 8px;
-        background: #fff;
+        background: var(--primary-color-dark);
         border: 0;
         border-radius: 4px;
-        color: var(--primary-color);
+        color: #fff;
         cursor: pointer;
         font-size: 12px;
         font-weight: 500;
         transition: background 0.15s, opacity 0.15s;
 
         &:hover:not(:disabled) {
-          background: #fff8f3;
+          background: color-mix(in srgb, var(--primary-color), #000 45%);
         }
 
         &:disabled {
@@ -288,9 +289,9 @@ changeAccentColor();
         text-align: center;
         font-weight: 700;
         padding: 0 8px;
-        background: #fff;
+        background: var(--primary-color-dark);
         border-radius: 4px;
-        color: var(--primary-color);
+        color: #fff;
         height: 24px;
         line-height: 24px;
       }

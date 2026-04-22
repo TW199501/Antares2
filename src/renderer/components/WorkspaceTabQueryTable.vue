@@ -36,11 +36,11 @@
       </ul>
       <div ref="table" class="table table-hover">
          <div class="thead">
-            <div class="tr">
+            <div class="tr [&>.th+.th]:!border-l [&>.th+.th]:!border-white/40">
                <div
                   v-for="(field, index) in filteredFields"
                   :key="index"
-                  class="th c-hand"
+                  class="th c-hand !py-[4px] !bg-primary !text-primary-foreground"
                   :title="`${field.type} ${fieldLength(field) ? `(${fieldLength(field)})` : ''}`"
                >
                   <div ref="columnResize" class="column-resizable">
@@ -392,13 +392,21 @@ const sortedResults = computed(() => {
 });
 
 const resultsWithRows = computed(() => props.results.filter(result => result.rows.length));
-const fields = computed(() => resultsWithRows.value.length ? resultsWithRows.value[resultsetIndex.value].fields : []);
+// Headers must show even when the table has 0 rows (schema preview).
+// Falls back to the first un-filtered result so column metadata still renders.
+const fields = computed(() => {
+   const source = resultsWithRows.value[resultsetIndex.value] ?? props.results[0];
+   return source?.fields ?? [];
+});
 const filteredFields = computed(() => fields.value.reduce((acc, cur) => {
    if (acc.findIndex(f => JSON.stringify(f) === JSON.stringify(cur)))
       acc.push(cur);
    return acc;
 }, [] as TableField[]));
-const keyUsage = computed(() => resultsWithRows.value.length ? resultsWithRows.value[resultsetIndex.value].keys : []);
+const keyUsage = computed(() => {
+   const source = resultsWithRows.value[resultsetIndex.value] ?? props.results[0];
+   return source?.keys ?? [];
+});
 
 // Column header 顯示策略：useCommentHeader=true 時顯示 DB 欄位註解，沒註解就空白（讓使用者看出 schema 缺口）。
 // 原欄位名透過 <span title=…> 放在 tooltip 保留可操作性。
