@@ -1,21 +1,21 @@
 <template>
    <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless no-outline p-0">
       <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
+         <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-[14px]">
             <div class="workspace-query-buttons">
                <!-- 資料 / 屬性 切換 -->
                <Tabs v-model="viewMode" class="mr-2">
                   <TabsList class="h-[32px] gap-0 p-[2px]">
                      <TabsTrigger
                         value="data"
-                        class="h-[28px] gap-1 px-[10px] py-0 text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                        class="h-[28px] gap-1 px-[10px] py-0 !text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiTable" :size="14" />
                         {{ t('general.data') }}
                      </TabsTrigger>
                      <TabsTrigger
                         value="props"
-                        class="h-[28px] gap-1 px-[10px] py-0 text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                        class="h-[28px] gap-1 px-[10px] py-0 !text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiWrenchCog" :size="14" />
                         {{ t('general.properties') }}
@@ -27,7 +27,7 @@
                   v-show="viewMode === 'data'"
                   type="button"
                   :class="[
-                     'mr-3 flex h-[32px] w-[32px] items-center justify-center rounded-md text-[14px] font-semibold transition-colors',
+                     'mr-3 flex h-[32px] w-[32px] items-center justify-center rounded-md !text-[14px] font-semibold transition-colors',
                      useCommentHeader
                         ? 'border border-primary bg-primary text-primary-foreground'
                         : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
@@ -38,52 +38,10 @@
                   {{ useCommentHeader ? '中' : 'A' }}
                </button>
                <div v-show="viewMode === 'data'" class="d-flex align-items-center gap-1">
-                  <!-- Page navigation -->
-                  <div class="flex">
-                     <Button
-                        variant="outline"
-                        class="h-[32px] rounded-r-none px-[8px] text-[14px]"
-                        :disabled="isQuering || page === 1"
-                        :title="t('application.previousResultsPage')"
-                        @click="pageChange('prev')"
-                     >
-                        <BaseIcon icon-name="mdiSkipPrevious" :size="16" />
-                     </Button>
-                     <div class="dropdown" :class="{'active': isPageMenu}">
-                        <div @click="openPageMenu">
-                           <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3 text-[14px]" style="height: 32px; border-radius: 0;">
-                              {{ page }}
-                           </div>
-                           <div class="menu px-3">
-                              <span>{{ t('general.pageNumber') }}</span>
-                              <input
-                                 ref="pageSelect"
-                                 v-model="pageProxy"
-                                 type="number"
-                                 min="1"
-                                 class="form-input"
-                                 @blur="setPageNumber"
-                              >
-                           </div>
-                        </div>
-                     </div>
-                     <Button
-                        variant="outline"
-                        class="h-[32px] rounded-l-none px-[8px] text-[14px]"
-                        :disabled="isQuering || (results.length && results[0].rows.length < limit)"
-                        :title="t('application.nextResultsPage')"
-                        @click="pageChange('next')"
-                     >
-                        <BaseIcon icon-name="mdiSkipNext" :size="16" />
-                     </Button>
-                  </div>
-
-                  <div class="divider-vert py-3" />
-
                   <!-- Filter toggle -->
                   <Button
                      :variant="isSearch ? 'default' : 'outline'"
-                     class="h-[32px] px-[10px] text-[14px]"
+                     class="h-[32px] px-[10px] !text-[14px]"
                      :title="t('general.filter')"
                      :disabled="isQuering"
                      @click="isSearch = !isSearch"
@@ -95,20 +53,62 @@
                   <Button
                      v-if="isTable && !connection.readonly"
                      variant="outline"
-                     class="h-[32px] gap-1.5 px-[10px] text-[14px]"
+                     class="h-[32px] gap-1.5 px-[10px] !text-[14px]"
                      :disabled="isQuering"
                      @click="showFakerModal()"
                   >
                      <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
                      <span>{{ t('database.insertRow', 2) }}</span>
                   </Button>
-
-                  <!-- Export dropdown -->
+               </div>
+            </div>
+            <div class="workspace-query-info !gap-0 divide-x divide-border [&>*]:px-[10px] [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
+               <!-- Page navigation -->
+               <div v-show="viewMode === 'data'" class="flex">
+                  <Button
+                     variant="outline"
+                     class="h-[32px] rounded-r-none px-[8px] !text-[14px]"
+                     :disabled="isQuering || page === 1"
+                     :title="t('application.previousResultsPage')"
+                     @click="pageChange('prev')"
+                  >
+                     <BaseIcon icon-name="mdiSkipPrevious" :size="16" />
+                  </Button>
+                  <div class="dropdown" :class="{'active': isPageMenu}">
+                     <div @click="openPageMenu">
+                        <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3 !text-[14px]" style="height: 32px; border-radius: 0;">
+                           {{ page }}
+                        </div>
+                        <div class="menu px-3">
+                           <span>{{ t('general.pageNumber') }}</span>
+                           <input
+                              ref="pageSelect"
+                              v-model="pageProxy"
+                              type="number"
+                              min="1"
+                              class="form-input"
+                              @blur="setPageNumber"
+                           >
+                        </div>
+                     </div>
+                  </div>
+                  <Button
+                     variant="outline"
+                     class="h-[32px] rounded-l-none px-[8px] !text-[14px]"
+                     :disabled="isQuering || (results.length && results[0].rows.length < limit)"
+                     :title="t('application.nextResultsPage')"
+                     @click="pageChange('next')"
+                  >
+                     <BaseIcon icon-name="mdiSkipNext" :size="16" />
+                  </Button>
+               </div>
+               <!-- Export dropdown -->
+               <div v-show="viewMode === 'data'">
                   <DropdownMenu>
                      <DropdownMenuTrigger as-child>
                         <Button
                            variant="outline"
-                           class="h-[32px] gap-1.5 px-[10px] text-[14px]"
+                           class="h-[32px] gap-1.5 px-[10px] !text-[14px]"
                            :disabled="isQuering"
                         >
                            <BaseIcon icon-name="mdiFileExport" :size="16" />
@@ -132,8 +132,6 @@
                      </DropdownMenuContent>
                   </DropdownMenu>
                </div>
-            </div>
-            <div class="workspace-query-info">
                <div
                   v-if="results.length"
                   :title="t('database.queryDuration')"
