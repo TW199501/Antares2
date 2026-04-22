@@ -125,6 +125,12 @@ Shortcuts are handled entirely via DOM `CustomEvent`s — Tauri's global shortcu
 ### Customizations pattern
 When a feature exists for some databases but not others, gate it via the `customizations` object rather than hard-coding client checks in the UI. Access via `workspace.customizations.<feature>` in renderer code, or import `common/customizations/<client>.ts` directly.
 
+### UI spec (read before any UI change)
+
+All UI decisions — padding, height, font-size, color, radius, state persistence — are governed by [docs/ui-spec.md](docs/ui-spec.md). Read it **before** touching any component that affects visuals. It consolidates the existing `tailwind.css` design tokens, component heights/fonts derived from session work, the reverse-video rule for primary surfaces, and the Tailwind-vs-SCSS boundary. Do not invent values ad-hoc.
+
+If `ui-spec.md` doesn't answer your question, the authoritative design file is `pencil-new.pen` at repo root — accessed via the `pencil` MCP server, but it requires the file to be open in Pencil desktop first (ask the user if MCP times out). Never try to `Read`/`Grep` `.pen` files; they're encrypted.
+
 ### UI stack: shadcn-vue + spectre coexistence
 
 As of the shadcn-vue migration (Phase 1), the renderer has **two** UI systems running side-by-side:
