@@ -41,6 +41,56 @@
          </ul>
       </div>
 
+      <div v-if="activePager" class="footer-center-elements">
+         <button
+            type="button"
+            class="footer-pager-btn"
+            :disabled="!activePager.hasPrev"
+            :title="t('application.previousResultsPage')"
+            @click="activePager.onPrev()"
+         >
+            <BaseIcon icon-name="mdiSkipPrevious" :size="18" />
+         </button>
+         <span class="footer-pager-page">{{ activePager.page }}</span>
+         <button
+            type="button"
+            class="footer-pager-btn"
+            :disabled="!activePager.hasNext"
+            :title="t('application.nextResultsPage')"
+            @click="activePager.onNext()"
+         >
+            <BaseIcon icon-name="mdiSkipNext" :size="18" />
+         </button>
+         <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+               <button
+                  type="button"
+                  class="footer-pager-btn footer-pager-export"
+                  :disabled="activePager.isQuering"
+                  :title="t('database.export')"
+               >
+                  <BaseIcon icon-name="mdiFileExport" :size="18" />
+                  <span>{{ t('database.export') }}</span>
+                  <BaseIcon icon-name="mdiMenuDown" :size="14" />
+               </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" side="top">
+               <DropdownMenuItem @select="activePager.onExport('json')">
+                  JSON
+               </DropdownMenuItem>
+               <DropdownMenuItem @select="activePager.onExport('csv')">
+                  CSV
+               </DropdownMenuItem>
+               <DropdownMenuItem @select="activePager.onExport('php')">
+                  {{ t('application.phpArray') }}
+               </DropdownMenuItem>
+               <DropdownMenuItem @select="activePager.onExport('sql')">
+                  SQL INSERT
+               </DropdownMenuItem>
+            </DropdownMenuContent>
+         </DropdownMenu>
+      </div>
+
       <div class="footer-right-elements">
          <ul class="footer-elements">
             <li class="footer-element footer-link" @click="toggleConsole()">
@@ -77,10 +127,12 @@ import { computed, ComputedRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { hexToRGBA } from '@/libs/hexToRgba';
 import { useApplicationStore } from '@/stores/application';
 import { useConnectionsStore } from '@/stores/connections';
 import { useConsoleStore } from '@/stores/console';
+import { useTablePagerStore } from '@/stores/tablePager';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
@@ -95,6 +147,9 @@ interface DatabaseInfos {// TODO: temp
 const applicationStore = useApplicationStore();
 const workspacesStore = useWorkspacesStore();
 const connectionsStore = useConnectionsStore();
+const tablePagerStore = useTablePagerStore();
+
+const { activePager } = storeToRefs(tablePagerStore);
 
 const lightColors = ['#FFCE54', '#FDA50F', '#BEBDB8', '#48CFAD'];
 
@@ -178,6 +233,63 @@ changeAccentColor();
           cursor: pointer;
           transition: background 0.2s;
         }
+      }
+    }
+
+    // Center block: absolutely centered so it stays mid-footer regardless
+    // of how wide the left version string or right console/bug buttons grow.
+    .footer-center-elements {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      height: $footer-height;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 12px;
+
+      // Reverse-video of the sidebar tag style (primary-bg + white-text).
+      // Footer is already primary-colored, so the invert = white-bg + primary-
+      // colored text. Matches the visual weight user chose as reference.
+      .footer-pager-btn {
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 8px;
+        background: #fff;
+        border: 0;
+        border-radius: 4px;
+        color: var(--primary-color);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background 0.15s, opacity 0.15s;
+
+        &:hover:not(:disabled) {
+          background: #fff8f3;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        &.footer-pager-export {
+          margin-left: 8px;
+        }
+      }
+
+      .footer-pager-page {
+        min-width: 28px;
+        text-align: center;
+        font-weight: 700;
+        padding: 0 8px;
+        background: #fff;
+        border-radius: 4px;
+        color: var(--primary-color);
+        height: 24px;
+        line-height: 24px;
       }
     }
   }

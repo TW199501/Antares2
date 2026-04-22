@@ -52,75 +52,6 @@
                </div>
             </div>
             <div class="workspace-query-info !gap-0 divide-x divide-border [&>*]:px-[10px] [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
-               <!-- Page navigation -->
-               <div v-show="viewMode === 'data'" class="flex">
-                  <Button
-                     variant="outline"
-                     class="h-[32px] rounded-r-none px-[8px] !text-[14px]"
-                     :disabled="isQuering || page === 1"
-                     :title="t('application.previousResultsPage')"
-                     @click="pageChange('prev')"
-                  >
-                     <BaseIcon icon-name="mdiSkipPrevious" :size="16" />
-                  </Button>
-                  <div class="dropdown" :class="{'active': isPageMenu}">
-                     <div @click="openPageMenu">
-                        <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3 !text-[14px]" style="height: 32px; border-radius: 0;">
-                           {{ page }}
-                        </div>
-                        <div class="menu px-3">
-                           <span>{{ t('general.pageNumber') }}</span>
-                           <input
-                              ref="pageSelect"
-                              v-model="pageProxy"
-                              type="number"
-                              min="1"
-                              class="form-input"
-                              @blur="setPageNumber"
-                           >
-                        </div>
-                     </div>
-                  </div>
-                  <Button
-                     variant="outline"
-                     class="h-[32px] rounded-l-none px-[8px] !text-[14px]"
-                     :disabled="isQuering || (results.length && results[0].rows.length < limit)"
-                     :title="t('application.nextResultsPage')"
-                     @click="pageChange('next')"
-                  >
-                     <BaseIcon icon-name="mdiSkipNext" :size="16" />
-                  </Button>
-               </div>
-               <!-- Export dropdown -->
-               <div v-show="viewMode === 'data'">
-                  <DropdownMenu>
-                     <DropdownMenuTrigger as-child>
-                        <Button
-                           variant="outline"
-                           class="h-[32px] gap-1.5 px-[10px] !text-[14px]"
-                           :disabled="isQuering"
-                        >
-                           <BaseIcon icon-name="mdiFileExport" :size="16" />
-                           <span>{{ t('database.export') }}</span>
-                           <BaseIcon icon-name="mdiMenuDown" :size="16" />
-                        </Button>
-                     </DropdownMenuTrigger>
-                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem @select="downloadTable('json')">
-                           JSON
-                        </DropdownMenuItem>
-                        <DropdownMenuItem @select="downloadTable('csv')">
-                           CSV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem @select="downloadTable('php')">
-                           {{ t('application.phpArray') }}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem @select="downloadTable('sql')">
-                           SQL INSERT
-                        </DropdownMenuItem>
-                     </DropdownMenuContent>
-                  </DropdownMenu>
-               </div>
                <div
                   v-if="results.length"
                   :title="t('database.queryDuration')"
@@ -230,7 +161,6 @@ import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSplitV from '@/components/BaseSplitV.vue';
 import ModalFakerRows from '@/components/ModalFakerRows.vue';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WorkspaceTabPropsTable from '@/components/WorkspaceTabPropsTable.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
@@ -240,6 +170,7 @@ import { useResultTables } from '@/composables/useResultTables';
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
+import { type ExportFormat, useTablePagerStore } from '@/stores/tablePager';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { localeString } = useFilters();
@@ -269,6 +200,7 @@ const {
 const { addNotification } = useNotificationsStore();
 const settingsStore = useSettingsStore();
 const workspacesStore = useWorkspacesStore();
+const tablePagerStore = useTablePagerStore();
 
 const { dataTabLimit: limit, tableAutoRefreshInterval, tableQueryAreaHeight } = storeToRefs(settingsStore);
 const { setTableQueryAreaHeight } = settingsStore;
@@ -569,11 +501,40 @@ window.addEventListener('antares:open-filter', openFilterListener);
 window.addEventListener('antares:next-page', nextPageListener);
 window.addEventListener('antares:prev-page', prevPageListener);
 
+// Footer pagination + Export bridge.
+// When this tab is the active selection, publish state + handlers into the
+// app-singleton tablePager store so TheFooter can render pagination/export
+// without any prop wiring. Whenever the underlying state changes (page,
+// results, isQuering) we patch the store. We clear on unmount AND when
+// isSelected flips false to avoid stale handlers from background tabs
+// firing into someone else's table.
+function pushPagerState (): void {
+   tablePagerStore.setActivePager({
+      page: page.value,
+      hasNext: !(isQuering.value || (results.value.length && results.value[0].rows.length < limit.value)),
+      hasPrev: !(isQuering.value || page.value === 1),
+      isQuering: isQuering.value,
+      onPrev: () => pageChange('prev'),
+      onNext: () => pageChange('next'),
+      onExport: (format: ExportFormat) => downloadTable(format)
+   });
+}
+
+watch(
+   [() => props.isSelected, () => viewMode.value, page, results, isQuering],
+   () => {
+      if (props.isSelected && viewMode.value === 'data') pushPagerState();
+      else tablePagerStore.clearActivePager();
+   },
+   { immediate: true, deep: true }
+);
+
 onBeforeUnmount(() => {
    clearInterval(refreshInterval.value);
    window.removeEventListener('antares:run-or-reload', reloadListener);
    window.removeEventListener('antares:open-filter', openFilterListener);
    window.removeEventListener('antares:next-page', nextPageListener);
    window.removeEventListener('antares:prev-page', prevPageListener);
+   tablePagerStore.clearActivePager();
 });
 </script>
