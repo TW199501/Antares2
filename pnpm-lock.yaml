@@ -56,9 +56,9 @@ importers:
       '@turf/helpers':
         specifier: ^7.3.4
         version: 7.3.4
-      '@tw199501/specsnap-core':
-        specifier: ^0.0.2
-        version: 0.0.2
+      '@tw199501/specsnap-inspector-vue':
+        specifier: ^0.0.9
+        version: 0.0.9(vue@3.5.32(typescript@6.0.2))
       '@vue/compiler-sfc':
         specifier: ^3.5.32
         version: 3.5.32
@@ -1340,8 +1340,16 @@ packages:
   '@turf/helpers@7.3.4':
     resolution: {integrity: sha512-U/S5qyqgx3WTvg4twaH0WxF3EixoTCfDsmk98g1E3/5e2YKp7JKYZdz0vivsS5/UZLJeZDEElOSFH4pUgp+l7g==}
 
-  '@tw199501/specsnap-core@0.0.2':
-    resolution: {integrity: sha512-Mtku14Dc7wDQqazBDvFXz9HRRYsdR2hVD2i6IheGlYs9wqvj1JYuo5k5TQSz7x1YtaU0HFqBkIYIw/mrwyV1Vw==}
+  '@tw199501/specsnap-core@0.0.9':
+    resolution: {integrity: sha512-Eutee+8Pp2+AMvQH6pcPKet/4Vy/wFmbRdrrWNdWfWPUtVGku11YRastVkvCG96a190w5Rh7KkBvdB56TPPcGg==}
+
+  '@tw199501/specsnap-inspector-core@0.0.9':
+    resolution: {integrity: sha512-CUqt7+wGACUpzQhEGJeLgqioTb6rv6P5KbmQh00yeYvEAL6x0bUqn4/ch3avEExTbrB+KzVNFSfJLt+OHQrrvw==}
+
+  '@tw199501/specsnap-inspector-vue@0.0.9':
+    resolution: {integrity: sha512-EH8GwdE9AnaSzrOWKaNGEsxzsczHLu83LaQoruKokYif4CkyKc1OMfwjfKqicePCrmIsSs/nZY7UQGWT/4Hgig==}
+    peerDependencies:
+      vue: '>=3.3'
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -2002,6 +2010,9 @@ packages:
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
+
+  dom-to-image-more@3.7.2:
+    resolution: {integrity: sha512-uQf+pHv6eQhgfI8t2bFuinV0KsPyT8TZgCLwcSU8uBVgN9v6leb0mMpvp6HQAlAcplP3NCcGjxbdqef6pTzvmw==}
 
   domelementtype@2.3.0:
     resolution: {integrity: sha512-OLETBj6w0OsagBwdXnPdN0cnMfF9opN69co+7ZrbfPGrdpPVNBUj02spi6B1N7wChLQiPn4CSH/zJvXw56gmHw==}
@@ -5168,7 +5179,18 @@ snapshots:
       '@types/geojson': 7946.0.16
       tslib: 2.8.1
 
-  '@tw199501/specsnap-core@0.0.2': {}
+  '@tw199501/specsnap-core@0.0.9':
+    dependencies:
+      dom-to-image-more: 3.7.2
+
+  '@tw199501/specsnap-inspector-core@0.0.9':
+    dependencies:
+      '@tw199501/specsnap-core': 0.0.9
+
+  '@tw199501/specsnap-inspector-vue@0.0.9(vue@3.5.32(typescript@6.0.2))':
+    dependencies:
+      '@tw199501/specsnap-inspector-core': 0.0.9
+      vue: 3.5.32(typescript@6.0.2)
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -5910,6 +5932,8 @@ snapshots:
       domelementtype: 2.3.0
       domhandler: 5.0.3
       entities: 4.5.0
+
+  dom-to-image-more@3.7.2: {}
 
   domelementtype@2.3.0: {}
 

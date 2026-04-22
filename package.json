@@ -47,7 +47,7 @@
     "@tauri-apps/plugin-updater": "^2.10.1",
     "@tauri-apps/plugin-window-state": "^2.4.1",
     "@turf/helpers": "^7.3.4",
-    "@tw199501/specsnap-core": "^0.0.2",
+    "@tw199501/specsnap-inspector-vue": "^0.0.9",
     "@vue/compiler-sfc": "^3.5.32",
     "@vueuse/core": "^14.2.1",
     "ace-builds": "^1.43.6",
