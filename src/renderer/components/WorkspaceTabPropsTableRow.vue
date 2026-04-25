@@ -2,13 +2,13 @@
    <div class="tr" @contextmenu.prevent="!editingField ? emit('contextmenu', $event, localRow._antares_id) : null">
       <!-- 排序 -->
       <div class="td p-0 text-center" tabindex="0">
-         <span class="cell-content text-center">{{ localRow.order }}</span>
+         <span class="cell-content text-center text-[14px]">{{ localRow.order }}</span>
       </div>
       <!-- 字段名 -->
       <div class="td p-0" tabindex="0">
          <span
             v-if="!isInlineEditor.name"
-            class="cell-content"
+            class="cell-content text-[14px]"
             @dblclick="editON($event, localRow.name, 'name')"
          >
             {{ localRow.name }}
@@ -19,15 +19,15 @@
             v-model="editingContent"
             type="text"
             autofocus
-            class="editable-field form-input input-sm px-1"
+            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @blur="editOFF"
          >
       </div>
       <!-- 数据类型 -->
-      <div class="td p-0 text-uppercase" tabindex="0">
+      <div class="td p-0 text-uppercase [&_.form-select]:!h-[28px] [&_.form-select]:!text-[14px]" tabindex="0">
          <span
             v-if="!isInlineEditor.type"
-            class="cell-content text-left"
+            class="cell-content text-left text-[14px]"
             :class="typeClass(localRow.type)"
             @dblclick="editON($event, localRow.type.toUpperCase(), 'type')"
          >
@@ -49,8 +49,8 @@
       <!-- 主键 PK (read-only chip) -->
       <div class="td p-0 text-center" tabindex="0">
          <span
-            class="field-chip"
-            :class="isPrimaryKey ? 'chip-key-primary' : 'chip-inactive'"
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium"
+            :class="isPrimaryKey ? 'bg-blue-100 text-blue-700' : 'bg-orange-50 text-orange-600'"
          >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
       </div>
       <!-- 自增 AI (toggle chip, conditional) -->
@@ -60,8 +60,11 @@
          tabindex="0"
       >
          <span
-            class="field-chip field-chip-toggle"
-            :class="[localRow.autoIncrement ? 'chip-active' : 'chip-inactive', !canAutoincrement ? 'chip-disabled' : '']"
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium select-none transition-colors"
+            :class="[
+               localRow.autoIncrement ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600',
+               !canAutoincrement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            ]"
             @click="canAutoincrement && toggleAutoIncrement()"
          >{{ localRow.autoIncrement ? t('general.yes') : t('general.no') }}</span>
       </div>
@@ -72,8 +75,11 @@
          tabindex="0"
       >
          <span
-            class="field-chip field-chip-toggle"
-            :class="[localRow.nullable ? 'chip-null-active' : 'chip-null-inactive', !isNullable ? 'chip-disabled' : '']"
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium select-none transition-colors"
+            :class="[
+               localRow.nullable ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600',
+               !isNullable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            ]"
             @click="isNullable && (localRow.nullable = !localRow.nullable)"
          >{{ localRow.nullable ? t('general.yes') : t('general.no') }}</span>
       </div>
@@ -81,8 +87,8 @@
       <div class="td p-0 type-int text-center" tabindex="0">
          <span
             v-if="!isInlineEditor.length"
-            class="cell-content text-center"
-            :class="!fieldType?.length ? 'cell-readonly' : ''"
+            class="cell-content text-center text-[14px]"
+            :class="!fieldType?.length ? 'cell-readonly text-muted-foreground cursor-not-allowed' : ''"
             @dblclick="fieldType?.length ? editON($event, localLength, 'length') : null"
          >{{ localRow.enumValues || localLength || '-' }}</span>
          <template v-if="fieldType?.length && isInlineEditor.length">
@@ -92,7 +98,7 @@
                v-model="editingContent"
                type="text"
                autofocus
-               class="editable-field form-input input-sm px-1"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
             <input
@@ -101,7 +107,7 @@
                v-model="editingContent"
                type="number"
                autofocus
-               class="editable-field form-input input-sm px-1"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
          </template>
@@ -111,7 +117,7 @@
          <template v-if="fieldType?.scale">
             <span
                v-if="!isInlineEditor.numScale"
-               class="cell-content text-center"
+               class="cell-content text-center text-[14px]"
                @dblclick="editON($event, localRow.numScale, 'numScale')"
             >{{ localRow.numScale }}</span>
             <input
@@ -120,31 +126,31 @@
                v-model="editingContent"
                type="number"
                autofocus
-               class="editable-field form-input input-sm px-1"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
          </template>
       </div>
       <!-- FK / UQ (read-only chips) -->
       <div class="td p-0 text-center" tabindex="0">
-         <div class="field-fkuq-chips">
+         <div class="flex flex-wrap gap-[2px] justify-center px-[0.2rem] py-[2px]">
             <span
                v-for="(idx, i) in uqIndexes"
                :key="`uq-${i}`"
                :title="idx.type"
-               class="field-chip chip-key-unique"
+               class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-700"
             >UQ</span>
             <span
                v-for="foreign in foreigns"
                :key="foreign"
                :title="foreign"
-               class="field-chip chip-key-fk"
+               class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium bg-orange-100 text-orange-700"
             >FK</span>
          </div>
       </div>
       <!-- 默认值 -->
       <div class="td p-0" tabindex="0">
-         <span class="cell-content" @dblclick="editON($event, localRow.default, 'default')">
+         <span class="cell-content text-[14px]" @dblclick="editON($event, localRow.default, 'default')">
             {{ fieldDefault }}
          </span>
       </div>
@@ -156,7 +162,7 @@
       >
          <span
             v-if="!isInlineEditor.comment"
-            class="cell-content"
+            class="cell-content text-[14px]"
             @dblclick="editON($event, localRow.comment, 'comment')"
          >
             {{ localRow.comment }}
@@ -167,20 +173,20 @@
             v-model="editingContent"
             type="text"
             autofocus
-            class="editable-field form-input input-sm px-1"
+            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @blur="editOFF"
          >
       </div>
       <!-- 排序規則 (collation, conditional) -->
       <div
          v-if="customizations.collation"
-         class="td p-0"
+         class="td p-0 [&_.form-select]:!h-[28px] [&_.form-select]:!text-[14px]"
          tabindex="0"
       >
          <template v-if="fieldType.collation">
             <span
                v-if="!isInlineEditor.collation"
-               class="cell-content"
+               class="cell-content text-[14px]"
                @dblclick="editON($event, localRow.collation, 'collation')"
             >
                {{ localRow.collation }}
@@ -201,34 +207,42 @@
       <!-- 操作 -->
       <div class="td p-0 td-ops" tabindex="0">
          <div class="ops-btns">
-            <button
-               class="btn btn-link btn-sm op-btn"
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100"
                :title="t('general.moveUp')"
                @click.stop="emit('move-up', localRow._antares_id)"
             >
                <BaseIcon icon-name="mdiArrowUp" :size="14" />
-            </button>
-            <button
-               class="btn btn-link btn-sm op-btn"
+            </Button>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100"
                :title="t('general.moveDown')"
                @click.stop="emit('move-down', localRow._antares_id)"
             >
                <BaseIcon icon-name="mdiArrowDown" :size="14" />
-            </button>
-            <button
-               class="btn btn-link btn-sm op-btn op-btn-edit"
+            </Button>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100 hover:!text-[#4a9eff]"
                :title="t('database.editField')"
                @click.stop="isEditModal = true"
             >
                <BaseIcon icon-name="mdiPencilOutline" :size="14" />
-            </button>
-            <button
-               class="btn btn-link btn-sm op-btn op-btn-delete"
+            </Button>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100 hover:!text-[#e85600]"
                :title="t('general.delete')"
                @click.stop="emit('remove-field-row', localRow._antares_id)"
             >
                <BaseIcon icon-name="mdiDeleteOutline" :size="14" />
-            </button>
+            </Button>
          </div>
       </div>
       <EditModal
@@ -360,6 +374,7 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
 import EditModal from '@/components/WorkspaceTabPropsTableEditModal.vue';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
@@ -627,17 +642,14 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// Inline-edit input overlays the cell while editing.
+// Visual styling (height/font/border/radius) now lives on the element via Tailwind utilities.
 .editable-field {
-  margin: 0;
-  border: none;
-  line-height: 1;
-  width: 100%;
   position: absolute;
   left: 0;
   right: 0;
-  max-height: 21px;
-  border-radius: 3px;
-  font-size: 0.7rem;
+  margin: 0;
+  width: 100%;
 }
 
 .td-ops {
@@ -659,21 +671,6 @@ onMounted(() => {
   }
 }
 
-.op-btn {
-  padding: 0 3px;
-  min-height: 0;
-  height: 20px;
-  line-height: 1;
-  opacity: 0.55;
-
-  &:hover {
-    opacity: 1;
-  }
-
-  &.op-btn-edit:hover { color: #4a9eff; }
-  &.op-btn-delete:hover { color: #e85600; }
-}
-
 .cell-readonly {
   opacity: 0.5;
   cursor: default;
@@ -693,23 +690,6 @@ onMounted(() => {
   }
 }
 
-.table-column-title {
-  display: flex;
-  align-items: center;
-}
-
-.form-checkbox {
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-  min-height: auto;
-
-  .form-icon {
-    top: -0.65rem;
-    left: calc(50% - 8px);
-  }
-}
-
 .cell-content {
   display: block;
   padding: 0 0.2rem;
@@ -717,54 +697,5 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-}
-
-.field-key-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 2px 0.2rem 2px;
-}
-
-.field-chip {
-  display: inline-block;
-  padding: 0 4px;
-  border-radius: 3px;
-  font-size: 0.58rem;
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
-
-  &.chip-key-primary   { background: rgba(74, 158, 255, 0.18); color: #4a9eff; border: 1px solid rgba(74, 158, 255, 0.4); }
-  &.chip-key-unique    { background: rgba(50, 182, 67, 0.18);  color: #32b643; border: 1px solid rgba(50, 182, 67, 0.4); }
-  &.chip-key-index,
-  &.chip-key-key       { background: rgba(224, 164, 12, 0.18); color: #e0a40c; border: 1px solid rgba(224, 164, 12, 0.4); }
-  &.chip-key-fk        { background: rgba(155, 89, 182, 0.18); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.4); }
-  &.chip-null-active   { background: rgba(50, 182, 67, 0.18);  color: #32b643; border: 1px solid rgba(50, 182, 67, 0.4); }
-  &.chip-null-inactive,
-  &.chip-inactive      { background: rgba(232, 86, 0, 0.12); color: rgba(232, 86, 0, 0.75); border: 1px solid rgba(232, 86, 0, 0.3); }
-  &.chip-active        { background: rgba(227, 105, 41, 0.18); color: #e36929; border: 1px solid rgba(227, 105, 41, 0.4); }
-
-  &.field-chip-toggle {
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s, color 0.15s;
-
-    &.chip-disabled {
-      cursor: not-allowed;
-    }
-
-    &:hover:not(.chip-disabled) {
-      filter: brightness(1.2);
-    }
-  }
-}
-
-.field-fkuq-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  justify-content: center;
-  padding: 2px 0.2rem;
 }
 </style>

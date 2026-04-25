@@ -2,183 +2,157 @@
    <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
       <div class="workspace-query-runner column col-12">
          <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons">
-               <button
-                  class="btn btn-primary btn-sm"
+            <div class="workspace-query-buttons flex items-center gap-2">
+               <Button
+                  variant="default"
+                  size="sm"
                   :disabled="!isChanged"
-                  :class="{'loading':isSaving}"
+                  :class="['h-[32px] !text-[14px] gap-1', { 'loading': isSaving }]"
                   @click="saveChanges"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiContentSave"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiContentSave" :size="16" />
                   <span>{{ t('general.save') }}</span>
-               </button>
-               <button
+               </Button>
+               <Button
+                  variant="outline"
+                  size="sm"
                   :disabled="!isChanged || isSaving"
-                  class="btn btn-link btn-sm mr-0"
+                  class="h-[32px] !text-[14px] gap-1"
                   :title="t('database.clearChanges')"
                   @click="clearChanges"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiDeleteSweep"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiDeleteSweep" :size="16" />
                   <span>{{ t('general.clear') }}</span>
-               </button>
+               </Button>
 
-               <div class="divider-vert py-3" />
+               <div class="mx-1 h-[20px] w-px bg-border" />
 
-               <button
+               <Button
+                  variant="secondary"
+                  size="sm"
                   :disabled="isSaving"
-                  class="btn btn-dark btn-sm"
+                  class="h-[32px] !text-[14px] gap-1"
                   :title="t('database.addNewField')"
                   @click="addField"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiPlaylistPlus"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
                   <span>{{ t('general.add') }}</span>
-               </button>
-               <button
+               </Button>
+               <Button
+                  variant="secondary"
+                  size="sm"
                   :disabled="isSaving"
-                  class="btn btn-dark btn-sm"
+                  class="h-[32px] !text-[14px] gap-1"
                   :title="t('database.manageIndexes')"
                   @click="showIntdexesModal"
                >
                   <BaseIcon
-                     class="mr-1"
                      icon-name="mdiKey"
                      :rotate="45"
-                     :size="24"
+                     :size="16"
                   />
                   <span>{{ t('database.indexes') }}</span>
-               </button>
-               <button
-                  class="btn btn-dark btn-sm mr-0"
+               </Button>
+               <Button
+                  variant="secondary"
+                  size="sm"
                   :disabled="isSaving"
+                  class="h-[32px] !text-[14px] gap-1"
                   :title="t('database.manageForeignKeys')"
                   @click="showForeignModal"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiKeyLink"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiKeyLink" :size="16" />
                   <span>{{ t('database.foreignKeys') }}</span>
-               </button>
-               <button
+               </Button>
+               <Button
                   v-if="workspace.customizations.tableCheck && originalTableChecks !== false"
-                  class="btn btn-dark btn-sm ml-2 mr-0"
+                  variant="secondary"
+                  size="sm"
                   :disabled="isSaving"
+                  class="h-[32px] !text-[14px] gap-1"
                   :title="t('database.manageTableChecks')"
                   @click="showTableChecksModal"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiTableCheck"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiTableCheck" :size="16" />
                   <span>{{ t('database.tableChecks') }}</span>
-               </button>
+               </Button>
 
-               <div class="divider-vert py-3" />
+               <div class="mx-1 h-[20px] w-px bg-border" />
 
-               <button
+               <Button
                   v-if="workspace.customizations.tableDdl"
-                  class="btn btn-dark btn-sm"
+                  variant="secondary"
+                  size="sm"
                   :disabled="isSaving"
+                  class="h-[32px] !text-[14px] gap-1"
                   @click="showDdlModal"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiCodeTags"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiCodeTags" :size="16" />
                   <span>{{ t('database.ddl') }}</span>
-               </button>
+               </Button>
             </div>
-            <div class="workspace-query-info">
-               <div class="d-flex" :title="t('database.schema')">
-                  <BaseIcon
-                     class="mt-1 mr-1"
-                     icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
+            <div class="workspace-query-info ml-auto flex items-center gap-1 text-[13px] text-muted-foreground">
+               <div class="flex items-center gap-1" :title="t('database.schema')">
+                  <BaseIcon icon-name="mdiDatabase" :size="16" /><b>{{ schema }}</b>
                </div>
             </div>
          </div>
       </div>
-      <div class="container">
-         <div class="columns mb-4">
-            <div class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('general.name') }}</label>
-                  <input
-                     v-model="localOptions.name"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
+      <div class="px-4 pt-2 pb-3">
+         <div class="flex flex-wrap items-end gap-3 mb-3">
+            <div class="flex flex-col gap-1">
+               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">{{ t('general.name') }}</Label>
+               <Input
+                  v-model="localOptions.name"
+                  type="text"
+                  class="!h-[32px] !text-[14px]"
+               />
             </div>
-            <div v-if="workspace.customizations.comment" class="column">
-               <div class="form-group">
-                  <label class="form-label">{{ t('database.comment') }}</label>
-                  <input
-                     v-model="localOptions.comment"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
+            <div v-if="workspace.customizations.comment" class="flex flex-col gap-1 flex-1 min-w-[240px]">
+               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">{{ t('database.comment') }}</Label>
+               <Input
+                  v-model="localOptions.comment"
+                  type="text"
+                  class="!h-[32px] !text-[14px]"
+               />
             </div>
 
-            <div v-if="workspace.customizations.autoIncrement" class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">
-                     {{ t('database.autoIncrement') }}
-                  </label>
-                  <input
-                     ref="firstInput"
-                     v-model="localOptions.autoIncrement"
-                     class="form-input"
-                     type="number"
-                     :disabled="localOptions.autoIncrement === null"
-                  >
-               </div>
+            <div v-if="workspace.customizations.autoIncrement" class="flex flex-col gap-1">
+               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.autoIncrement') }}
+               </Label>
+               <Input
+                  ref="firstInput"
+                  v-model="localOptions.autoIncrement"
+                  type="number"
+                  :disabled="localOptions.autoIncrement === null"
+                  class="!h-[32px] !text-[14px]"
+               />
             </div>
-            <div v-if="workspace.customizations.collations" class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">
-                     {{ t('database.collation') }}
-                  </label>
-                  <BaseSelect
-                     v-model="localOptions.collation"
-                     :options="workspace.collations"
-                     :max-visible-options="1000"
-                     option-label="collation"
-                     option-track-by="collation"
-                     class="form-select"
-                  />
-               </div>
+            <div v-if="workspace.customizations.collations" class="flex flex-col gap-1">
+               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.collation') }}
+               </Label>
+               <BaseSelect
+                  v-model="localOptions.collation"
+                  :options="workspace.collations"
+                  :max-visible-options="1000"
+                  option-label="collation"
+                  option-track-by="collation"
+                  class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+               />
             </div>
-            <div v-if="workspace.customizations.engines" class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">
-                     {{ t('database.engine') }}
-                  </label>
-                  <BaseSelect
-                     v-model="localOptions.engine"
-                     class="form-select"
-                     :options="workspace.engines"
-                     option-label="name"
-                     option-track-by="name"
-                  />
-               </div>
+            <div v-if="workspace.customizations.engines" class="flex flex-col gap-1">
+               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.engine') }}
+               </Label>
+               <BaseSelect
+                  v-model="localOptions.engine"
+                  class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                  :options="workspace.engines"
+                  option-label="name"
+                  option-track-by="name"
+               />
             </div>
          </div>
       </div>
@@ -253,6 +227,9 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import WorkspaceTabPropsTableChecksModal from '@/components/WorkspaceTabPropsTableChecksModal.vue';
 import WorkspaceTabPropsTableDdlModal from '@/components/WorkspaceTabPropsTableDdlModal.vue';
 import WorkspaceTabPropsTableFields from '@/components/WorkspaceTabPropsTableFields.vue';

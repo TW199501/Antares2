@@ -26,71 +26,71 @@
                </div>
                <div class="th">
                   <div class="column-resizable min-120">
-                     <div class="table-column-title">
+                     <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.fieldName') }}
                      </div>
                   </div>
                </div>
                <div class="th">
                   <div class="column-resizable min-100">
-                     <div class="table-column-title">
+                     <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.type') }}
                      </div>
                   </div>
                </div>
                <div class="th th-chip">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.primaryKey') }}
                   </div>
                </div>
                <div v-if="customizations.autoIncrement" class="th th-chip">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.autoIncrement') }}
                   </div>
                </div>
                <div v-if="customizations.nullable" class="th th-chip">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.allowNull') }}
                   </div>
                </div>
                <div class="th th-num">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.length') }}
                   </div>
                </div>
                <div class="th th-scale">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.precision') }}
                   </div>
                </div>
                <div class="th th-chip2">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      FK / UQ
                   </div>
                </div>
                <div class="th">
                   <div class="column-resizable">
-                     <div class="table-column-title">
+                     <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.default') }}
                      </div>
                   </div>
                </div>
                <div v-if="customizations.comment" class="th">
                   <div class="column-resizable">
-                     <div class="table-column-title">
+                     <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.comment') }}
                      </div>
                   </div>
                </div>
                <div v-if="customizations.collation" class="th">
                   <div class="column-resizable min-100">
-                     <div class="table-column-title">
+                     <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.collation') }}
                      </div>
                   </div>
                </div>
                <div class="th th-ops">
-                  <div class="table-column-title">
+                  <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('general.actions') }}
                   </div>
                </div>
