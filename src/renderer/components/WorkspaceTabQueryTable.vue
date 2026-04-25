@@ -36,11 +36,11 @@
       </ul>
       <div ref="table" class="table table-hover">
          <div class="thead">
-            <div class="tr [&>.th+.th]:!border-l [&>.th+.th]:!border-white/40">
+            <div class="tr [&>.th]:!border-l [&>.th]:!border-white/40">
                <div
                   v-for="(field, index) in filteredFields"
                   :key="index"
-                  class="th c-hand !py-[4px] !bg-primary !text-primary-foreground"
+                  class="th c-hand !h-[32px] !py-0 !align-middle !bg-primary !text-primary-foreground"
                   :title="`${field.type} ${fieldLength(field) ? `(${fieldLength(field)})` : ''}`"
                >
                   <div ref="columnResize" class="column-resizable">
@@ -398,8 +398,12 @@ const fields = computed(() => {
    const source = resultsWithRows.value[resultsetIndex.value] ?? props.results[0];
    return source?.fields ?? [];
 });
+// Dedupe by deep-equality (JSON string) — prevents duplicate column headers
+// from JOIN queries that return the same field from aliased tables. Previous
+// code used `if (findIndex(...))` which is inverted: `0` is falsy so the
+// first match was silently excluded and higher indices re-pushed duplicates.
 const filteredFields = computed(() => fields.value.reduce((acc, cur) => {
-   if (acc.findIndex(f => JSON.stringify(f) === JSON.stringify(cur)))
+   if (acc.findIndex(f => JSON.stringify(f) === JSON.stringify(cur)) === -1)
       acc.push(cur);
    return acc;
 }, [] as TableField[]));
@@ -505,21 +509,28 @@ const setLocalResults = () => {
 };
 
 const resizeResults = () => {
-   if (resultTable.value && props.isSelected) {
-      const el = tableWrapper.value;
+   if (!props.isSelected) return;
 
-      if (el) {
-         let sizeToSubtract = 0;
-         const footer = document.getElementById('footer');
-         if (footer) sizeToSubtract += footer.offsetHeight;
+   // Height must be computed regardless of BaseVirtualScroll being mounted:
+   // when the table has 0 rows, <BaseVirtualScroll v-if> stays unmounted
+   // (see template), so gating the whole body on `resultTable.value` would
+   // leave the wrapper at height 0 and clip the header row. See e2e/
+   // mssql-empty-table-header.spec.ts for the regression this guards.
+   const el = tableWrapper.value;
+   if (el) {
+      let sizeToSubtract = 0;
+      const footer = document.getElementById('footer');
+      if (footer) sizeToSubtract += footer.offsetHeight;
 
-         sizeToSubtract += consoleHeight.value;
+      sizeToSubtract += consoleHeight.value;
 
-         const size = window.innerHeight - el.getBoundingClientRect().top - sizeToSubtract;
-         resultsSize.value = size;
-      }
-      resultTable.value.updateWindow();
+      const size = window.innerHeight - el.getBoundingClientRect().top - sizeToSubtract;
+      resultsSize.value = size;
    }
+
+   // updateWindow only makes sense when the virtual scroller is actually
+   // in the DOM (i.e. there are rows to virtualize).
+   resultTable.value?.updateWindow();
 };
 
 const refreshScroller = () => resizeResults();
@@ -1079,9 +1090,15 @@ onUpdated(() => {
    });
 });
 
-onMounted(() => {
+onMounted(async () => {
    window.addEventListener('resize', resizeResults);
    window.addEventListener('keydown', onKey);
+
+   // Size the wrapper once on mount so the header is visible even when the
+   // first opened table has 0 rows (BaseVirtualScroll would never mount
+   // in that case, so onUpdated-driven sizing cannot rescue us alone).
+   await nextTick();
+   resizeResults();
 });
 
 onUnmounted(() => {
