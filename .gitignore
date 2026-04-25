@@ -25,3 +25,6 @@ skills-lock.json
 antares-fixed-*.png
 antares-initial.png
 verify-*.png
+debug-*.png
+current-snap.yml
+e2e-results/
