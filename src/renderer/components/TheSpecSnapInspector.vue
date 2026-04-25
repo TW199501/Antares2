@@ -42,6 +42,11 @@ function attachDrag (panel: HTMLElement): void {
    panel.style.bottom = 'auto';
    panel.style.top = `${rect.top}px`;
    panel.style.left = `${rect.left}px`;
+   // reka-ui 的 Dialog (shadcn-vue) 開啟時會把 document.body.style.pointerEvents
+   // 設成 "none"，導致 Teleport 到 body 的 SpecSnap panel 連帶失去點擊能力。
+   // 這裡強制在 panel 節點上覆寫回 auto，讓使用者在 Modal 開著時仍能操作 inspector
+   // (Start Inspect / Copy MD / Clear / Close 等按鈕)。
+   panel.style.pointerEvents = 'auto';
    header.style.cursor = 'move';
    header.style.userSelect = 'none';
 
