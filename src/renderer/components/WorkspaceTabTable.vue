@@ -43,15 +43,41 @@
                      v-if="isTable && !connection.readonly"
                      variant="outline"
                      class="h-[32px] gap-1.5 px-[10px] !text-[14px]"
-                     :disabled="isQuering"
+                     :disabled="isQuering || isSystemSchema"
+                     :title="isSystemSchema ? t('application.systemSchemaReadonly') : ''"
                      @click="showFakerModal()"
                   >
                      <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
-                     <span>{{ t('database.insertRow', 2) }}</span>
+                     <span>{{ t('general.add') }}</span>
                   </Button>
                </div>
             </div>
             <div class="workspace-query-info !gap-0 divide-x divide-border [&>*]:px-[10px] [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
+               <div v-if="tableInfo" :title="t('general.name')">
+                  <BaseIcon icon-name="mdiTableOfContents" :size="14" />
+                  <b>{{ tableInfo.name }}</b>
+               </div>
+               <div
+                  v-if="tableInfo?.comment"
+                  class="max-w-[240px] truncate text-muted-foreground"
+                  :title="tableInfo.comment"
+               >
+                  <span>{{ tableInfo.comment }}</span>
+               </div>
+               <div
+                  v-if="tableInfo?.autoIncrement"
+                  :title="t('database.autoIncrement')"
+               >
+                  <BaseIcon icon-name="mdiNumeric" :size="14" />
+                  <span>{{ tableInfo.autoIncrement }}</span>
+               </div>
+               <div
+                  v-if="tableInfo?.collation"
+                  :title="t('database.collation')"
+               >
+                  <BaseIcon icon-name="mdiSortAlphabeticalAscending" :size="14" />
+                  <span>{{ tableInfo.collation }}</span>
+               </div>
                <div
                   v-if="results.length"
                   :title="t('database.queryDuration')"
@@ -234,6 +260,24 @@ const customizations = computed(() => {
 
 const isTable = computed(() => {
    return props.elementType === 'table';
+});
+
+// Reserved / system databases (e.g. SQL Server master, msdb, tempdb, model;
+// MySQL mysql / information_schema / ...). Insert UI is blocked on these to
+// prevent accidental schema pollution. Matches case-insensitively because
+// SQL Server collations are commonly CI by default.
+const isSystemSchema = computed(() => {
+   const list = workspace.value.customizations?.systemSchemas ?? [];
+   if (!props.schema || list.length === 0) return false;
+   const needle = props.schema.toLowerCase();
+   return list.some(name => name.toLowerCase() === needle);
+});
+
+// Read-only table metadata shown in the info bar: table name, comment,
+// autoIncrement value, collation. Source: workspace's structure cache.
+const tableInfo = computed(() => {
+   const db = workspace.value.structure?.find((d: { name: string }) => d.name === props.schema);
+   return db?.tables?.find((t: { name: string }) => t.name === props.table);
 });
 
 const fields = computed(() => {
@@ -445,14 +489,20 @@ const openTableSettingTab = () => {
    });
 };
 
+// NOTE: lastTable is intentionally NOT set here — getTableData() updates it
+// at line ~287 only when it actually runs. If we pre-set it synchronously
+// and the fetch early-returns (e.g. !isSelected at the moment the watcher
+// fires), the isSelected watcher below loses its ability to recover via
+// `if (lastTable.value !== props.table) getTableData()`. Symptom: first
+// table opened shows no column headers until user clicks to another table
+// and back.
 watch(() => props.schema, () => {
    if (props.isSelected) {
       page.value = 1;
       approximateCount.value = 0;
       sortParams.value = {} as { field: string; dir: 'asc' | 'desc'};
       getTableData();
-      lastTable.value = props.table;
-      queryTable.value.resetSort();
+      queryTable.value?.resetSort();
    }
 });
 
@@ -465,8 +515,7 @@ watch(() => props.table, () => {
       approximateCount.value = 0;
       sortParams.value = {} as { field: string; dir: 'asc' | 'desc'};
       getTableData();
-      lastTable.value = props.table;
-      queryTable.value.resetSort();
+      queryTable.value?.resetSort();
    }
 });
 

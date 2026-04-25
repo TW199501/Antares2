@@ -286,6 +286,7 @@
     "noResultsPresent": "沒有結果",
     "showColumnComments": "顯示欄位註解",
     "showColumnNames": "顯示欄位名稱",
+    "systemSchemaReadonly": "系統資料庫不可新增資料",
     "queryAreaPlaceholder": "查詢區 — 自訂查詢 UI 待實作",
     "sqlExportOptions": "SQL 導出選項",
     "targetTable": "目標表",

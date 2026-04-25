@@ -294,6 +294,7 @@
     "noResultsPresent": "No results present",
     "showColumnComments": "Show column comments",
     "showColumnNames": "Show column names",
+    "systemSchemaReadonly": "System databases cannot accept new rows",
     "queryAreaPlaceholder": "Query area — custom UI coming soon",
     "sqlExportOptions": "SQL export options",
     "targetTable": "Target table",
