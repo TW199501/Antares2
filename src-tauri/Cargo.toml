@@ -25,3 +25,9 @@ tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# sidecar.rs uses libc::kill on macOS/Linux to terminate the Node child process.
+# Windows uses taskkill (no crate needed). Scoping to cfg(unix) keeps Windows
+# builds from pulling libc.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
