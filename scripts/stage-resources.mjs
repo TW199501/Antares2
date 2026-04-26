@@ -14,7 +14,7 @@
  * directory-to-directory mappings (no globs) so Tauri copies them intact.
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,7 +59,12 @@ copyFile('sidecar/antares-server.cjs', 'sidecar/antares-server.cjs');
 
 copyDir('workers', 'workers');
 
-const packages = [
+// Seed: packages required at sidecar runtime that are externalized from the
+// esbuild bundle (native addons, dynamic __dirname requires, or bindings-based
+// loads). We then walk their `dependencies` graphs to capture transitive deps
+// hoisted to top-level node_modules by pnpm — without this walk, runtime hits
+// `Cannot find module 'big-integer'` etc. when the sidecar starts.
+const seedPackages = [
    'better-sqlite3',
    'ssh2',
    '@heroku/socksv5',
@@ -68,7 +73,23 @@ const packages = [
    'file-uri-to-path',
    'node-firebird'
 ];
-for (const pkg of packages)
+
+const staged = new Set();
+const queue = [...seedPackages];
+while (queue.length) {
+   const pkg = queue.shift();
+   if (staged.has(pkg)) continue;
+   const pkgJsonPath = join(ROOT, 'node_modules', pkg, 'package.json');
+   if (!existsSync(pkgJsonPath)) {
+      // Optional dep not installed (e.g. platform-specific). Skip silently.
+      continue;
+   }
+   staged.add(pkg);
    copyDir(`node_modules/${pkg}`, `node_modules/${pkg}`);
+   const deps = JSON.parse(readFileSync(pkgJsonPath, 'utf8')).dependencies || {};
+   for (const dep of Object.keys(deps))
+      if (!staged.has(dep)) queue.push(dep);
+}
+console.log(`  (resolved ${staged.size} packages from ${seedPackages.length} seeds)`);
 
 console.log(`\n✓ staged → ${STAGING}`);
