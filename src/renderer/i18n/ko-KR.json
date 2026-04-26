@@ -130,7 +130,7 @@
     "comment": "설명",
     "collation": "Collation",
     "key": "키 | 키들",
-    "order": "순서",
+    "order": "번호",
     "expression": "식",
     "autoIncrement": "자동 증가",
     "primaryKey": "기본 키",

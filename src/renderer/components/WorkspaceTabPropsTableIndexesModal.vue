@@ -7,7 +7,7 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex items-center">
             <BaseIcon
                class="mr-1"
                icon-name="mdiKey"
@@ -18,140 +18,135 @@
          </div>
       </template>
       <template #body>
-         <div class="columns col-gapless">
-            <div class="column col-5">
-               <div class="panel" :style="{ height: modalInnerHeight + 'px'}">
-                  <div class="panel-header pt-0 pl-0">
-                     <div class="d-flex">
-                        <button class="btn btn-dark btn-sm d-flex" @click="addIndex">
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiKeyPlus"
-                              :size="24"
-                           />
-                           <span>{{ t('general.add') }}</span>
-                        </button>
-                        <button
-                           class="btn btn-dark btn-sm d-flex ml-2 mr-0"
-                           :title="t('database.clearChanges')"
-                           :disabled="!isChanged"
-                           @click.prevent="clearChanges"
-                        >
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiDeleteSweep"
-                              :size="24"
-                           />
-                           <span>{{ t('general.clear') }}</span>
-                        </button>
-                     </div>
+         <div class="grid grid-cols-12 gap-0">
+            <div class="col-span-5">
+               <div class="flex flex-col" :style="{ height: modalInnerHeight + 'px'}">
+                  <div class="flex items-center gap-2 mb-2">
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        @click="addIndex"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiKeyPlus"
+                           :size="18"
+                        />
+                        <span>{{ t('general.add') }}</span>
+                     </Button>
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        :title="t('database.clearChanges')"
+                        :disabled="!isChanged"
+                        @click.prevent="clearChanges"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiDeleteSweep"
+                           :size="18"
+                        />
+                        <span>{{ t('general.clear') }}</span>
+                     </Button>
                   </div>
-                  <div ref="indexesPanel" class="panel-body p-0 pr-1">
+                  <div ref="indexesPanel" class="flex-1 overflow-auto pr-1">
                      <div
                         v-for="index in indexesProxy"
                         :key="index._antares_id"
-                        class="tile tile-centered c-hand mb-1 p-1"
+                        class="tile flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
                         :class="{'selected-element': selectedIndexID === index._antares_id}"
                         @click="selectIndex($event, index._antares_id)"
                      >
-                        <div class="tile-icon">
-                           <div>
-                              <BaseIcon
-                                 class="mt-2 column-key"
-                                 icon-name="mdiKey"
-                                 :class="`key-${index.type}`"
-                                 :size="24"
-                              />
-                           </div>
-                        </div>
-                        <div class="tile-content">
-                           <div class="tile-title">
+                        <BaseIcon
+                           class="column-key shrink-0"
+                           icon-name="mdiKey"
+                           :class="`key-${index.type}`"
+                           :size="22"
+                        />
+                        <div class="flex-1 min-w-0">
+                           <div class="text-[14px] truncate">
                               {{ index.name }}
                            </div>
-                           <small class="tile-subtitle text-gray">{{ index.type }} · {{ index.fields.length }} {{ t('database.field', index.fields.length) }}</small>
+                           <div class="text-[12px] text-muted-foreground">
+                              {{ index.type }} · {{ index.fields.length }} {{ t('database.field', index.fields.length) }}
+                           </div>
                         </div>
-                        <div class="tile-action">
-                           <button
-                              class="btn btn-link remove-field p-0 mr-2"
-                              :title="t('general.delete')"
-                              @click.prevent="removeIndex(index._antares_id)"
-                           >
-                              <BaseIcon
-                                 icon-name="mdiClose"
-                                 :size="18"
-                                 class="mt-2"
-                              />
-                           </button>
-                        </div>
+                        <Button
+                           variant="ghost"
+                           size="icon"
+                           class="tile-action !h-[24px] !w-[24px] remove-field"
+                           :title="t('general.delete')"
+                           @click.prevent="removeIndex(index._antares_id)"
+                        >
+                           <BaseIcon
+                              icon-name="mdiClose"
+                              :size="16"
+                           />
+                        </Button>
                      </div>
                   </div>
                </div>
             </div>
 
-            <div class="column col-7 pl-2 editor-col">
+            <div class="col-span-7 pl-2 editor-col">
                <form
                   v-if="selectedIndexObj"
                   :style="{ height: modalInnerHeight + 'px'}"
-                  class="form-horizontal"
+                  class="flex flex-col gap-3"
                >
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="selectedIndexObj.name"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
+                     </Label>
+                     <Input
+                        v-model="selectedIndexObj.name"
+                        type="text"
+                        class="!h-[32px] !text-[14px]"
+                     />
                   </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
                         {{ t('database.type') }}
-                     </label>
-                     <div class="column">
-                        <BaseSelect
-                           v-model="selectedIndexObj.type"
-                           :options="indexTypes"
-                           :option-disabled="(opt: any) => opt === 'PRIMARY' && hasPrimary"
-                           class="form-select"
-                        />
-                     </div>
+                     </Label>
+                     <BaseSelect
+                        v-model="selectedIndexObj.type"
+                        :options="indexTypes"
+                        :option-disabled="(opt: any) => opt === 'PRIMARY' && hasPrimary"
+                        class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                     />
                   </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-start gap-2">
+                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.field', fields.length) }}
-                     </label>
-                     <div class="fields-list column pt-1">
+                     </Label>
+                     <div class="fields-list flex flex-col gap-1 pt-1">
                         <label
                            v-for="(field, i) in fields"
                            :key="`${field.name}-${i}`"
-                           class="form-checkbox m-0"
-                           @click.prevent="toggleField(field.name)"
+                           class="flex items-center gap-2 cursor-pointer text-[14px]"
                         >
-                           <input type="checkbox" :checked="selectedIndexObj.fields.some((f: string) => f === field.name)">
-                           <i class="form-icon" /> {{ field.name }}
+                           <Checkbox
+                              :model-value="selectedIndexObj.fields.some((f: string) => f === field.name)"
+                              @update:model-value="toggleField(field.name)"
+                           />
+                           <span>{{ field.name }}</span>
                         </label>
                      </div>
                   </div>
                </form>
-               <div v-if="!indexesProxy.length" class="empty">
-                  <div class="empty-icon">
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiKeyOutline"
-                        :size="48"
-                     />
-                  </div>
-                  <p class="empty-title h5">
+               <div v-if="!indexesProxy.length" class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                  <BaseIcon
+                     icon-name="mdiKeyOutline"
+                     :size="48"
+                  />
+                  <p class="text-[16px]">
                      {{ t('database.thereAreNoIndexes') }}
                   </p>
-                  <div class="empty-action">
-                     <button class="btn btn-primary" @click="addIndex">
-                        {{ t('database.createNewIndex') }}
-                     </button>
-                  </div>
+                  <Button @click="addIndex">
+                     {{ t('database.createNewIndex') }}
+                  </Button>
                </div>
             </div>
          </div>
@@ -168,6 +163,10 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const { t } = useI18n();
 
@@ -292,6 +291,7 @@ onUnmounted(() => {
 
   &.selected-element {
     opacity: 1;
+    background: var(--accent);
   }
 }
 

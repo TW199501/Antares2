@@ -1,26 +1,41 @@
 <template>
    <Dialog :open="true" @update:open="(v) => { if (!v) hideModal(); }">
       <DialogContent
-         :class="modalSizeClass"
+         :class="[modalSizeClass, '!p-0 !gap-0 !rounded-xl !shadow-2xl !border-border/70 overflow-hidden']"
+         aria-describedby="undefined"
          @open-auto-focus="onOpenAutoFocus"
          @escape-key-down.prevent="hideModal"
          @pointer-down-outside.prevent="hideModal"
       >
-         <DialogHeader v-if="hasHeader || hasDefault">
-            <DialogTitle>
+         <DialogHeader v-if="hasHeader || hasDefault" class="px-5 pt-4 pb-3 border-b border-border/60">
+            <DialogTitle class="!text-[15px] !font-semibold !tracking-normal pr-8">
                <slot name="header" />
                <slot />
             </DialogTitle>
          </DialogHeader>
-         <div v-if="hasBody" class="py-2">
+         <div
+            v-if="hasBody"
+            class="px-5 py-4 overflow-auto"
+            :class="bodyMaxHeightClass"
+         >
             <slot name="body" />
          </div>
-         <DialogFooter v-if="!hideFooter">
-            <Button variant="default" @click.stop="confirmModal">
-               {{ confirmText || t('general.confirm') }}
-            </Button>
-            <Button variant="link" @click="hideModal">
+         <DialogFooter v-if="!hideFooter" class="!flex !flex-row !justify-end !gap-2 !px-5 !py-3 border-t border-border/60 bg-muted/30">
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click="hideModal"
+            >
                {{ cancelText || t('general.cancel') }}
+            </Button>
+            <Button
+               variant="default"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="confirmModal"
+            >
+               {{ confirmText || t('general.confirm') }}
             </Button>
          </DialogFooter>
       </DialogContent>
@@ -76,6 +91,11 @@ const modalSizeClass = computed(() => {
       case 'resize': return 'max-w-[95vw] max-h-[95vh]';
       default: return 'max-w-sm';
    }
+});
+
+const bodyMaxHeightClass = computed(() => {
+   // Reserve space for header (~52px) + footer (~56px) + margin within viewport
+   return props.size === 'resize' ? 'max-h-[calc(95vh-130px)]' : 'max-h-[calc(85vh-130px)]';
 });
 
 const confirmModal = () => {

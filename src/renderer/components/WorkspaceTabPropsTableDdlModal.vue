@@ -8,7 +8,7 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex items-center">
             <BaseIcon
                class="mr-1"
                icon-name="mdiCodeTags"

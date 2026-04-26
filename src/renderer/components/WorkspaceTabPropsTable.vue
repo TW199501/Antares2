@@ -1,124 +1,26 @@
 <template>
    <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
-      <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons flex items-center gap-2">
-               <Button
-                  variant="default"
-                  size="sm"
-                  :disabled="!isChanged"
-                  :class="['h-[32px] !text-[14px] gap-1', { 'loading': isSaving }]"
-                  @click="saveChanges"
-               >
-                  <BaseIcon icon-name="mdiContentSave" :size="16" />
-                  <span>{{ t('general.save') }}</span>
-               </Button>
-               <Button
-                  variant="outline"
-                  size="sm"
-                  :disabled="!isChanged || isSaving"
-                  class="h-[32px] !text-[14px] gap-1"
-                  :title="t('database.clearChanges')"
-                  @click="clearChanges"
-               >
-                  <BaseIcon icon-name="mdiDeleteSweep" :size="16" />
-                  <span>{{ t('general.clear') }}</span>
-               </Button>
-
-               <div class="mx-1 h-[20px] w-px bg-border" />
-
-               <Button
-                  variant="secondary"
-                  size="sm"
-                  :disabled="isSaving"
-                  class="h-[32px] !text-[14px] gap-1"
-                  :title="t('database.addNewField')"
-                  @click="addField"
-               >
-                  <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
-                  <span>{{ t('general.add') }}</span>
-               </Button>
-               <Button
-                  variant="secondary"
-                  size="sm"
-                  :disabled="isSaving"
-                  class="h-[32px] !text-[14px] gap-1"
-                  :title="t('database.manageIndexes')"
-                  @click="showIntdexesModal"
-               >
-                  <BaseIcon
-                     icon-name="mdiKey"
-                     :rotate="45"
-                     :size="16"
-                  />
-                  <span>{{ t('database.indexes') }}</span>
-               </Button>
-               <Button
-                  variant="secondary"
-                  size="sm"
-                  :disabled="isSaving"
-                  class="h-[32px] !text-[14px] gap-1"
-                  :title="t('database.manageForeignKeys')"
-                  @click="showForeignModal"
-               >
-                  <BaseIcon icon-name="mdiKeyLink" :size="16" />
-                  <span>{{ t('database.foreignKeys') }}</span>
-               </Button>
-               <Button
-                  v-if="workspace.customizations.tableCheck && originalTableChecks !== false"
-                  variant="secondary"
-                  size="sm"
-                  :disabled="isSaving"
-                  class="h-[32px] !text-[14px] gap-1"
-                  :title="t('database.manageTableChecks')"
-                  @click="showTableChecksModal"
-               >
-                  <BaseIcon icon-name="mdiTableCheck" :size="16" />
-                  <span>{{ t('database.tableChecks') }}</span>
-               </Button>
-
-               <div class="mx-1 h-[20px] w-px bg-border" />
-
-               <Button
-                  v-if="workspace.customizations.tableDdl"
-                  variant="secondary"
-                  size="sm"
-                  :disabled="isSaving"
-                  class="h-[32px] !text-[14px] gap-1"
-                  @click="showDdlModal"
-               >
-                  <BaseIcon icon-name="mdiCodeTags" :size="16" />
-                  <span>{{ t('database.ddl') }}</span>
-               </Button>
-            </div>
-            <div class="workspace-query-info ml-auto flex items-center gap-1 text-[13px] text-muted-foreground">
-               <div class="flex items-center gap-1" :title="t('database.schema')">
-                  <BaseIcon icon-name="mdiDatabase" :size="16" /><b>{{ schema }}</b>
-               </div>
-            </div>
-         </div>
-      </div>
       <div class="px-4 pt-2 pb-3">
-         <div class="flex flex-wrap items-end gap-3 mb-3">
-            <div class="flex flex-col gap-1">
-               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">{{ t('general.name') }}</Label>
+         <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div class="flex items-center gap-2">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('general.name') }}</Label>
                <Input
                   v-model="localOptions.name"
                   type="text"
-                  class="!h-[32px] !text-[14px]"
+                  class="!h-[32px] !text-[14px] !bg-background"
                />
             </div>
-            <div v-if="workspace.customizations.comment" class="flex flex-col gap-1 flex-1 min-w-[240px]">
-               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">{{ t('database.comment') }}</Label>
+            <div v-if="workspace.customizations.comment" class="flex items-center gap-2">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.comment') }}</Label>
                <Input
                   v-model="localOptions.comment"
                   type="text"
-                  class="!h-[32px] !text-[14px]"
+                  class="!h-[32px] !text-[14px] !w-[200px] !bg-background"
                />
             </div>
 
-            <div v-if="workspace.customizations.autoIncrement" class="flex flex-col gap-1">
-               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">
+            <div v-if="workspace.customizations.autoIncrement" class="flex items-center gap-2">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
                   {{ t('database.autoIncrement') }}
                </Label>
                <Input
@@ -126,11 +28,11 @@
                   v-model="localOptions.autoIncrement"
                   type="number"
                   :disabled="localOptions.autoIncrement === null"
-                  class="!h-[32px] !text-[14px]"
+                  class="!h-[32px] !text-[14px] !bg-background"
                />
             </div>
-            <div v-if="workspace.customizations.collations" class="flex flex-col gap-1">
-               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">
+            <div v-if="workspace.customizations.collations" class="flex items-center gap-2">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
                   {{ t('database.collation') }}
                </Label>
                <BaseSelect
@@ -139,16 +41,17 @@
                   :max-visible-options="1000"
                   option-label="collation"
                   option-track-by="collation"
-                  class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                  :disabled="true"
+                  class="form-select w-[200px] !bg-background !bg-none [&.select--disabled]:!opacity-100 [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px] [&_.form-select]:!bg-background [&_.form-select]:!bg-none"
                />
             </div>
-            <div v-if="workspace.customizations.engines" class="flex flex-col gap-1">
-               <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0">
+            <div v-if="workspace.customizations.engines" class="flex items-center gap-2">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
                   {{ t('database.engine') }}
                </Label>
                <BaseSelect
                   v-model="localOptions.engine"
-                  class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                  class="form-select !bg-background [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px] [&_.form-select]:!bg-background"
                   :options="workspace.engines"
                   option-label="name"
                   option-track-by="name"
@@ -156,6 +59,97 @@
             </div>
          </div>
       </div>
+      <Teleport :to="toolbarTarget" :disabled="!toolbarTarget">
+         <div class="flex items-center gap-2">
+            <Button
+               variant="default"
+               size="sm"
+               :disabled="!isChanged"
+               :class="['h-[32px] !text-[14px] gap-1', { 'loading': isSaving }]"
+               @click="saveChanges"
+            >
+               <BaseIcon icon-name="mdiContentSave" :size="16" />
+               <span>{{ t('general.save') }}</span>
+            </Button>
+            <Button
+               variant="outline"
+               size="sm"
+               :disabled="!isChanged || isSaving"
+               class="h-[32px] !text-[14px] gap-1"
+               :title="t('database.clearChanges')"
+               @click="clearChanges"
+            >
+               <BaseIcon icon-name="mdiDeleteSweep" :size="16" />
+               <span>{{ t('general.clear') }}</span>
+            </Button>
+
+            <div class="mx-1 h-[20px] w-px bg-border" />
+
+            <Button
+               variant="secondary"
+               size="sm"
+               :disabled="isSaving"
+               class="h-[32px] !text-[14px] gap-1"
+               :title="t('database.addNewField')"
+               @click="addField"
+            >
+               <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
+               <span>{{ t('general.add') }}</span>
+            </Button>
+            <Button
+               variant="secondary"
+               size="sm"
+               :disabled="isSaving"
+               class="h-[32px] !text-[14px] gap-1"
+               :title="t('database.manageIndexes')"
+               @click="showIntdexesModal"
+            >
+               <BaseIcon
+                  icon-name="mdiKey"
+                  :rotate="45"
+                  :size="16"
+               />
+               <span>{{ t('database.indexes') }}</span>
+            </Button>
+            <Button
+               variant="secondary"
+               size="sm"
+               :disabled="isSaving"
+               class="h-[32px] !text-[14px] gap-1"
+               :title="t('database.manageForeignKeys')"
+               @click="showForeignModal"
+            >
+               <BaseIcon icon-name="mdiKeyLink" :size="16" />
+               <span>{{ t('database.foreignKeys') }}</span>
+            </Button>
+            <Button
+               v-if="workspace.customizations.tableCheck && originalTableChecks !== false"
+               variant="secondary"
+               size="sm"
+               :disabled="isSaving"
+               class="h-[32px] !text-[14px] gap-1"
+               :title="t('database.manageTableChecks')"
+               @click="showTableChecksModal"
+            >
+               <BaseIcon icon-name="mdiTableCheck" :size="16" />
+               <span>{{ t('database.tableChecks') }}</span>
+            </Button>
+
+            <div class="mx-1 h-[20px] w-px bg-border" />
+
+            <Button
+               v-if="workspace.customizations.tableDdl"
+               variant="secondary"
+               size="sm"
+               :disabled="isSaving"
+               class="h-[32px] !text-[14px] gap-1"
+               @click="showDdlModal"
+            >
+               <BaseIcon icon-name="mdiCodeTags" :size="16" />
+               <span>{{ t('database.ddl') }}</span>
+            </Button>
+         </div>
+      </Teleport>
       <div class="workspace-query-results column col-12 p-relative">
          <BaseLoader v-if="isLoading" />
          <WorkspaceTabPropsTableFields
@@ -175,6 +169,7 @@
             @add-new-index="addNewIndex"
             @add-to-index="addToIndex"
             @rename-field="renameField"
+            @edit-field="openEditField"
          />
       </div>
       <WorkspaceTabPropsTableIndexesModal
@@ -214,6 +209,17 @@
          @hide="hideTableChecksModal"
          @checks-update="checksUpdate"
       />
+      <WorkspaceTabPropsTableEditModal
+         v-if="editModalOpen && editModalDraft"
+         :row="editModalDraft"
+         :indexes="editModalIndexes"
+         :foreigns="editModalForeigns"
+         :data-types="workspace.dataTypes"
+         :customizations="workspace.customizations"
+         :mode="editModalMode"
+         @confirm="confirmEditModal"
+         @hide="hideEditModal"
+      />
    </div>
 </template>
 
@@ -232,6 +238,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import WorkspaceTabPropsTableChecksModal from '@/components/WorkspaceTabPropsTableChecksModal.vue';
 import WorkspaceTabPropsTableDdlModal from '@/components/WorkspaceTabPropsTableDdlModal.vue';
+import WorkspaceTabPropsTableEditModal from '@/components/WorkspaceTabPropsTableEditModal.vue';
 import WorkspaceTabPropsTableFields from '@/components/WorkspaceTabPropsTableFields.vue';
 import WorkspaceTabPropsTableForeignModal from '@/components/WorkspaceTabPropsTableForeignModal.vue';
 import WorkspaceTabPropsTableIndexesModal from '@/components/WorkspaceTabPropsTableIndexesModal.vue';
@@ -247,7 +254,8 @@ const props = defineProps({
    connection: Object,
    isSelected: Boolean,
    table: String,
-   schema: String
+   schema: String,
+   toolbarTarget: { type: String, default: '' }
 });
 
 const { addNotification } = useNotificationsStore();
@@ -274,6 +282,10 @@ const isIndexesModal = ref(false);
 const isForeignModal = ref(false);
 const isTableChecksModal = ref(false);
 const isDdlModal = ref(false);
+const editModalOpen = ref(false);
+const editModalMode = ref<'edit' | 'create'>('edit');
+const editModalDraft: Ref<TableField | null> = ref(null);
+const editModalTargetId = ref<string | null>(null);
 
 const originalFields: Ref<TableField[]> = ref([]);
 const localFields: Ref<TableField[]> = ref([]);
@@ -683,9 +695,9 @@ const clearChanges = () => {
    newFieldsCounter.value = 0;
 };
 
-const addField = () => {
+const buildDraftField = (): TableField => {
    const uid = uidGen();
-   localFields.value.push({
+   return {
       _antares_id: uid,
       name: `${t('database.field', 1)}_${uid.substring(0, 4)}`,
       key: '',
@@ -710,12 +722,69 @@ const addField = () => {
       alias: '',
       tableAlias: '',
       orgTable: ''
-   });
+   } as TableField;
+};
 
-   setTimeout(() => {
-      const scrollable = indexTable.value.tableWrapper;
-      scrollable.scrollTop = scrollable.scrollHeight + 30;
-   }, 20);
+const editModalIndexes = computed(() => {
+   if (!editModalDraft.value) return [];
+   const fieldName = editModalDraft.value.name;
+   return localIndexes.value.reduce((acc, curr) => {
+      acc.push(...curr.fields.map(f => ({ name: f, type: curr.type })));
+      return acc;
+   }, [] as { name: string; type: string }[]).filter(f => f.name === fieldName);
+});
+
+const editModalForeigns = computed(() => {
+   if (!editModalDraft.value) return [];
+   const fieldName = editModalDraft.value.name;
+   return localKeyUsage.value.reduce((acc, curr) => {
+      if (curr.field === fieldName)
+         acc.push(`${curr.refTable}.${curr.refField}`);
+      return acc;
+   }, [] as string[]);
+});
+
+const openEditField = (uid: string) => {
+   const field = localFields.value.find(f => f._antares_id === uid);
+   if (!field) return;
+   // Deep-clone so modal edits don't leak until confirmed
+   editModalDraft.value = JSON.parse(JSON.stringify(field));
+   editModalTargetId.value = uid;
+   editModalMode.value = 'edit';
+   editModalOpen.value = true;
+};
+
+const addField = () => {
+   editModalDraft.value = buildDraftField();
+   editModalTargetId.value = null;
+   editModalMode.value = 'create';
+   editModalOpen.value = true;
+};
+
+const hideEditModal = () => {
+   editModalOpen.value = false;
+   editModalDraft.value = null;
+   editModalTargetId.value = null;
+};
+
+const confirmEditModal = (updated: TableField) => {
+   if (editModalMode.value === 'create') {
+      localFields.value.push({ ...updated });
+      setTimeout(() => {
+         const scrollable = indexTable.value?.tableWrapper;
+         if (scrollable) scrollable.scrollTop = scrollable.scrollHeight + 30;
+      }, 20);
+   }
+   else {
+      const target = localFields.value.find(f => f._antares_id === editModalTargetId.value);
+      if (target) {
+         const oldName = target.name;
+         Object.assign(target, updated);
+         if (updated.name !== oldName)
+            renameField({ index: '', old: oldName, new: updated.name } as any);
+      }
+   }
+   hideEditModal();
 };
 
 const renameField = (payload: {index: string; new: string; old: string}) => {

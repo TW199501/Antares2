@@ -20,7 +20,7 @@
          <div class="thead">
             <div class="tr">
                <div class="th th-order">
-                  <div class="text-right">
+                  <div class="table-column-title text-center !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.order') }}
                   </div>
                </div>
@@ -69,23 +69,16 @@
                   </div>
                </div>
                <div class="th">
-                  <div class="column-resizable">
+                  <div class="column-resizable min-100">
                      <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.default') }}
                      </div>
                   </div>
                </div>
                <div v-if="customizations.comment" class="th">
-                  <div class="column-resizable">
+                  <div class="column-resizable min-200">
                      <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.comment') }}
-                     </div>
-                  </div>
-               </div>
-               <div v-if="customizations.collation" class="th">
-                  <div class="column-resizable min-100">
-                     <div class="table-column-title !text-[12px] !font-medium !text-muted-foreground !uppercase tracking-wide">
-                        {{ t('database.collation') }}
                      </div>
                   </div>
                </div>
@@ -115,6 +108,7 @@
                   @move-up="moveFieldUp"
                   @move-down="moveFieldDown"
                   @remove-field-row="removeFieldById"
+                  @edit-field="emit('edit-field', $event)"
                />
             </template>
          </Draggable>
@@ -154,6 +148,7 @@ const emit = defineEmits<{
    'rename-field': [field: any];
    'duplicate-field': [id: string];
    'remove-field': [id: string];
+   'edit-field': [id: string];
 }>();
 
 const workspacesStore = useWorkspacesStore();
@@ -293,6 +288,10 @@ defineExpose({ tableWrapper });
   min-width: 120px !important;
 }
 
+.min-200 {
+  min-width: 200px !important;
+}
+
 // Fixed-width header cells
 .th-order {
   width: 55px;
@@ -331,5 +330,9 @@ defineExpose({ tableWrapper });
   min-width: 110px;
   max-width: 110px;
   text-align: center;
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: var(--background);
 }
 </style>

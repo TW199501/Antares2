@@ -6,29 +6,35 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex align-items-center">
+         <div class="flex items-center">
             <BaseIcon
                class="mr-1"
-               icon-name="mdiTableEdit"
+               :icon-name="mode === 'create' ? 'mdiTablePlus' : 'mdiTableEdit'"
                :size="22"
             />
-            <span class="cut-text">{{ t('database.editField') }} "{{ row.name }}"</span>
+            <span class="cut-text">
+               {{ mode === 'create' ? t('database.addNewField') : `${t('database.editField')} "${row.name}"` }}
+            </span>
          </div>
       </template>
       <template #body>
-         <div class="edit-field-form">
+         <div class="flex flex-col gap-3 px-1 py-2">
             <!-- 欄位名 -->
-            <div class="form-group">
-               <label class="form-label">{{ t('database.fieldName') }}</label>
-               <input
+            <div class="flex flex-col gap-1">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.fieldName') }}
+               </Label>
+               <Input
                   v-model="local.name"
-                  class="form-input input-sm"
                   type="text"
-               >
+                  class="!h-[32px] !text-[14px]"
+               />
             </div>
             <!-- 資料類型 -->
-            <div class="form-group">
-               <label class="form-label">{{ t('database.type') }}</label>
+            <div class="flex flex-col gap-1">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.type') }}
+               </Label>
                <BaseSelect
                   v-model="local.type"
                   :options="dataTypes"
@@ -36,38 +42,38 @@
                   group-values="types"
                   option-label="name"
                   option-track-by="name"
-                  class="form-select input-sm text-uppercase"
+                  class="form-select uppercase [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
                />
             </div>
             <!-- 長度 / 精度 -->
-            <div class="columns">
-               <div v-if="currentFieldType?.length" class="column col-6">
-                  <div class="form-group">
-                     <label class="form-label">{{ t('database.length') }}</label>
-                     <input
-                        v-model.number="localLength"
-                        class="form-input input-sm"
-                        type="number"
-                        min="0"
-                     >
-                  </div>
+            <div class="grid grid-cols-2 gap-2">
+               <div v-if="currentFieldType?.length" class="flex flex-col gap-1">
+                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     {{ t('database.length') }}
+                  </Label>
+                  <Input
+                     v-model.number="localLength"
+                     type="number"
+                     min="0"
+                     class="!h-[32px] !text-[14px]"
+                  />
                </div>
-               <div v-if="currentFieldType?.scale" class="column col-6">
-                  <div class="form-group">
-                     <label class="form-label">{{ t('database.precision') }}</label>
-                     <input
-                        v-model.number="local.numScale"
-                        class="form-input input-sm"
-                        type="number"
-                        min="0"
-                     >
-                  </div>
+               <div v-if="currentFieldType?.scale" class="flex flex-col gap-1">
+                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     {{ t('database.precision') }}
+                  </Label>
+                  <Input
+                     v-model.number="local.numScale"
+                     type="number"
+                     min="0"
+                     class="!h-[32px] !text-[14px]"
+                  />
                </div>
             </div>
             <!-- 主鍵 / 自增 / 可空 -->
-            <div class="d-flex align-items-center mb-2" style="gap:8px;">
+            <div class="flex items-center gap-2">
                <!-- PK: read-only -->
-               <div class="edit-chip-label">
+               <div class="text-[12px] text-muted-foreground">
                   {{ t('database.primaryKey') }}
                </div>
                <span
@@ -76,7 +82,7 @@
                >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
                <!-- AI -->
                <template v-if="customizations.autoIncrement">
-                  <div class="edit-chip-label ml-2">
+                  <div class="text-[12px] text-muted-foreground ml-2">
                      {{ t('database.autoIncrement') }}
                   </div>
                   <span
@@ -88,7 +94,7 @@
                </template>
                <!-- NULL -->
                <template v-if="customizations.nullable">
-                  <div class="edit-chip-label ml-2">
+                  <div class="text-[12px] text-muted-foreground ml-2">
                      {{ t('database.allowNull') }}
                   </div>
                   <span
@@ -100,39 +106,45 @@
                </template>
             </div>
             <!-- 預設值 -->
-            <div class="form-group">
-               <label class="form-label">{{ t('database.default') }}</label>
-               <input
+            <div class="flex flex-col gap-1">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.default') }}
+               </Label>
+               <Input
                   v-model="local.default"
-                  class="form-input input-sm"
                   type="text"
                   :placeholder="t('general.none')"
-               >
+                  class="!h-[32px] !text-[14px]"
+               />
             </div>
             <!-- 描述 (with AI translate) -->
-            <div v-if="customizations.comment" class="form-group">
-               <label class="form-label">{{ t('database.comment') }}</label>
-               <div class="input-group">
-                  <input
+            <div v-if="customizations.comment" class="flex flex-col gap-1">
+               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  {{ t('database.comment') }}
+               </Label>
+               <div class="flex gap-1">
+                  <Input
                      v-model="local.comment"
-                     class="form-input input-sm"
                      type="text"
                      :placeholder="t('database.commentPlaceholder')"
-                  >
-                  <button
-                     class="btn btn-sm input-group-btn translate-btn"
-                     :class="{ 'loading': isTranslating }"
+                     class="!h-[32px] !text-[14px] flex-1"
+                  />
+                  <Button
+                     variant="secondary"
+                     size="sm"
+                     class="!h-[32px] !w-[36px] !p-0"
                      :title="settingsStore.aiApiKey ? t('database.translateWithAi') : t('database.aiKeyRequired')"
-                     :disabled="isTranslating"
+                     :disabled="isTranslating || !settingsStore.aiApiKey"
                      @click.prevent="translateDescription"
                   >
-                     <span v-if="!isTranslating" class="globe-icon">🌐</span>
-                  </button>
+                     <span v-if="!isTranslating" aria-hidden="true">🌐</span>
+                     <span v-else class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                  </Button>
                </div>
-               <p v-if="!settingsStore.aiApiKey" class="form-input-hint text-warning mt-1">
+               <p v-if="!settingsStore.aiApiKey" class="text-[12px] mt-1 text-amber-600">
                   {{ t('database.aiKeyRequired') }}
                </p>
-               <p v-if="translateError" class="form-input-hint text-error mt-1">
+               <p v-if="translateError" class="text-[12px] mt-1 text-destructive">
                   {{ translateError }}
                </p>
             </div>
@@ -149,6 +161,9 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Ai from '@/ipc-api/Ai';
 import { useSettingsStore } from '@/stores/settings';
 
@@ -174,6 +189,10 @@ const props = defineProps({
    customizations: {
       type: Object,
       default: () => ({})
+   },
+   mode: {
+      type: String as PropType<'edit' | 'create'>,
+      default: 'edit'
    }
 });
 
@@ -248,23 +267,6 @@ const applyChanges = () => {
 </script>
 
 <style lang="scss" scoped>
-.edit-field-form {
-  .form-group {
-    margin-bottom: 0.6rem;
-  }
-
-  .form-label {
-    font-size: 0.65rem;
-    opacity: 0.7;
-    margin-bottom: 2px;
-  }
-}
-
-.edit-chip-label {
-  font-size: 0.65rem;
-  opacity: 0.7;
-}
-
 .field-chip {
   display: inline-block;
   padding: 0 5px;
@@ -287,18 +289,4 @@ const applyChanges = () => {
     &:hover:not([style*="not-allowed"]) { filter: brightness(1.2); }
   }
 }
-
-.translate-btn {
-  padding: 0 8px;
-  font-size: 1rem;
-  line-height: 1;
-
-  .globe-icon {
-    display: block;
-    line-height: 1.2;
-  }
-}
-
-.text-warning { color: #ffb700; }
-.text-error   { color: #e85600; }
 </style>

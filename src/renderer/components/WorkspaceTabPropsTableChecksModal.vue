@@ -7,7 +7,7 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex items-center">
             <BaseIcon
                class="mr-1"
                icon-name="mdiTableCheck"
@@ -17,123 +17,116 @@
          </div>
       </template>
       <template #body>
-         <div class="columns col-gapless">
-            <div class="column col-5">
-               <div class="panel" :style="{ height: modalInnerHeight + 'px'}">
-                  <div class="panel-header pt-0 pl-0">
-                     <div class="d-flex">
-                        <button class="btn btn-dark btn-sm d-flex" @click="addCheck">
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiCheckboxMarkedCirclePlusOutline"
-                              :size="24"
-                           />
-                           <span>{{ t('general.add') }}</span>
-                        </button>
-                        <button
-                           class="btn btn-dark btn-sm d-flex ml-2 mr-0"
-                           :title="t('database.clearChanges')"
-                           :disabled="!isChanged"
-                           @click.prevent="clearChanges"
-                        >
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiDeleteSweep"
-                              :size="24"
-                           />
-                           <span>{{ t('general.clear') }}</span>
-                        </button>
-                     </div>
+         <div class="grid grid-cols-12 gap-0">
+            <div class="col-span-5">
+               <div class="flex flex-col" :style="{ height: modalInnerHeight + 'px'}">
+                  <div class="flex items-center gap-2 mb-2">
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        @click="addCheck"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiCheckboxMarkedCirclePlusOutline"
+                           :size="18"
+                        />
+                        <span>{{ t('general.add') }}</span>
+                     </Button>
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        :title="t('database.clearChanges')"
+                        :disabled="!isChanged"
+                        @click.prevent="clearChanges"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiDeleteSweep"
+                           :size="18"
+                        />
+                        <span>{{ t('general.clear') }}</span>
+                     </Button>
                   </div>
-                  <div ref="checksPanel" class="panel-body p-0 pr-1">
+                  <div ref="checksPanel" class="flex-1 overflow-auto pr-1">
                      <div
                         v-for="check in checksProxy"
                         :key="check._antares_id"
-                        class="tile tile-centered c-hand mb-1 p-1"
+                        class="tile flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
                         :class="{'selected-element': selectedCheckID === check._antares_id}"
                         @click="selectCheck($event, check._antares_id)"
                      >
-                        <div class="tile-icon">
-                           <div>
-                              <BaseIcon
-                                 class="mt-2 column-key"
-                                 icon-name="mdiCheckboxMarkedCircleOutline"
-                                 :size="24"
-                              />
-                           </div>
-                        </div>
-                        <div class="tile-content">
-                           <div class="tile-title">
+                        <BaseIcon
+                           class="column-key shrink-0"
+                           icon-name="mdiCheckboxMarkedCircleOutline"
+                           :size="22"
+                        />
+                        <div class="flex-1 min-w-0">
+                           <div class="text-[14px] truncate">
                               {{ check.name }}
                            </div>
-                           <small class="tile-subtitle text-gray d-inline-block cut-text" style="width: 100%;">{{ check.clause }}</small>
+                           <div class="text-[12px] text-muted-foreground truncate">
+                              {{ check.clause }}
+                           </div>
                         </div>
-                        <div class="tile-action">
-                           <button
-                              class="btn btn-link remove-field p-0 mr-2"
-                              :title="t('general.delete')"
-                              @click.prevent="removeCheck(check._antares_id)"
-                           >
-                              <BaseIcon
-                                 icon-name="mdiClose"
-                                 :size="18"
-                                 class="mt-2"
-                              />
-                           </button>
-                        </div>
+                        <Button
+                           variant="ghost"
+                           size="icon"
+                           class="tile-action !h-[24px] !w-[24px] remove-field"
+                           :title="t('general.delete')"
+                           @click.prevent="removeCheck(check._antares_id)"
+                        >
+                           <BaseIcon
+                              icon-name="mdiClose"
+                              :size="16"
+                           />
+                        </Button>
                      </div>
                   </div>
                </div>
             </div>
 
-            <div class="column col-7 pl-2 editor-col">
+            <div class="col-span-7 pl-2">
                <form
                   v-if="selectedCheckObj"
                   :style="{ height: modalInnerHeight + 'px'}"
-                  class="form-horizontal"
+                  class="flex flex-col gap-3"
                >
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="selectedCheckObj.name"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
-                  </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
-                        {{ t('database.checkClause') }}
-                     </label>
-                     <div class="column">
-                        <textarea
-                           v-model="selectedCheckObj.clause"
-                           class="form-input"
-                           style="resize: vertical;"
-                           rows="5"
-                        />
-                     </div>
-                  </div>
-               </form>
-               <div v-if="!checksProxy.length" class="empty">
-                  <div class="empty-icon">
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiCheckboxMarkedCircleOutline"
-                        :size="48"
+                     </Label>
+                     <Input
+                        v-model="selectedCheckObj.name"
+                        type="text"
+                        class="!h-[32px] !text-[14px]"
                      />
                   </div>
-                  <p class="empty-title h5">
+                  <div class="grid grid-cols-[100px_1fr] items-start gap-2">
+                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 mt-1.5">
+                        {{ t('database.checkClause') }}
+                     </Label>
+                     <textarea
+                        v-model="selectedCheckObj.clause"
+                        rows="5"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        style="resize: vertical;"
+                     />
+                  </div>
+               </form>
+               <div v-if="!checksProxy.length" class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                  <BaseIcon
+                     icon-name="mdiCheckboxMarkedCircleOutline"
+                     :size="48"
+                  />
+                  <p class="text-[16px]">
                      {{ t('database.thereAreNoTableChecks') }}
                   </p>
-                  <div class="empty-action">
-                     <button class="btn btn-primary" @click="addCheck">
-                        {{ t('database.createNewCheck') }}
-                     </button>
-                  </div>
+                  <Button @click="addCheck">
+                     {{ t('database.createNewCheck') }}
+                  </Button>
                </div>
             </div>
          </div>
@@ -149,6 +142,9 @@ import { useI18n } from 'vue-i18n';
 
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const { t } = useI18n();
 
@@ -257,6 +253,7 @@ onUnmounted(() => {
 
   &.selected-element {
     opacity: 1;
+    background: var(--accent);
   }
 }
 

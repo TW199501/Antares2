@@ -51,14 +51,20 @@
                      <span>{{ t('general.add') }}</span>
                   </Button>
                </div>
+               <!-- Teleport target for props-mode toolbar (Save/Clear/Add/Indexes/ForeignKeys/DDL) -->
+               <div
+                  v-show="viewMode === 'props'"
+                  :id="propsToolbarSlotId"
+                  class="flex items-center gap-2"
+               />
             </div>
             <div class="workspace-query-info !gap-0 divide-x divide-border [&>*]:px-[10px] [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
-               <div v-if="tableInfo" :title="t('general.name')">
+               <div v-if="tableInfo && viewMode !== 'props'" :title="t('general.name')">
                   <BaseIcon icon-name="mdiTableOfContents" :size="14" />
                   <b>{{ tableInfo.name }}</b>
                </div>
                <div
-                  v-if="tableInfo?.comment"
+                  v-if="tableInfo?.comment && viewMode !== 'props'"
                   class="max-w-[240px] truncate text-muted-foreground"
                   :title="tableInfo.comment"
                >
@@ -160,6 +166,7 @@
          :is-selected="isSelected && viewMode === 'props'"
          :table="table"
          :schema="schema"
+         :toolbar-target="`#${propsToolbarSlotId}`"
       />
       <ModalFakerRows
          v-if="isFakerModal"
@@ -179,7 +186,7 @@
 import { ConnectionParams } from 'common/interfaces/antares';
 import { TableFilterClausole } from 'common/interfaces/tableApis';
 import { storeToRefs } from 'pinia';
-import { computed, nextTick, onBeforeUnmount, Prop, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, nextTick, onBeforeUnmount, Prop, Ref, ref, useId, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
@@ -202,6 +209,8 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 const { localeString } = useFilters();
 
 const { t } = useI18n();
+
+const propsToolbarSlotId = `props-toolbar-${useId()}`;
 
 const props = defineProps({
    connection: Object as Prop<ConnectionParams>,

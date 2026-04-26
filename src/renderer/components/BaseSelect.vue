@@ -15,7 +15,7 @@
          <input
             v-if="searchable"
             ref="searchInput"
-            class="select__search-input"
+            class="select__search-input !text-[14px]"
             :style="searchInputStyle"
             type="text"
             autocomplete="off"
