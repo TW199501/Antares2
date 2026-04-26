@@ -39,8 +39,16 @@ if (stageStatus !== 0) {
 }
 
 // ── Step 2: tauri build ──────────────────────────────────────────────────────
-// The MSI step is expected to fail with ICE30; we catch the error below.
-const tauriStatus = run('tauri', ['build']);
+// On Windows, the MSI sub-step is expected to fail with ICE30; we re-run light.exe
+// in step 3. On macOS/Linux, tauri build produces dmg/appimage/deb/rpm directly
+// and the MSI step does not apply.
+const tauriArgs = process.argv.slice(2); // pass through (e.g. --target aarch64-apple-darwin)
+const tauriStatus = run('tauri', ['build', ...tauriArgs]);
+
+if (process.platform !== 'win32') {
+   // Non-Windows: tauri build's exit status is authoritative.
+   process.exit(tauriStatus);
+}
 
 const NSIS = `src-tauri/target/release/bundle/nsis/Antares2_${version}_x64-setup.exe`;
 if (!existsSync(NSIS)) {
@@ -49,7 +57,7 @@ if (!existsSync(NSIS)) {
 }
 console.log(`\nNSIS installer built → ${NSIS}`);
 
-// ── Step 3: MSI via build-msi.mjs ────────────────────────────────────────────
+// ── Step 3: MSI via build-msi.mjs (Windows only) ─────────────────────────────
 const msiStatus = run('node', ['scripts/build-msi.mjs']);
 
 process.exit(msiStatus);

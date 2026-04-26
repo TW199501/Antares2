@@ -12,7 +12,6 @@
       "active": true,
       "targets": ["nsis", "msi"],
       "resources": {
-         "resources/sidecar/node.exe": "sidecar/node.exe",
          "resources/sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
          "resources/workers": "workers",
          "resources/node_modules/better-sqlite3": "node_modules/better-sqlite3",

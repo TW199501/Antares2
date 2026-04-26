@@ -51,7 +51,10 @@ function copyDir (relSrc, relDest) {
 
 console.log('staging resources …');
 
-copyFile('sidecar/node.exe', 'sidecar/node.exe');
+// Node binary differs by platform: `node.exe` on Windows, `node` on macOS/Linux.
+// CI workflows download the right one into sidecar/ before this script runs.
+const nodeBin = process.platform === 'win32' ? 'node.exe' : 'node';
+copyFile(`sidecar/${nodeBin}`, `sidecar/${nodeBin}`);
 copyFile('sidecar/antares-server.cjs', 'sidecar/antares-server.cjs');
 
 copyDir('workers', 'workers');

@@ -1,7 +1,8 @@
 {
    "bundle": {
+      "targets": ["appimage", "deb", "rpm"],
       "resources": {
-         "../sidecar/node": "sidecar/node"
+         "resources/sidecar/node": "sidecar/node"
       }
    }
 }
