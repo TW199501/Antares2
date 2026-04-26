@@ -822,9 +822,25 @@ export class MySQLClient extends BaseClient {
          Table: string;
       }>>(`SHOW CREATE TABLE \`${schema}\`.\`${table}\``);
 
-      if (rows.length)
-         return rows[0]['Create Table'];
-      else return '';
+      if (!rows.length) return '';
+
+      // Make CREATE TABLE re-runnable: skip when the table already exists.
+      let createSql = rows[0]['Create Table'].replace(/^CREATE TABLE /, 'CREATE TABLE IF NOT EXISTS ');
+
+      // Emit additive ALTER TABLE statements so a re-run also fills in any missing
+      // columns. ADD COLUMN IF NOT EXISTS is supported on MariaDB 10.0.2+; on pure
+      // MySQL it parses as a syntax error and the user can comment those lines out.
+      const columnLines: string[] = [];
+      for (const line of createSql.split('\n')) {
+         const match = line.match(/^\s+`([^`]+)`\s+(.+?),?\s*$/);
+         if (match)
+            columnLines.push(`ALTER TABLE \`${schema}\`.\`${table}\` ADD COLUMN IF NOT EXISTS \`${match[1]}\` ${match[2].replace(/,$/, '')};`);
+      }
+
+      if (columnLines.length)
+         createSql += '\n\n' + columnLines.join('\n');
+
+      return createSql;
    }
 
    async getKeyUsage ({ schema, table }: { schema: string; table: string }) {
