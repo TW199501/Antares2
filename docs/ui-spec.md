@@ -140,6 +140,44 @@ Pattern is established in `src/renderer/stores/settings.ts` — follow it, don't
 
 *   Shell pattern wrapping `@tw199501/specsnap-inspector-vue` published wrapper, documented in `CLAUDE.md`'s "Embedded SpecSnap Inspector" subsection
 
+## Phase 2 primitive coverage
+
+Batch 0 (commit `<TBD>`) adds twelve new shadcn-vue primitives under `src/renderer/components/ui/` to back the rest of the Phase 2 migration. Below is the **contract** for which primitive a given UI surface should reach for. **Anything not in the table** must default to one of the existing primitives (Button / Checkbox / Dialog / DropdownMenu / FormField / Input / Label / Select / Tabs) or be raised in review.
+
+| Primitive | Use for | Do **not** use for |
+| --- | --- | --- |
+| `Switch` | Settings boolean toggle, connection enabled/disabled, single on/off knob in a form row | Multi-select binary fields (use `Checkbox`) |
+| `Textarea` | DDL view, SQL body, note content, anything multi-line user input | Single-line input (use `Input`) |
+| `Tooltip` | Icon-only button labels, ellipsised text hover hint, table-header description | Critical action explanation (write it into the visible button label) |
+| `Sonner` (toast) | Async result notifications (saved / failed / connected), non-blocking feedback | Confirmations that need a user response (use `BaseConfirmModal`) |
+| `ContextMenu` | Sidebar connection right-click, explore tree table/column right-click, scratchpad note right-click | Standard click-to-open menu (use `DropdownMenu`) |
+| `ScrollArea` | Bounded-height connection list, explore tree, long settings panel | Main viewport scroll (use the browser native scrollbar) |
+| `Separator` | Visual break between grouped form sections, vertical divider in toolbars | Replacement for spacing (use `gap-*` / `space-*`) |
+| `Badge` | Connection status chip, column-type tag, version label, schema tag | Primary call-to-action (use `Button`) |
+| `Card` | Settings group panel, connection card, empty-state container, dashboard tile | Whole-modal shell (use `Dialog`) |
+| `Popover` | Color picker, inline detail flyout, lightweight extra controls | Confirmation prompts (use `Dialog` or `BaseConfirmModal`) |
+| `RadioGroup` | Mutually-exclusive choice with 2–5 options visible inline | 6+ options (use `Select`) |
+| `Accordion` | Sidebar object-type groups (Tables / Views / Triggers), settings sub-sections | Tab switching (use `Tabs`) |
+
+### Status-color tokens (Batch 0)
+
+`tailwind.css` now exposes the following Tailwind utilities backed by CSS variables:
+
+*   `bg-success` / `text-success-foreground` — successful save / connection
+*   `bg-warning` / `text-warning-foreground` — non-blocking caution
+*   `bg-info` / `text-info-foreground` — neutral informational state (new in Batch 0)
+*   `bg-danger` / `text-danger-foreground` — recoverable error (separate from `bg-destructive`, which is reserved for irreversible / delete actions)
+
+`Badge` exposes `variant="success" | "warning" | "info"` in addition to the defaults. **Do not** introduce new colors inline — extend `tailwind.css` and the `Badge` variants instead.
+
+### Connection-palette tokens (Batch 0)
+
+The 17-color palette previously inlined in `ModalFolderAppearance.vue` is now mapped to `--color-connection-<name>` (e.g. `--color-connection-emerald`). Use these via `bg-connection-emerald` / `border-connection-emerald` so user-customised connection accents stay theme-aware. Hex values are duplicated under `:root` and `.theme-dark` because the dark-mode shades are subtly brighter for surface contrast.
+
+### DB-object icon tokens (Batch 0, placeholder)
+
+`--db-table` / `--db-view` / `--db-trigger` / `--db-function` / `--db-procedure` / `--db-scheduler` are introduced as **placeholders** for Batch 7 (sidebar / explore-bar migration). Final hex values must be confirmed against `pencil-new.pen` before Batch 7 lands. Until then, do not surface these tokens in production UI.
+
 ## When in doubt
 
 1.  Open `pencil-new.pen` in Pencil desktop, use `pencil` MCP to read spec
