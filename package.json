@@ -81,6 +81,7 @@
     "v-mask": "^2.3.0",
     "vue": "^3.5.32",
     "vue-i18n": "^11.3.2",
+    "vue-sonner": "^2.0.9",
     "vuedraggable": "^4.1.0"
   },
   "pnpm": {
