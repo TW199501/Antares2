@@ -48,6 +48,41 @@
    --color-success-foreground: var(--success-foreground);
    --color-warning: var(--warning);
    --color-warning-foreground: var(--warning-foreground);
+   --color-info: var(--info);
+   --color-info-foreground: var(--info-foreground);
+   --color-danger: var(--danger);
+   --color-danger-foreground: var(--danger-foreground);
+
+   /* Connection palette — abstracted from inline hex in ModalFolderAppearance.vue
+      (Phase 2 Batch 0). Names mirror the user-facing palette names. */
+   --color-connection-default: var(--connection-default);
+   --color-connection-grape-fruit: var(--connection-grape-fruit);
+   --color-connection-rose: var(--connection-rose);
+   --color-connection-fire: var(--connection-fire);
+   --color-connection-sunflower: var(--connection-sunflower);
+   --color-connection-moss: var(--connection-moss);
+   --color-connection-grass: var(--connection-grass);
+   --color-connection-emerald: var(--connection-emerald);
+   --color-connection-mint: var(--connection-mint);
+   --color-connection-aqua: var(--connection-aqua);
+   --color-connection-royal-lblue: var(--connection-royal-lblue);
+   --color-connection-blue-jeans: var(--connection-blue-jeans);
+   --color-connection-stone: var(--connection-stone);
+   --color-connection-lavander: var(--connection-lavander);
+   --color-connection-pink-rose: var(--connection-pink-rose);
+   --color-connection-smoke: var(--connection-smoke);
+   --color-connection-slate: var(--connection-slate);
+
+   /* DB-object icon palette — distinguishes table / view / trigger / function /
+      procedure / scheduler in the explore bar and tab icons. Phase 2 Batch 0
+      placeholders; final hex values to be confirmed against pencil-new.pen
+      during Batch 7 (sidebar / explore migration). */
+   --color-db-table: var(--db-table);
+   --color-db-view: var(--db-view);
+   --color-db-trigger: var(--db-trigger);
+   --color-db-function: var(--db-function);
+   --color-db-procedure: var(--db-procedure);
+   --color-db-scheduler: var(--db-scheduler);
 }
 
 :root {
@@ -86,6 +121,38 @@
    --success-foreground: #ffffff;
    --warning: #d49400;
    --warning-foreground: #ffffff;
+   --info: #0284c7;
+   --info-foreground: #ffffff;
+   --danger: #dc2626;
+   --danger-foreground: #ffffff;
+
+   /* Connection palette — sourced from ModalFolderAppearance.vue colorPalette */
+   --connection-default: #e36929;
+   --connection-grape-fruit: #ed5565;
+   --connection-rose: #e3242b;
+   --connection-fire: #fda50f;
+   --connection-sunflower: #ffce54;
+   --connection-moss: #8a985e;
+   --connection-grass: #6dcd05;
+   --connection-emerald: #038835;
+   --connection-mint: #48cfad;
+   --connection-aqua: #4fc1e9;
+   --connection-royal-lblue: #4169e1;
+   --connection-blue-jeans: #5d9cec;
+   --connection-stone: #59788e;
+   --connection-lavander: #ac92ec;
+   --connection-pink-rose: #ec87c0;
+   --connection-smoke: #bebdb8;
+   --connection-slate: #757c88;
+
+   /* DB-object icon palette — placeholder values, finalize against pencil-new.pen
+      during Batch 7 (sidebar / explore migration) */
+   --db-table: #3b82f6;
+   --db-view: #8b5cf6;
+   --db-trigger: #f59e0b;
+   --db-function: #10b981;
+   --db-procedure: #ec4899;
+   --db-scheduler: #06b6d4;
 
    /* Solid fill used by -webkit-autofill override (must be opaque to cover Chrome's peach/yellow) */
    --autofill: #f4f4f7;
@@ -129,6 +196,39 @@
    --success-foreground: #08091a;
    --warning: #fcd34d;
    --warning-foreground: #08091a;
+   --info: #38bdf8;
+   --info-foreground: #08091a;
+   --danger: #ff5757;
+   --danger-foreground: #ffffff;
+
+   /* Connection palette — same hexes as light mode (palette names map to user
+      preference, not theme); kept here for the "navy glass" surfaces to inherit
+      via theme switch */
+   --connection-default: #ff7034;
+   --connection-grape-fruit: #ff6b76;
+   --connection-rose: #ef4444;
+   --connection-fire: #ffb524;
+   --connection-sunflower: #ffd966;
+   --connection-moss: #a4b370;
+   --connection-grass: #7ed321;
+   --connection-emerald: #10b981;
+   --connection-mint: #5fd8b8;
+   --connection-aqua: #5fcaeb;
+   --connection-royal-lblue: #5b7ee8;
+   --connection-blue-jeans: #7ab0f0;
+   --connection-stone: #6e8aa1;
+   --connection-lavander: #b8a5f0;
+   --connection-pink-rose: #f098ca;
+   --connection-smoke: #c8c7c2;
+   --connection-slate: #8a91a0;
+
+   /* DB-object icon palette — slightly brighter for dark surface contrast */
+   --db-table: #60a5fa;
+   --db-view: #a78bfa;
+   --db-trigger: #fbbf24;
+   --db-function: #34d399;
+   --db-procedure: #f472b6;
+   --db-scheduler: #22d3ee;
 
    /* Opaque navy to hide Chrome's peach autofill underneath the translucent --secondary */
    --autofill: #1e2240;
