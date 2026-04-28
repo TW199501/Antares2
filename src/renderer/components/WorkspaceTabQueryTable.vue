@@ -71,7 +71,7 @@
                            v-else
                            icon-name="mdiMinus"
                            :size="18"
-                           class="sort-icon d-invisible"
+                           class="sort-icon invisible"
                         />
                      </div>
                   </div>
@@ -819,7 +819,9 @@ const sort = (field: TableField) => {
 
    selectedRows.value = [];
    let fieldName = field.name;
-   const hasTableInFieldname = Object.keys(localResults.value[0]).find(k => k !== '_antares_id').includes('.');
+   const firstRow = localResults.value[0];
+   const sampleKey = firstRow ? Object.keys(firstRow).find(k => k !== '_antares_id') : undefined;
+   const hasTableInFieldname = !!sampleKey && sampleKey.includes('.');
 
    if (props.mode === 'query' && hasTableInFieldname)
       fieldName = `${field.tableAlias || field.table}.${field.name}`;
