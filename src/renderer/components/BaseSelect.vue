@@ -17,6 +17,17 @@
             :disabled="disabled"
             class="select-base__input !h-8 !text-[13px]"
          />
+         <ComboboxTrigger
+            class="select-base__trigger"
+            :disabled="disabled"
+            tabindex="-1"
+         >
+            <BaseIcon
+               icon-name="mdiChevronDown"
+               :size="16"
+               class="text-muted-foreground"
+            />
+         </ComboboxTrigger>
       </ComboboxAnchor>
       <ComboboxList :class="['select-base__list', dropdownClass]">
          <ComboboxEmpty>{{ noResultsText }}</ComboboxEmpty>
@@ -91,6 +102,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useAttrs, watch } from 'vue';
 
+import BaseIcon from '@/components/BaseIcon.vue';
 import {
    Combobox,
    ComboboxAnchor,
@@ -100,7 +112,8 @@ import {
    ComboboxItem,
    ComboboxItemIndicator,
    ComboboxLabel,
-   ComboboxList
+   ComboboxList,
+   ComboboxTrigger
 } from '@/components/ui/combobox';
 import {
    Select,
@@ -353,10 +366,35 @@ onMounted(() => {
    spectre styling. */
 .select-base {
    display: inline-flex;
+   align-items: center;
    width: 100%;
+   position: relative;
 
    &__input {
       width: 100%;
+      padding-right: 24px;
+   }
+
+   &__trigger {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 22px;
+      width: 22px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      pointer-events: auto;
+
+      &:disabled {
+         cursor: not-allowed;
+         opacity: 0.5;
+      }
    }
 
    &__list {
