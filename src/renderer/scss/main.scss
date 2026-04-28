@@ -118,6 +118,8 @@ option:checked {
     }
 
     .td {
+      display: flex;
+      align-items: center;
       border-right: 2px solid;
       border-bottom: 2px solid;
       padding: 0 0.2rem;
@@ -130,6 +132,12 @@ option:checked {
 
       &:focus {
         outline: none;
+      }
+
+      // Allow .cell-content (the inner span) to ellipsis-truncate inside flex
+      > .cell-content {
+        flex: 1;
+        min-width: 0;
       }
     }
   }
