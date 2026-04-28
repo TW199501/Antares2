@@ -23,7 +23,7 @@
          @hide="hideInfoModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiInformationOutline"
                   :size="24"

@@ -6,7 +6,7 @@
       @hide="emit('close')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex">
             <BaseIcon
                icon-name="mdiContentSaveAlert"
                class="mr-1"

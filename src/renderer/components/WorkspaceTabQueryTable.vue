@@ -46,7 +46,7 @@
                <div
                   v-for="(field, index) in filteredFields"
                   :key="index"
-                  class="th c-hand !h-[32px] !py-0 !align-middle !bg-primary !text-primary-foreground"
+                  class="th cursor-pointer !h-[32px] !py-0 !align-middle !bg-primary !text-primary-foreground"
                   :title="`${field.type} ${fieldLength(field) ? `(${fieldLength(field)})` : ''}`"
                >
                   <div ref="columnResize" class="column-resizable">
@@ -115,7 +115,7 @@
          @hide="hideDeleteConfirmModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiDelete"
                   class="mr-1"
@@ -137,7 +137,7 @@
          @hide="chunkModalRequest = false"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiFileExport"
                   class="mr-1"
@@ -147,23 +147,19 @@
             </div>
          </template>
          <template #body>
-            <div class="columns">
-               <Label class="column col-12 h6 mb-2 cut-text">{{ t('database.targetTable') }}</Label>
-               <div class="column col-12">
-                  <Input
-                     v-model.number="sqlExportOptions.targetTable"
-                     type="text"
-                     :placeholder="chunkModalRequest"
-                  />
-               </div>
-               <Label class="column col-12 h6 mb-2 mt-4 cut-text">{{ t('database.newInsertStmtEvery') }}:</Label>
-               <div class="column col-6">
+            <div class="flex flex-col gap-2">
+               <Label class="text-[14px] font-semibold cut-text">{{ t('database.targetTable') }}</Label>
+               <Input
+                  v-model.number="sqlExportOptions.targetTable"
+                  type="text"
+                  :placeholder="chunkModalRequest"
+               />
+               <Label class="text-[14px] font-semibold cut-text mt-3">{{ t('database.newInsertStmtEvery') }}:</Label>
+               <div class="grid grid-cols-2 gap-2">
                   <Input
                      v-model.number="sqlExportOptions.sqlInsertAfter"
                      type="number"
                   />
-               </div>
-               <div class="column col-6">
                   <BaseSelect
                      v-model="sqlExportOptions.sqlInsertDivider"
                      :options="[{ value: 'bytes', label: 'KiB' }, { value: 'rows', label: t('database.row', 2) }]"
@@ -179,7 +175,7 @@
          @hide="csvModalRequest = false"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiFileExport"
                   class="mr-1"
@@ -189,56 +185,40 @@
             </div>
          </template>
          <template #body>
-            <div class="columns">
-               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
-                  <div class="column col-5">
-                     <Label class="cut-text">{{ t('application.csvFieldDelimiter') }}:</Label>
-                  </div>
-                  <div class="column col-7">
-                     <Input
-                        v-model.number="csvExportOptions.fieldDelimiter"
-                        type="text"
-                     />
-                  </div>
+            <div class="flex flex-col gap-2">
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label class="cut-text">{{ t('application.csvFieldDelimiter') }}:</Label>
+                  <Input
+                     v-model.number="csvExportOptions.fieldDelimiter"
+                     type="text"
+                  />
                </div>
-               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
-                  <div class="column col-5">
-                     <Label class="cut-text">{{ t('application.csvStringDelimiter') }}:</Label>
-                  </div>
-                  <div class="column col-7">
-                     <BaseSelect
-                        v-model="csvExportOptions.stringDelimiter"
-                        :options="[
-                           { value: '', label: t('general.none') },
-                           { value: 'single', label: t('general.singleQuote') },
-                           { value: 'double', label: t('general.doubleQuote') }
-                        ]"
-                     />
-                  </div>
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label class="cut-text">{{ t('application.csvStringDelimiter') }}:</Label>
+                  <BaseSelect
+                     v-model="csvExportOptions.stringDelimiter"
+                     :options="[
+                        { value: '', label: t('general.none') },
+                        { value: 'single', label: t('general.singleQuote') },
+                        { value: 'double', label: t('general.doubleQuote') }
+                     ]"
+                  />
                </div>
-               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
-                  <div class="column col-5">
-                     <Label class="cut-text">{{ t('application.csvLinesTerminator') }}:</Label>
-                  </div>
-                  <div class="column col-7">
-                     <textarea
-                        v-model.number="csvExportOptions.linesTerminator"
-                        class="text-foreground bg-background border border-input rounded-md px-3 py-1 w-full text-[14px]"
-                        :style="'resize: none'"
-                        rows="1"
-                     />
-                  </div>
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label class="cut-text">{{ t('application.csvLinesTerminator') }}:</Label>
+                  <textarea
+                     v-model.number="csvExportOptions.linesTerminator"
+                     class="text-foreground bg-background border border-input rounded-md px-3 py-1 w-full text-[14px]"
+                     :style="'resize: none'"
+                     rows="1"
+                  />
                </div>
-               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
-                  <div class="column col-5">
-                     <Label>{{ t('application.csvIncludeHeader') }}</Label>
-                  </div>
-                  <div class="column col-7">
-                     <Switch
-                        :checked="csvExportOptions.header"
-                        @update:checked="(v) => csvExportOptions.header = v"
-                     />
-                  </div>
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label>{{ t('application.csvIncludeHeader') }}</Label>
+                  <Switch
+                     :checked="csvExportOptions.header"
+                     @update:checked="(v) => csvExportOptions.header = v"
+                  />
                </div>
             </div>
          </template>

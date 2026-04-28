@@ -65,7 +65,7 @@
       @hide="hideConfirmModal"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex">
             <BaseIcon
                class="text-light mr-1"
                :icon-name="contextConnection.isFolder ? 'mdiFolderRemove' : 'mdiServerRemove'"

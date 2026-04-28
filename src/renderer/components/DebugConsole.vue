@@ -19,7 +19,7 @@
       <div
          id="console"
          ref="queryConsole"
-         class="console column col-12 bg-background border-t border-border/60"
+         class="console w-full bg-background border-t border-border/60"
          :style="{height: localHeight ? localHeight+'px' : ''}"
       >
          <Tabs v-model="selectedTabModel" class="flex h-full flex-col">

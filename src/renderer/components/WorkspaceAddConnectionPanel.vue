@@ -1,5 +1,5 @@
 <template>
-   <div class="connection-panel-wrapper p-relative">
+   <div class="connection-panel-wrapper relative">
       <div class="connection-panel">
          <div class="mx-auto mb-5 flex w-[520px] items-center gap-3 px-1 text-foreground">
             <div class="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">

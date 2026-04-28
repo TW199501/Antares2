@@ -1,5 +1,5 @@
 <template>
-   <div class="column col-auto p-relative">
+   <div class="shrink-0 relative">
       <div ref="resizer" class="workspace-explorebar-resizer" />
       <div
          ref="explorebar"

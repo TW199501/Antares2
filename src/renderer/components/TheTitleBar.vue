@@ -30,7 +30,7 @@
             <BaseIcon icon-name="mdiRefresh" :size="18" />
          </div>
          <div v-if="isWindows" :style="'width: 140px;'" />
-         <div v-if="isLinux" class="d-flex">
+         <div v-if="isLinux" class="flex">
             <div class="titlebar-element" @click="minimize">
                <BaseIcon icon-name="mdiWindowMinimize" :size="18" />
             </div>

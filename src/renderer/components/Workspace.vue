@@ -23,7 +23,7 @@
                tag="ul"
                item-key="uid"
                group="tabs"
-               class="ws-tabs-row column col-12"
+               class="ws-tabs-row w-full"
                draggable=".tab-draggable"
                @mouseover="addWheelEvent"
             >

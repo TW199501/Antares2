@@ -84,7 +84,7 @@
          @hide="hideEditorModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiPlaylistEdit"
                   class="mr-1"
@@ -101,8 +101,8 @@
                      :mode="editorMode"
                   />
                </div>
-               <div class="editor-field-info p-vcentered">
-                  <div class="d-flex p-vcentered">
+               <div class="editor-field-info flex items-center">
+                  <div class="flex items-center">
                      <Label for="editorMode" class="mr-2">
                         <b>{{ t('general.content') }}</b>:
                      </Label>
@@ -112,11 +112,11 @@
                         :options="availableLanguages"
                         option-label="name"
                         option-track-by="slug"
-                        class="select-sm"
+                        class="h-7 text-[12px]"
                      />
                   </div>
-                  <div class="d-flex">
-                     <div class="p-vcentered">
+                  <div class="flex">
+                     <div class="items-center">
                         <div class="mr-4">
                            <b>{{ t('general.size') }}</b>: {{ editingContent ? editingContent.length : 0 }}
                         </div>
@@ -136,7 +136,7 @@
          @hide="hideEditorModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiMap"
                   class="mr-1"
@@ -155,7 +155,7 @@
          @hide="hideEditorModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiPlaylistEdit"
                   class="mr-1"

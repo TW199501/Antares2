@@ -1,21 +1,17 @@
 <template>
-   <div class="column col-12 empty">
-      <div class="empty-icon">
-         <img :src="logos[applicationTheme]" width="200">
-      </div>
-      <p class="h6 empty-subtitle">
+   <div class="flex flex-col items-center justify-center mx-auto h-full w-full gap-4">
+      <img :src="logos[applicationTheme]" width="200">
+      <p class="text-[15px] font-semibold text-muted-foreground">
          {{ t('application.noOpenTabs') }}
       </p>
-      <div class="empty-action">
-         <Button @click="emit('new-tab')">
-            <BaseIcon
-               icon-name="mdiTabPlus"
-               :size="24"
-               class="mr-2"
-            />
-            {{ t('application.openNewTab') }}
-         </Button>
-      </div>
+      <Button @click="emit('new-tab')">
+         <BaseIcon
+            icon-name="mdiTabPlus"
+            :size="20"
+            class="mr-2"
+         />
+         {{ t('application.openNewTab') }}
+      </Button>
    </div>
 </template>
 <script setup lang="ts">
@@ -53,17 +49,3 @@ const workspace = computed(() => {
 
 changeBreadcrumbs({ schema: workspace.value.breadcrumbs.schema });
 </script>
-
-<style lang="scss" scoped>
-  .empty {
-    height: 100%;
-    border-radius: 0;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-left: auto;
-    margin-right: auto;
-  }
-</style>

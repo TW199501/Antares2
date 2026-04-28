@@ -54,7 +54,7 @@
                      <div
                         v-for="foreign in foreignProxy"
                         :key="foreign._antares_id"
-                        class="tile flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
+                        class="flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
                         :class="{'selected-element': selectedForeignID === foreign._antares_id}"
                         @click="selectForeign($event, foreign._antares_id)"
                      >

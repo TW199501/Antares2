@@ -63,7 +63,7 @@
       @hide="hideEmptyModal"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex">
             <BaseIcon
                class="text-light mr-1"
                icon-name="mdiTableOff"
@@ -92,7 +92,7 @@
       @hide="hideDeleteModal"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex">
             <BaseIcon
                class="text-light mr-1"
                icon-name="mdiTableRemove"

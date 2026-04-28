@@ -138,7 +138,7 @@
                         <div
                            v-for="(field, index) in fields"
                            :key="index"
-                           class="th c-hand"
+                           class="th cursor-pointer"
                         >
                            <div ref="columnResize" class="column-resizable">
                               <div class="table-column-title" @click="sort(field)">

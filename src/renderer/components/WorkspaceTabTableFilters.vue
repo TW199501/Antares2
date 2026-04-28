@@ -12,7 +12,7 @@
          />
          <BaseSelect
             v-model="row.field"
-            class="ml-2 col-auto select-sm"
+            class="ml-2 shrink-0"
             :options="fields"
             option-track-by="name"
             option-label="name"
@@ -20,7 +20,7 @@
          />
          <BaseSelect
             v-model="row.op"
-            class="ml-2 col-auto select-sm"
+            class="ml-2 shrink-0"
             :options="operators"
             :disabled="isQuering"
          />

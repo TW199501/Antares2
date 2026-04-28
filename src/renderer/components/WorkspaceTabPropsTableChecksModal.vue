@@ -54,7 +54,7 @@
                      <div
                         v-for="check in checksProxy"
                         :key="check._antares_id"
-                        class="tile flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
+                        class="flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
                         :class="{'selected-element': selectedCheckID === check._antares_id}"
                         @click="selectCheck($event, check._antares_id)"
                      >

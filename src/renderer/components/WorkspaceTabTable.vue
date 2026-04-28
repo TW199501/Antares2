@@ -37,7 +37,7 @@
                >
                   {{ useCommentHeader ? '中' : 'A' }}
                </button>
-               <div v-show="viewMode === 'data'" class="d-flex align-items-center gap-1">
+               <div v-show="viewMode === 'data'" class="flex items-center gap-1">
                   <!-- Insert row -->
                   <Button
                      v-if="isTable && !connection.readonly"

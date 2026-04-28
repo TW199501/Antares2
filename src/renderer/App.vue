@@ -5,7 +5,7 @@
          <div id="window-content">
             <TheSettingBar @show-connections-modal="isAllConnectionsModal = true" />
             <div id="main-content" class="container">
-               <div class="columns col-gapless">
+               <div class="flex">
                   <Workspace
                      v-for="connection in connections"
                      :key="connection.uid"
