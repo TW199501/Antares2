@@ -10,7 +10,7 @@
             :value="downloadPercentage"
             max="100"
          />
-         <p class="text-[12px] text-muted-foreground mt-1">
+         <p class="text-xs text-muted-foreground mt-1">
             {{ downloadPercentage }}%
          </p>
       </div>

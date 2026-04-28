@@ -151,7 +151,7 @@
                class="text-muted-foreground mb-2"
                :size="48"
             />
-            <p class="text-[14px] font-medium text-muted-foreground">
+            <p class="text-sm font-medium text-muted-foreground">
                {{ t('database.thereAreNoQueriesYet') }}
             </p>
          </div>

@@ -11,7 +11,7 @@ const forwarded = useForwardProps(props);
 <template>
    <ComboboxLabel
       v-bind="forwarded"
-      :class="cn('px-2 py-1.5 text-[12px] font-semibold text-muted-foreground', props.class)"
+      :class="cn('px-2 py-1.5 text-xs font-semibold text-muted-foreground', props.class)"
    >
       <slot />
    </ComboboxLabel>

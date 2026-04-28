@@ -23,8 +23,8 @@ import { Toaster } from 'vue-sonner';
       :toast-options="{
          classes: {
             toast: 'bg-card border-border text-card-foreground shadow-lg',
-            title: 'text-[14px] font-medium',
-            description: 'text-[12px] text-muted-foreground'
+            title: 'text-sm font-medium',
+            description: 'text-xs text-muted-foreground'
          }
       }"
    />

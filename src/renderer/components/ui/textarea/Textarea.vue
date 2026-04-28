@@ -1,7 +1,7 @@
 <!--
   @usage
   <Textarea v-model="note.content" rows="6" placeholder="Write something..." />
-  <Textarea v-model="ddl" readonly class="font-mono text-[12px]" />
+  <Textarea v-model="ddl" readonly class="font-mono text-xs" />
 -->
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core';

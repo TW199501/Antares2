@@ -64,10 +64,10 @@
                            class="shrink-0"
                         />
                         <div class="flex-1 min-w-0">
-                           <div class="text-[14px] truncate">
+                           <div class="text-sm truncate">
                               {{ param.name }}
                            </div>
-                           <div class="text-[12px] text-muted-foreground truncate">
+                           <div class="text-xs text-muted-foreground truncate">
                               {{ param.type }}{{ param.length ? `(${param.length})` : '' }} · {{ param.context }}
                            </div>
                         </div>
@@ -95,22 +95,22 @@
                   class="flex flex-col gap-3"
                >
                   <div class="grid grid-cols-[100px_1fr] items-center gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
                      </Label>
                      <Input
                         v-model="selectedParamObj.name"
                         type="text"
-                        class="!h-[32px] !text-[14px]"
+                        class="!h-[32px] !text-sm"
                      />
                   </div>
                   <div class="grid grid-cols-[100px_1fr] items-center gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.type') }}
                      </Label>
                      <BaseSelect
                         v-model="selectedParamObj.type"
-                        class="uppercase !h-[32px] !text-[14px]"
+                        class="uppercase !h-[32px] !text-sm"
                         :options="workspace.dataTypes"
                         group-label="group"
                         group-values="types"
@@ -119,25 +119,25 @@
                      />
                   </div>
                   <div v-if="customizations.parametersLength" class="grid grid-cols-[100px_1fr] items-center gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.length') }}
                      </Label>
                      <Input
                         v-model="selectedParamObj.length"
                         type="number"
                         min="0"
-                        class="!h-[32px] !text-[14px]"
+                        class="!h-[32px] !text-sm"
                      />
                   </div>
                   <div v-if="customizations.procedureContext" class="grid grid-cols-[100px_1fr] items-start gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 mt-1.5">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.context') }}
                      </Label>
                      <RadioGroup v-model="selectedParamObj.context" class="flex flex-col gap-1.5 pt-1">
                         <label
                            v-for="condext in customizations.procedureContextValues"
                            :key="condext"
-                           class="flex items-center gap-2 cursor-pointer text-[14px]"
+                           class="flex items-center gap-2 cursor-pointer text-sm"
                         >
                            <RadioGroupItem :value="condext" />
                            {{ condext }}

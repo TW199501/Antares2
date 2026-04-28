@@ -34,7 +34,7 @@
                <Label class="!text-[13px]">{{ t('general.directoryPath') }}</Label>
                <div class="flex items-center gap-2">
                   <code
-                     class="flex-1 truncate rounded-md border border-input bg-secondary px-3 py-2 text-[12px] text-muted-foreground"
+                     class="flex-1 truncate rounded-md border border-input bg-secondary px-3 py-2 text-xs text-muted-foreground"
                      :title="basePath"
                      @click.stop="openPathDialog"
                   >{{ basePath || '—' }}</code>
@@ -114,7 +114,7 @@
                      scrolling long table lists.
                   -->
                   <div class="flex-1 min-h-0 overflow-auto rounded-md border border-border/60">
-                     <table class="w-full text-[12px]">
+                     <table class="w-full text-xs">
                         <thead class="sticky top-0 z-10 bg-muted/40 backdrop-blur-sm">
                            <tr class="border-b border-border/60">
                               <th class="text-left font-semibold px-3 py-2 w-[50%]">
@@ -185,19 +185,19 @@
 
                <!-- Options column -->
                <div class="col-span-1 space-y-3">
-                  <h5 class="text-[14px] font-semibold m-0">
+                  <h5 class="text-sm font-semibold m-0">
                      {{ t('general.options') }}
                   </h5>
 
                   <div>
-                     <div class="text-[12px] font-medium mb-1.5">
+                     <div class="text-xs font-medium mb-1.5">
                         {{ t('general.includes') }}:
                      </div>
                      <div class="space-y-1.5">
                         <label
                            v-for="(_, key) in options.includes"
                            :key="key"
-                           class="flex items-center gap-2 text-[12px] cursor-pointer"
+                           class="flex items-center gap-2 text-xs cursor-pointer"
                         >
                            <Checkbox v-model="options.includes[key]" />
                            {{ t(`database.${String(key).slice(0, -1)}`, 2) }}
@@ -206,7 +206,7 @@
                   </div>
 
                   <div v-if="clientCustoms.exportByChunks">
-                     <div class="text-[12px] font-medium mb-1.5">
+                     <div class="text-xs font-medium mb-1.5">
                         {{ t('database.newInsertStmtEvery') }}:
                      </div>
                      <div class="grid grid-cols-2 gap-2">
@@ -222,7 +222,7 @@
                   </div>
 
                   <div>
-                     <div class="text-[12px] font-medium mb-1.5">
+                     <div class="text-xs font-medium mb-1.5">
                         {{ t('general.outputFormat') }}:
                      </div>
                      <BaseSelect

@@ -2,10 +2,10 @@
    <div class="px-2 py-2 space-y-6">
       <Card class="!shadow-none">
          <CardHeader class="!p-4 !pb-2">
-            <CardTitle class="text-[14px] font-semibold uppercase tracking-wide">
+            <CardTitle class="text-sm font-semibold uppercase tracking-wide">
                {{ t('application.exportData') }}
             </CardTitle>
-            <CardDescription class="text-[12px]">
+            <CardDescription class="text-xs">
                {{ t('application.exportDataExplanation') }}
             </CardDescription>
          </CardHeader>
@@ -19,10 +19,10 @@
 
       <Card class="!shadow-none">
          <CardHeader class="!p-4 !pb-2">
-            <CardTitle class="text-[14px] font-semibold uppercase tracking-wide">
+            <CardTitle class="text-sm font-semibold uppercase tracking-wide">
                {{ t('application.importData') }}
             </CardTitle>
-            <CardDescription class="text-[12px]">
+            <CardDescription class="text-xs">
                {{ t('application.importDataExplanation') }}
             </CardDescription>
          </CardHeader>

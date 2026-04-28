@@ -6,7 +6,7 @@
          </div>
          <div
             v-if="schema"
-            class="flex items-center gap-1 text-[12px] text-muted-foreground"
+            class="flex items-center gap-1 text-xs text-muted-foreground"
             :title="schemaTitle"
          >
             <BaseIcon icon-name="mdiDatabase" :size="14" />

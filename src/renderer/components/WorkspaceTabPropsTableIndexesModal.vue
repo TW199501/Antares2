@@ -66,10 +66,10 @@
                            :size="22"
                         />
                         <div class="flex-1 min-w-0">
-                           <div class="text-[14px] truncate">
+                           <div class="text-sm truncate">
                               {{ index.name }}
                            </div>
-                           <div class="text-[12px] text-muted-foreground">
+                           <div class="text-xs text-muted-foreground">
                               {{ index.type }} · {{ index.fields.length }} {{ t('database.field', index.fields.length) }}
                            </div>
                         </div>
@@ -97,35 +97,35 @@
                   class="flex flex-col gap-3"
                >
                   <div class="grid grid-cols-[100px_1fr] items-center gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
                      </Label>
                      <Input
                         v-model="selectedIndexObj.name"
                         type="text"
-                        class="!h-[32px] !text-[14px]"
+                        class="!h-[32px] !text-sm"
                      />
                   </div>
                   <div class="grid grid-cols-[100px_1fr] items-center gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.type') }}
                      </Label>
                      <BaseSelect
                         v-model="selectedIndexObj.type"
                         :options="indexTypes"
                         :option-disabled="(opt: any) => opt === 'PRIMARY' && hasPrimary"
-                        class="!h-[32px] !text-[14px]"
+                        class="!h-[32px] !text-sm"
                      />
                   </div>
                   <div class="grid grid-cols-[100px_1fr] items-start gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 mt-1.5">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.field', fields.length) }}
                      </Label>
                      <div class="fields-list flex flex-col gap-1 pt-1">
                         <label
                            v-for="(field, i) in fields"
                            :key="`${field.name}-${i}`"
-                           class="flex items-center gap-2 cursor-pointer text-[14px]"
+                           class="flex items-center gap-2 cursor-pointer text-sm"
                         >
                            <Checkbox
                               :model-value="selectedIndexObj.fields.some((f: string) => f === field.name)"
@@ -141,7 +141,7 @@
                      icon-name="mdiKeyOutline"
                      :size="48"
                   />
-                  <p class="text-[16px]">
+                  <p class="text-base">
                      {{ t('database.thereAreNoIndexes') }}
                   </p>
                   <Button @click="addIndex">

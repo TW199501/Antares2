@@ -32,7 +32,7 @@
                   class="text-muted-foreground"
                   :size="16"
                />
-               <code class="flex-1 truncate text-[12px] text-muted-foreground" :title="sqlFile">{{ sqlFile }}</code>
+               <code class="flex-1 truncate text-xs text-muted-foreground" :title="sqlFile">{{ sqlFile }}</code>
             </div>
 
             <!--
@@ -57,7 +57,7 @@
                      v-model="formattedQueryErrors"
                      rows="6"
                      readonly
-                     class="font-mono text-[12px]"
+                     class="font-mono text-xs"
                   />
                </CardContent>
             </Card>

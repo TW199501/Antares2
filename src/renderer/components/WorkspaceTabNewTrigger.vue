@@ -81,7 +81,7 @@
                      <label
                         v-for="event in Object.keys(localEvents) as ('INSERT' | 'UPDATE' | 'DELETE')[]"
                         :key="event"
-                        class="flex cursor-pointer items-center gap-1.5 text-[12px]"
+                        class="flex cursor-pointer items-center gap-1.5 text-xs"
                      >
                         <Checkbox
                            :checked="localEvents[event]"
@@ -97,7 +97,7 @@
 
       <template #content>
          <BaseLoader v-if="isLoading" />
-         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+         <Label class="!text-xs !text-muted-foreground !font-normal !m-0 ml-2">
             {{ t('database.triggerStatement') }}
          </Label>
          <QueryEditor

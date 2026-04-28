@@ -3,24 +3,24 @@
       <div class="px-4 pt-2 pb-3">
          <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div class="flex items-center gap-2">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('general.name') }}</Label>
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('general.name') }}</Label>
                <Input
                   v-model="localOptions.name"
                   type="text"
-                  class="!h-[32px] !text-[14px] !bg-background"
+                  class="!h-[32px] !text-sm !bg-background"
                />
             </div>
             <div v-if="workspace.customizations.comment" class="flex items-center gap-2">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.comment') }}</Label>
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.comment') }}</Label>
                <Input
                   v-model="localOptions.comment"
                   type="text"
-                  class="!h-[32px] !text-[14px] !w-[200px] !bg-background"
+                  class="!h-[32px] !text-sm !w-[200px] !bg-background"
                />
             </div>
 
             <div v-if="workspace.customizations.autoIncrement" class="flex items-center gap-2">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
                   {{ t('database.autoIncrement') }}
                </Label>
                <Input
@@ -28,11 +28,11 @@
                   v-model="localOptions.autoIncrement"
                   type="number"
                   :disabled="localOptions.autoIncrement === null"
-                  class="!h-[32px] !text-[14px] !bg-background"
+                  class="!h-[32px] !text-sm !bg-background"
                />
             </div>
             <div v-if="workspace.customizations.collations" class="flex items-center gap-2">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
                   {{ t('database.collation') }}
                </Label>
                <BaseSelect
@@ -42,16 +42,16 @@
                   option-label="collation"
                   option-track-by="collation"
                   :disabled="true"
-                  class="w-[200px] !h-[32px] !text-[14px] !bg-background"
+                  class="w-[200px] !h-[32px] !text-sm !bg-background"
                />
             </div>
             <div v-if="workspace.customizations.engines" class="flex items-center gap-2">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
                   {{ t('database.engine') }}
                </Label>
                <BaseSelect
                   v-model="localOptions.engine"
-                  class="!h-[32px] !text-[14px] !bg-background"
+                  class="!h-[32px] !text-sm !bg-background"
                   :options="workspace.engines"
                   option-label="name"
                   option-track-by="name"
@@ -65,7 +65,7 @@
                variant="default"
                size="sm"
                :disabled="!isChanged"
-               :class="['h-[32px] !text-[14px] gap-1', { 'loading': isSaving }]"
+               :class="['h-[32px] !text-sm gap-1', { 'loading': isSaving }]"
                @click="saveChanges"
             >
                <BaseIcon icon-name="mdiContentSave" :size="16" />
@@ -75,7 +75,7 @@
                variant="outline"
                size="sm"
                :disabled="!isChanged || isSaving"
-               class="h-[32px] !text-[14px] gap-1"
+               class="h-[32px] !text-sm gap-1"
                :title="t('database.clearChanges')"
                @click="clearChanges"
             >
@@ -89,7 +89,7 @@
                variant="secondary"
                size="sm"
                :disabled="isSaving"
-               class="h-[32px] !text-[14px] gap-1"
+               class="h-[32px] !text-sm gap-1"
                :title="t('database.addNewField')"
                @click="addField"
             >
@@ -100,7 +100,7 @@
                variant="secondary"
                size="sm"
                :disabled="isSaving"
-               class="h-[32px] !text-[14px] gap-1"
+               class="h-[32px] !text-sm gap-1"
                :title="t('database.manageIndexes')"
                @click="showIntdexesModal"
             >
@@ -115,7 +115,7 @@
                variant="secondary"
                size="sm"
                :disabled="isSaving"
-               class="h-[32px] !text-[14px] gap-1"
+               class="h-[32px] !text-sm gap-1"
                :title="t('database.manageForeignKeys')"
                @click="showForeignModal"
             >
@@ -127,7 +127,7 @@
                variant="secondary"
                size="sm"
                :disabled="isSaving"
-               class="h-[32px] !text-[14px] gap-1"
+               class="h-[32px] !text-sm gap-1"
                :title="t('database.manageTableChecks')"
                @click="showTableChecksModal"
             >
@@ -142,7 +142,7 @@
                variant="secondary"
                size="sm"
                :disabled="isSaving"
-               class="h-[32px] !text-[14px] gap-1"
+               class="h-[32px] !text-sm gap-1"
                @click="showDdlModal"
             >
                <BaseIcon icon-name="mdiCodeTags" :size="16" />

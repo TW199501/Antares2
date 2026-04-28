@@ -19,7 +19,7 @@
             <Button
                variant="ghost"
                size="sm"
-               class="!h-[28px] !text-[12px] mr-8"
+               class="!h-[28px] !text-xs mr-8"
                :disabled="!createDdl"
                :title="t('general.copy')"
                @click="copyDdl"

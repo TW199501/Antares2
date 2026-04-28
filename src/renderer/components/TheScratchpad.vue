@@ -6,7 +6,7 @@
          @pointer-down-outside.prevent="hideScratchpad"
       >
          <DialogHeader class="flex flex-row items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/30">
-            <DialogTitle class="!text-[14px] !font-semibold flex items-center gap-1.5">
+            <DialogTitle class="!text-sm !font-semibold flex items-center gap-1.5">
                <BaseIcon icon-name="mdiNotebookOutline" :size="20" />
                <span>{{ t('application.note', 2) }}</span>
             </DialogTitle>
@@ -39,7 +39,7 @@
                      v-for="tag in [{ code: 'all', name: t('general.all') }, ...noteTags]"
                      :key="tag.code"
                      type="button"
-                     class="px-3 text-[12px] uppercase font-medium transition-colors"
+                     class="px-3 text-xs uppercase font-medium transition-colors"
                      :class="selectedTag === tag.code
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-card text-card-foreground hover:bg-accent/50'"

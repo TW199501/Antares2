@@ -31,7 +31,7 @@
                   option-label="collation"
                   option-track-by="collation"
                />
-               <p class="text-[12px] text-muted-foreground mt-1">
+               <p class="text-xs text-muted-foreground mt-1">
                   {{ t('database.serverDefault') }}: {{ defaultCollation }}
                </p>
             </FormField>

@@ -36,7 +36,7 @@
          parsed key markup width (parseKeys returns kbd-tagged HTML).
       -->
       <div class="container">
-         <div class="grid grid-cols-[200px_1fr_180px] gap-2 px-3 py-2 border-b border-border/60 bg-muted/30 text-[12px] font-semibold uppercase tracking-wide">
+         <div class="grid grid-cols-[200px_1fr_180px] gap-2 px-3 py-2 border-b border-border/60 bg-muted/30 text-xs font-semibold uppercase tracking-wide">
             <div>{{ t('application.event') }}</div>
             <div>{{ t('application.key', 2) }}</div>
             <div />
@@ -56,7 +56,7 @@
                   <Button
                      variant="ghost"
                      size="sm"
-                     class="!h-6 !px-1.5 !text-[12px] gap-1"
+                     class="!h-6 !px-1.5 !text-xs gap-1"
                      @click="showEditModal({...shortcut, index: i})"
                   >
                      <span>{{ t('general.edit') }}</span>
@@ -65,7 +65,7 @@
                   <Button
                      variant="ghost"
                      size="sm"
-                     class="!h-6 !px-1.5 !text-[12px] gap-1"
+                     class="!h-6 !px-1.5 !text-xs gap-1"
                      @click="showDeleteModal(shortcut)"
                   >
                      <span>{{ t('general.delete') }}</span>
@@ -104,7 +104,7 @@
                <Label class="!text-[13px] font-medium">{{ t('application.key', 2) }}</Label>
                <KeyPressDetector v-model="typedShortcut" />
             </div>
-            <small v-if="doesShortcutExists" class="text-[12px] text-yellow-600 dark:text-yellow-400">{{ t('application.shortcutAlreadyExists') }}</small>
+            <small v-if="doesShortcutExists" class="text-xs text-yellow-600 dark:text-yellow-400">{{ t('application.shortcutAlreadyExists') }}</small>
          </div>
       </template>
    </ConfirmModal>
@@ -137,7 +137,7 @@
                <Label class="!text-[13px] font-medium">{{ t('application.key', 2) }}</Label>
                <KeyPressDetector v-model="shortcutToEdit.keys[0]" />
             </div>
-            <small v-if="doesShortcutExists" class="text-[12px] text-yellow-600 dark:text-yellow-400">{{ t('application.shortcutAlreadyExists') }}</small>
+            <small v-if="doesShortcutExists" class="text-xs text-yellow-600 dark:text-yellow-400">{{ t('application.shortcutAlreadyExists') }}</small>
          </div>
       </template>
    </ConfirmModal>

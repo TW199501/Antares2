@@ -5,7 +5,6 @@
   --primary-color-shadow: 0 0 0 0.1rem rgba(227, 105, 41, 0.2);
 }
 
-@import "~spectre.css/src/variables";
 @import "variables";
 @import "transitions";
 @import "data-types";
@@ -15,55 +14,6 @@
 @import "db-icons";
 @import "themes/dark-theme";
 @import "themes/light-theme";
-/* Cherry-pick spectre modules. We intentionally skip `utilities/_colors.scss`
-   because its `.bg-primary`, `.bg-secondary`, `.bg-dark`, `.text-primary`,
-   `.text-secondary`, `.text-error` etc. utility classes (with `!important`)
-   collide head-on with Tailwind / shadcn-vue utility names and overwrite them
-   with spectre's palette (notably peach `.bg-secondary` #F9E0D2, which was
-   rendering every <Input> and secondary <Button> in Connection panels pink). */
-@import "~spectre.css/src/mixins";
-@import "~spectre.css/src/normalize";
-@import "~spectre.css/src/base";
-@import "~spectre.css/src/typography";
-@import "~spectre.css/src/asian";
-@import "~spectre.css/src/tables";
-@import "~spectre.css/src/buttons";
-@import "~spectre.css/src/forms";
-@import "~spectre.css/src/labels";
-@import "~spectre.css/src/codes";
-@import "~spectre.css/src/media";
-@import "~spectre.css/src/layout";
-@import "~spectre.css/src/hero";
-@import "~spectre.css/src/navbar";
-@import "~spectre.css/src/accordions";
-@import "~spectre.css/src/avatars";
-@import "~spectre.css/src/badges";
-@import "~spectre.css/src/breadcrumbs";
-@import "~spectre.css/src/bars";
-@import "~spectre.css/src/cards";
-@import "~spectre.css/src/chips";
-@import "~spectre.css/src/dropdowns";
-@import "~spectre.css/src/empty";
-@import "~spectre.css/src/menus";
-@import "~spectre.css/src/modals";
-@import "~spectre.css/src/navs";
-@import "~spectre.css/src/pagination";
-@import "~spectre.css/src/panels";
-@import "~spectre.css/src/popovers";
-@import "~spectre.css/src/steps";
-@import "~spectre.css/src/tabs";
-@import "~spectre.css/src/tiles";
-@import "~spectre.css/src/toasts";
-@import "~spectre.css/src/tooltips";
-@import "~spectre.css/src/animations";
-@import "~spectre.css/src/utilities/cursors";
-@import "~spectre.css/src/utilities/display";
-@import "~spectre.css/src/utilities/divider";
-@import "~spectre.css/src/utilities/loading";
-@import "~spectre.css/src/utilities/position";
-@import "~spectre.css/src/utilities/shapes";
-@import "~spectre.css/src/utilities/text";
-@import "~spectre.css/src/spectre-exp";
 
 body {
   user-select: none;
@@ -74,7 +24,7 @@ a {
   color: var(--primary-color);
 
   &:hover {
-    color: var(--primary-color-dark)
+    color: var(--primary-color-dark);
   }
 }
 
@@ -87,16 +37,7 @@ option:checked {
   color: $light-color;
 }
 
-/* Additions */
-@include margin-variant(3, $unit-3);
-@include margin-variant(4, $unit-4);
-@include padding-variant(3, $unit-3);
-@include padding-variant(4, $unit-4);
-
-.p-vcentered {
-  display: flex !important;
-  align-items: center;
-}
+/* Custom utility classes still referenced by Vue components */
 
 .c-help {
   cursor: help;
@@ -150,6 +91,7 @@ option:checked {
   }
 }
 
+/* Custom result-table styling — fake-table layout (.table .th .td) */
 .workspace-query-results {
   overflow: auto;
   white-space: nowrap;
@@ -205,12 +147,8 @@ option:checked {
 
       .workspace-query-buttons {
         display: flex;
-
-        .btn {
-          display: flex;
-          align-self: center;
-          margin-right: 0.4rem;
-        }
+        align-items: center;
+        gap: 0.4rem;
       }
 
       .workspace-query-info {
@@ -255,290 +193,7 @@ option:checked {
   animation: rotation 0.8s infinite linear;
 }
 
-.loading {
-  &::after {
-    border: 0.1rem solid var(--primary-color);
-    border-right-color: transparent;
-    border-top-color: transparent;
-  }
-}
-
-/* Override */
-.modal {
-  .modal-container,
-  .modal-sm .modal-container {
-    padding: 0;
-    border-radius: $border-radius;
-
-    .modal-header {
-      padding: 0.4rem 0.8rem;
-      text-transform: uppercase;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: $border-radius $border-radius 0 0;
-
-      .modal-title {
-        overflow: hidden;
-      }
-    }
-  }
-
-  .modal-overlay {
-    background: rgb(255 255 255 / 10%);
-    box-shadow: 0 8px 32px 0 rgb(31 38 135 / 37%);
-  }
-}
-
-#wrapper:not(.no-blur) {
-  .modal-overlay {
-    backdrop-filter: blur(4px);
-  }
-}
-
-.tab {
-  .tab-item {
-    position: relative;
-    display: flex;
-    justify-content: center;
-
-    .tab-link {
-      min-width: 0;
-      transition: color 0.2s;
-    }
-
-    &.active {
-      a {
-        border-bottom-color: transparent;
-      }
-
-      .tab-link {
-        border-color: transparent;
-      }
-
-      &::after {
-        width: 100%;
-      }
-    }
-
-    &::after {
-      content: "";
-      height: 2px;
-      width: 0;
-      transition: width 0.2s;
-      background-color: var(--primary-color);
-      position: absolute;
-      bottom: 0;
-    }
-
-    .btn-clear {
-      margin-top: -0.1rem;
-      font-size: 0.6rem;
-    }
-  }
-}
-
-.panel {
-  border: none;
-}
-
-.tooltip:hover {
-  &::after {
-    opacity: 1;
-  }
-}
-
-.badge {
-  &[data-badge],
-  &:not([data-badge]) {
-    &::after {
-      box-shadow: none;
-    }
-  }
-
-  &.badge-connected::after {
-    background: $success-color;
-  }
-
-  &.badge-connecting::after {
-    background: $warning-color;
-    animation-name: pulse;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-  }
-
-  &.badge-failed::after {
-    background: $error-color;
-  }
-}
-
-.has-icon-left svg.form-icon,
-.has-icon-right svg.form-icon {
-  width: auto;
-  height: auto;
-}
-
-.form-checkbox input:checked + .form-icon, .form-radio input:checked + .form-icon, .form-switch input:checked + .form-icon {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.form-checkbox input:focus + .form-icon, .form-radio input:focus + .form-icon, .form-switch input:focus + .form-icon {
-  box-shadow: 0 0 0 0.1rem var(--primary-color-shadow);
-  border-color: var(--primary-color);
-}
-
-.form-select {
-  cursor: pointer;
-
-  &:focus {
-    box-shadow: 0 0 0 0.1rem var(--primary-color-shadow);
-  }
-
-  &.small-select {
-    height: 21px;
-    font-size: 0.7rem;
-    padding: 1px 0.4rem 0;
-  }
-
-  &.select {
-    &.select--open {
-      border-color: var(--primary-color) !important;
-      box-shadow: 0 0 0 0.1rem var(--primary-color-shadow) !important;
-
-      @include control-shadow();
-    }
-  }
-}
-
-.select__list {
-  margin: 0;
-
-  li {
-    margin: 0;
-    padding: 0.3rem 0.8rem;
-
-    .select-sm &,
-    .small-select & {
-      padding: 0.05rem 0.3rem;
-    }
-  }
-}
-
-.select__list-wrapper {
-  z-index: 401 !important;
-  border: 1px solid transparent;
-  border-radius: $border-radius;
-  box-shadow:
-    0 8px 17px 0 rgb(0 0 0 / 20%),
-    0 6px 20px 0 rgb(0 0 0 / 19%);
-}
-
-.select__option--selected {
-  background: rgba(var(--primary-color), 0.25);
-}
-
-.select__option--highlight {
-  background: var(--primary-color);
-  text-shadow: 0 0 15px #000;
-}
-
-.form-input {
-  &[type="file"] {
-    overflow: hidden;
-  }
-  &:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.1rem var(--primary-color-shadow);
-  }
-}
-
-.input-group .input-group-addon {
-  z-index: 1;
-}
-
-.menu {
-  font-size: 0.7rem;
-
-  .menu-item {
-    + .menu-item {
-      margin-top: 0;
-    }
-  }
-}
-
-.accordion-body {
-  max-height: 5000rem !important;
-}
-
-.btn {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-
-  &:not(.btn-link) {
-    text-shadow: 0 0 15px #000;
-  }
-
-  &:hover {
-    border-color: var(--primary-color-dark);
-  }
-
-  &:focus {
-    box-shadow: 0 0 3px 1px rgba(var(--primary-color), 90%);
-  }
-
-  &.btn-success:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 3px 1px rgba(var(--primary-color), 90%);
-  }
-
-  &.btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color-dark);
-
-    &:hover {
-      background: var(--primary-color-dark);
-      border-color: var(--primary-color-dark);
-    }
-  }
-}
-
-.btn-group {
-  flex-wrap: nowrap;
-}
-
-.btn.loading {
-  > .mdi,
-  > span {
-    visibility: hidden;
-  }
-}
-
-.divider {
-  margin: 0.15rem 0.3rem;
-}
-
-.table-dropdown {
-  .menu {
-    min-width: 100%;
-    padding: 0;
-
-    .menu-item {
-      padding: 0;
-
-      > a {
-        margin: 0.2rem;
-        padding: 0.1rem 0.3rem;
-
-        &:hover {
-          color: inherit;
-        }
-      }
-    }
-  }
-}
-
-/* Ace Editor */
+/* Ace Editor (used by BaseTextEditor) */
 .ace_editor {
   &.ace_autocomplete {
     border-radius: $border-radius;
@@ -552,7 +207,7 @@ option:checked {
   }
 }
 
-/* sql-highlight */
+/* sql-highlight (used by ScratchpadNote / DebugConsole / WorkspaceTabQueryTable) */
 code.sql {
   font-family: monospace;
 }

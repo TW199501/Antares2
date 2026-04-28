@@ -7,7 +7,7 @@
                :size="48"
                class="opacity-40"
             />
-            <CardTitle class="text-[14px] font-semibold">
+            <CardTitle class="text-sm font-semibold">
                {{ t('database.thereAreNoTableFields') }}
             </CardTitle>
             <Button @click="emit('new-field')">

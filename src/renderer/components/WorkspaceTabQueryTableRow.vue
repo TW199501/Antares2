@@ -112,7 +112,7 @@
                         :options="availableLanguages"
                         option-label="name"
                         option-track-by="slug"
-                        class="h-7 text-[12px]"
+                        class="h-7 text-xs"
                      />
                   </div>
                   <div class="flex">

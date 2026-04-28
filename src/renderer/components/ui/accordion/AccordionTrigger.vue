@@ -18,7 +18,7 @@ const forwarded = useForwardProps(delegatedProps);
    <AccordionHeader class="flex">
       <AccordionTrigger
          v-bind="forwarded"
-         :class="cn('flex flex-1 items-center justify-between py-4 text-[14px] font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180', props.class)"
+         :class="cn('flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180', props.class)"
       >
          <slot />
          <BaseIcon

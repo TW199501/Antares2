@@ -74,7 +74,6 @@
     "pgsql-ast-parser": "^7.2.1",
     "pinia": "^3.0.4",
     "reka-ui": "^2.9.6",
-    "spectre.css": "^0.5.9",
     "sql-formatter": "^15.7.3",
     "sql-highlight": "^6.1.0",
     "tailwind-merge": "^3.5.0",

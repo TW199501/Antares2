@@ -46,7 +46,7 @@
             />
          </div>
          <div class="flex justify-between items-center">
-            <small class="opacity-80 text-[12px] truncate">
+            <small class="opacity-80 text-xs truncate">
                {{ getConnectionName(note.cUid) || t('general.all') }} · {{ formatDate(note.date) }}
             </small>
             <div class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center gap-1 shrink-0">

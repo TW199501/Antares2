@@ -75,7 +75,7 @@
 
       <template #content>
          <BaseLoader v-if="isLoading" />
-         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+         <Label class="!text-xs !text-muted-foreground !font-normal !m-0 ml-2">
             {{ t('database.functionBody') }}
          </Label>
          <QueryEditor

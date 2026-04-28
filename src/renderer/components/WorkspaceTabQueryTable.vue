@@ -34,7 +34,7 @@
                v-for="(result, index) in resultsWithRows"
                :key="index"
                :value="String(index)"
-               class="!text-[12px] !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
+               class="!text-xs !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
             >
                {{ result.fields ? result.fields[0]?.tableAlias ?? result.fields[0]?.table : `${t('general.results')} #${index}` }} ({{ result.rows.length }})
             </TabsTrigger>
@@ -148,13 +148,13 @@
          </template>
          <template #body>
             <div class="flex flex-col gap-2">
-               <Label class="text-[14px] font-semibold cut-text">{{ t('database.targetTable') }}</Label>
+               <Label class="text-sm font-semibold cut-text">{{ t('database.targetTable') }}</Label>
                <Input
                   v-model.number="sqlExportOptions.targetTable"
                   type="text"
                   :placeholder="chunkModalRequest"
                />
-               <Label class="text-[14px] font-semibold cut-text mt-3">{{ t('database.newInsertStmtEvery') }}:</Label>
+               <Label class="text-sm font-semibold cut-text mt-3">{{ t('database.newInsertStmtEvery') }}:</Label>
                <div class="grid grid-cols-2 gap-2">
                   <Input
                      v-model.number="sqlExportOptions.sqlInsertAfter"
@@ -208,7 +208,7 @@
                   <Label class="cut-text">{{ t('application.csvLinesTerminator') }}:</Label>
                   <textarea
                      v-model.number="csvExportOptions.linesTerminator"
-                     class="text-foreground bg-background border border-input rounded-md px-3 py-1 w-full text-[14px]"
+                     class="text-foreground bg-background border border-input rounded-md px-3 py-1 w-full text-sm"
                      :style="'resize: none'"
                      rows="1"
                   />

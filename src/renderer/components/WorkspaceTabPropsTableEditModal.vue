@@ -21,18 +21,18 @@
          <div class="flex flex-col gap-3 px-1 py-2">
             <!-- 欄位名 -->
             <div class="flex flex-col gap-1">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.fieldName') }}
                </Label>
                <Input
                   v-model="local.name"
                   type="text"
-                  class="!h-[32px] !text-[14px]"
+                  class="!h-[32px] !text-sm"
                />
             </div>
             <!-- 資料類型 -->
             <div class="flex flex-col gap-1">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.type') }}
                </Label>
                <BaseSelect
@@ -42,38 +42,38 @@
                   group-values="types"
                   option-label="name"
                   option-track-by="name"
-                  class="uppercase !h-[32px] !text-[14px]"
+                  class="uppercase !h-[32px] !text-sm"
                />
             </div>
             <!-- 長度 / 精度 -->
             <div class="grid grid-cols-2 gap-2">
                <div v-if="currentFieldType?.length" class="flex flex-col gap-1">
-                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.length') }}
                   </Label>
                   <Input
                      v-model.number="localLength"
                      type="number"
                      min="0"
-                     class="!h-[32px] !text-[14px]"
+                     class="!h-[32px] !text-sm"
                   />
                </div>
                <div v-if="currentFieldType?.scale" class="flex flex-col gap-1">
-                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.precision') }}
                   </Label>
                   <Input
                      v-model.number="local.numScale"
                      type="number"
                      min="0"
-                     class="!h-[32px] !text-[14px]"
+                     class="!h-[32px] !text-sm"
                   />
                </div>
             </div>
             <!-- 主鍵 / 自增 / 可空 -->
             <div class="flex items-center gap-2">
                <!-- PK: read-only -->
-               <div class="text-[12px] text-muted-foreground">
+               <div class="text-xs text-muted-foreground">
                   {{ t('database.primaryKey') }}
                </div>
                <span
@@ -82,7 +82,7 @@
                >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
                <!-- AI -->
                <template v-if="customizations.autoIncrement">
-                  <div class="text-[12px] text-muted-foreground ml-2">
+                  <div class="text-xs text-muted-foreground ml-2">
                      {{ t('database.autoIncrement') }}
                   </div>
                   <span
@@ -94,7 +94,7 @@
                </template>
                <!-- NULL -->
                <template v-if="customizations.nullable">
-                  <div class="text-[12px] text-muted-foreground ml-2">
+                  <div class="text-xs text-muted-foreground ml-2">
                      {{ t('database.allowNull') }}
                   </div>
                   <span
@@ -107,19 +107,19 @@
             </div>
             <!-- 預設值 -->
             <div class="flex flex-col gap-1">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.default') }}
                </Label>
                <Input
                   v-model="local.default"
                   type="text"
                   :placeholder="t('general.none')"
-                  class="!h-[32px] !text-[14px]"
+                  class="!h-[32px] !text-sm"
                />
             </div>
             <!-- 描述 (with AI translate) -->
             <div v-if="customizations.comment" class="flex flex-col gap-1">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.comment') }}
                </Label>
                <div class="flex gap-1">
@@ -127,7 +127,7 @@
                      v-model="local.comment"
                      type="text"
                      :placeholder="t('database.commentPlaceholder')"
-                     class="!h-[32px] !text-[14px] flex-1"
+                     class="!h-[32px] !text-sm flex-1"
                   />
                   <Button
                      variant="secondary"
@@ -141,10 +141,10 @@
                      <span v-else class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
                   </Button>
                </div>
-               <p v-if="!settingsStore.aiApiKey" class="text-[12px] mt-1 text-amber-600">
+               <p v-if="!settingsStore.aiApiKey" class="text-xs mt-1 text-amber-600">
                   {{ t('database.aiKeyRequired') }}
                </p>
-               <p v-if="translateError" class="text-[12px] mt-1 text-destructive">
+               <p v-if="translateError" class="text-xs mt-1 text-destructive">
                   {{ translateError }}
                </p>
             </div>

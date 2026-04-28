@@ -27,13 +27,13 @@
                <TabsList class="!h-7 !p-0.5 !bg-transparent !rounded-none gap-0.5">
                   <TabsTrigger
                      value="query"
-                     class="!text-[12px] !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
+                     class="!text-xs !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
                   >
                      {{ t('application.executedQueries') }}
                   </TabsTrigger>
                   <TabsTrigger
                      value="debug"
-                     class="!text-[12px] !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
+                     class="!text-xs !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
                   >
                      {{ t('application.debugConsole') }}
                   </TabsTrigger>

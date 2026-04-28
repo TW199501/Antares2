@@ -42,7 +42,7 @@
                   {{ t('general.content') }}
                   <small
                      v-if="localNote.type !== 'query'"
-                     class="text-[12px] font-normal text-muted-foreground leading-none"
+                     class="text-xs font-normal text-muted-foreground leading-none"
                   >({{ t('application.markdownSupported') }})</small>
                </Label>
                <BaseTextEditor

@@ -109,7 +109,7 @@
                      </div>
 
                      <!-- Connection target details -->
-                     <div class="mt-2 space-y-1 text-[12px] text-foreground/80">
+                     <div class="mt-2 space-y-1 text-xs text-foreground/80">
                         <div
                            v-if="connection.databasePath"
                            class="flex items-center gap-1.5 truncate"

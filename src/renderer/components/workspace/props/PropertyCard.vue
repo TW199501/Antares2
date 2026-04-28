@@ -3,7 +3,7 @@
       <Label
          v-if="label"
          :for="forId"
-         class="!text-[12px] !text-muted-foreground !font-normal !m-0 whitespace-nowrap"
+         class="!text-xs !text-muted-foreground !font-normal !m-0 whitespace-nowrap"
       >
          {{ label }}
       </Label>

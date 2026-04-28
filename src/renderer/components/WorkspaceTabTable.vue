@@ -1,21 +1,21 @@
 <template>
    <div v-show="isSelected" class="workspace-query-tab no-outline flex w-full flex-col p-0">
       <div class="workspace-query-runner flex w-full flex-col">
-         <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-[14px]">
+         <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-sm">
             <div class="workspace-query-buttons">
                <!-- 資料 / 屬性 切換 -->
                <Tabs v-model="viewMode" class="mr-2">
                   <TabsList class="h-[32px] gap-0 p-[2px]">
                      <TabsTrigger
                         value="data"
-                        class="h-[28px] gap-1 px-[10px] py-0 !text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                        class="h-[28px] gap-1 px-[10px] py-0 !text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiTable" :size="14" />
                         {{ t('general.data') }}
                      </TabsTrigger>
                      <TabsTrigger
                         value="props"
-                        class="h-[28px] gap-1 px-[10px] py-0 !text-[14px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                        class="h-[28px] gap-1 px-[10px] py-0 !text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiWrenchCog" :size="14" />
                         {{ t('general.properties') }}
@@ -27,7 +27,7 @@
                   v-show="viewMode === 'data'"
                   type="button"
                   :class="[
-                     'mr-3 flex h-[32px] w-[32px] items-center justify-center rounded-md !text-[14px] font-semibold transition-colors',
+                     'mr-3 flex h-[32px] w-[32px] items-center justify-center rounded-md !text-sm font-semibold transition-colors',
                      useCommentHeader
                         ? 'border border-primary bg-primary text-primary-foreground'
                         : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
@@ -42,7 +42,7 @@
                   <Button
                      v-if="isTable && !connection.readonly"
                      variant="outline"
-                     class="h-[32px] gap-1.5 px-[10px] !text-[14px]"
+                     class="h-[32px] gap-1.5 px-[10px] !text-sm"
                      :disabled="isQuering || isSystemSchema"
                      :title="isSystemSchema ? t('application.systemSchemaReadonly') : ''"
                      @click="showFakerModal()"
@@ -151,7 +151,7 @@
                   />
                   <div
                      v-if="!isQuering && !results[0]?.rows.length"
-                     class="pointer-events-none absolute inset-x-0 top-[12px] flex justify-center text-[12px] text-muted-foreground"
+                     class="pointer-events-none absolute inset-x-0 top-[12px] flex justify-center text-xs text-muted-foreground"
                   >
                      {{ t('database.noResultsPresent') }}
                   </div>

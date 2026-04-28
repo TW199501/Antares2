@@ -12,13 +12,13 @@
          清掉 spectre 遺產後才能真的垂直置中。
       -->
       <DialogContent
-         class="flex max-h-[85vh] max-w-[800px] flex-col gap-0 !p-0 !text-[14px] [&>button.absolute]:!hidden"
+         class="flex max-h-[85vh] max-w-[800px] flex-col gap-0 !p-0 !text-sm [&>button.absolute]:!hidden"
          @escape-key-down.prevent="closeModal"
          @pointer-down-outside.prevent
          @interact-outside.prevent
       >
          <DialogHeader class="relative flex flex-shrink-0 flex-row items-center justify-between gap-2 rounded-t-lg border-b bg-muted/50 px-6 py-3">
-            <DialogTitle class="flex items-center gap-1 !m-0 !text-[14px] leading-none">
+            <DialogTitle class="flex items-center gap-1 !m-0 !text-sm leading-none">
                <BaseIcon icon-name="mdiPlaylistPlus" :size="18" />
                <span class="cut-text">{{ t('database.insertRow', 1) }}</span>
             </DialogTitle>
@@ -85,7 +85,7 @@
                   -->
                   <Label
                      :for="`faker-${field.name}`"
-                     class="flex min-w-0 flex-col gap-0.5 !text-[14px] font-medium"
+                     class="flex min-w-0 flex-col gap-0.5 !text-sm font-medium"
                      :title="field.name"
                   >
                      <span class="truncate">
@@ -97,7 +97,7 @@
                      </span>
                      <span
                         v-if="field.comment"
-                        class="truncate text-[12px] font-normal text-muted-foreground"
+                        class="truncate text-xs font-normal text-muted-foreground"
                      >{{ field.comment }}</span>
                   </Label>
 
@@ -237,7 +237,7 @@
                      table and render the corresponding column value here so
                      the user has a concrete example of what to type.
                   -->
-                  <div class="min-w-0 truncate text-[12px] text-muted-foreground" />
+                  <div class="min-w-0 truncate text-xs text-muted-foreground" />
                </div>
             </fieldset>
          </form>
@@ -254,14 +254,14 @@
             <Button
                variant="default"
                :disabled="isInserting"
-               class="h-[32px] !text-[14px]"
+               class="h-[32px] !text-sm"
                @click.stop="insertRows"
             >
                {{ t('general.insert') }}
             </Button>
             <Button
                variant="outline"
-               class="h-[32px] !text-[14px]"
+               class="h-[32px] !text-sm"
                @click.stop="closeModal"
             >
                {{ t('general.close') }}
@@ -331,7 +331,7 @@ const isInserting = ref(false);
 // realistic suffix at text-[11px] ("TIMESTAMP (6)" ≈ 82px); typed content
 // never slides under the suffix.
 const inputClass =
-   'box-border h-[32px] w-full rounded-md border border-input bg-background pl-2 pr-[88px] text-[14px] text-foreground ' +
+   'box-border h-[32px] w-full rounded-md border border-input bg-background pl-2 pr-[88px] text-sm text-foreground ' +
    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ' +
    'read-only:cursor-not-allowed read-only:bg-muted/50 read-only:text-muted-foreground';
 

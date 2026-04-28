@@ -154,7 +154,7 @@
                               class="rounded-r-none"
                               @change="onChangeAutoRefresh"
                            />
-                           <span class="inline-flex items-center px-2 border border-l-0 border-input bg-muted rounded-r-md text-[12px] text-muted-foreground">
+                           <span class="inline-flex items-center px-2 border border-l-0 border-input bg-muted rounded-r-md text-xs text-muted-foreground">
                               {{ t('general.seconds') }}
                            </span>
                         </div>
@@ -206,7 +206,7 @@
                               class="rounded-r-none"
                               @focusout="checkNotificationsTimeout"
                            />
-                           <span class="inline-flex items-center px-2 border border-l-0 border-input bg-muted rounded-r-md text-[12px] text-muted-foreground">
+                           <span class="inline-flex items-center px-2 border border-l-0 border-input bg-muted rounded-r-md text-xs text-muted-foreground">
                               {{ t('general.seconds') }}
                            </span>
                         </div>
@@ -286,7 +286,7 @@
                            <img :src="darkPreview" class="w-full h-full object-cover">
                            <div class="absolute inset-0 flex flex-col items-center justify-center text-white bg-black/30">
                               <BaseIcon icon-name="mdiMoonWaningCrescent" :size="40" />
-                              <div class="text-[14px] font-semibold mt-2">
+                              <div class="text-sm font-semibold mt-2">
                                  {{ t('application.dark') }}
                               </div>
                            </div>
@@ -300,7 +300,7 @@
                            <img :src="lightPreview" class="w-full h-full object-cover">
                            <div class="absolute inset-0 flex flex-col items-center justify-center text-black bg-white/30">
                               <BaseIcon icon-name="mdiWhiteBalanceSunny" :size="40" />
-                              <div class="text-[14px] font-semibold mt-2">
+                              <div class="text-sm font-semibold mt-2">
                                  {{ t('application.light') }}
                               </div>
                            </div>
@@ -333,7 +333,7 @@
                               :key="size.code"
                               :variant="editorFontSize === size.code ? 'default' : 'outline'"
                               size="sm"
-                              class="!h-[28px] !px-2 !text-[12px] !rounded-none"
+                              class="!h-[28px] !px-2 !text-xs !rounded-none"
                               :class="[
                                  idx === 0 ? '!rounded-l-md' : '',
                                  idx === fontSizes.length - 1 ? '!rounded-r-md' : '',
@@ -406,7 +406,7 @@
                      </p>
                      <div class="space-y-1">
                         <small class="block text-[11px] uppercase text-muted-foreground">{{ t('general.contributors') }}:</small>
-                        <div class="text-[12px]">
+                        <div class="text-xs">
                            <small v-for="(contributor, i) in otherContributors" :key="i">{{ i !== 0 ? ', ' : '' }}{{ contributor }}</small>
                         </div>
                         <small class="block text-[11px] text-muted-foreground">{{ t('application.madeWithJS') }}</small>

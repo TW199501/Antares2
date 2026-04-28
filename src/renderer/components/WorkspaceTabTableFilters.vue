@@ -29,14 +29,14 @@
                v-if="!row.op.includes('NULL')"
                v-model="row.value"
                type="text"
-               class="!h-8 !text-[14px]"
+               class="!h-8 !text-sm"
                :disabled="isQuering"
             />
             <Input
                v-if="row.op === 'BETWEEN'"
                v-model="row.value2"
                type="text"
-               class="!h-8 !text-[14px] ml-2"
+               class="!h-8 !text-sm ml-2"
                :disabled="isQuering"
             />
          </div>

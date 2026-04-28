@@ -2,13 +2,13 @@
    <div class="tr" @contextmenu.prevent="!editingField ? emit('contextmenu', $event, localRow._antares_id) : null">
       <!-- 序號 (column ordinal position) -->
       <div class="td p-0 text-center" tabindex="0">
-         <span class="cell-content text-center text-[14px]">{{ localRow.order }}</span>
+         <span class="cell-content text-center text-sm">{{ localRow.order }}</span>
       </div>
       <!-- 字段名 -->
       <div class="td p-0" tabindex="0">
          <span
             v-if="!isInlineEditor.name"
-            class="cell-content text-[14px]"
+            class="cell-content text-sm"
             @dblclick="editON($event, localRow.name, 'name')"
          >
             {{ localRow.name }}
@@ -19,7 +19,7 @@
             v-model="editingContent"
             type="text"
             autofocus
-            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @blur="editOFF"
          >
       </div>
@@ -27,7 +27,7 @@
       <div class="td p-0 text-uppercase" tabindex="0">
          <span
             v-if="!isInlineEditor.type"
-            class="cell-content text-left text-[14px]"
+            class="cell-content text-left text-sm"
             :class="typeClass(localRow.type)"
             @dblclick="editON($event, localRow.type.toUpperCase(), 'type')"
          >
@@ -42,7 +42,7 @@
             group-values="types"
             option-label="name"
             option-track-by="name"
-            class="editable-field pl-1 pr-4 text-uppercase !h-[28px] !text-[14px]"
+            class="editable-field pl-1 pr-4 text-uppercase !h-[28px] !text-sm"
             @blur="editOFF"
          />
       </div>
@@ -87,7 +87,7 @@
       <div class="td p-0 type-int text-center" tabindex="0">
          <span
             v-if="!isInlineEditor.length"
-            class="cell-content text-center text-[14px]"
+            class="cell-content text-center text-sm"
             :class="!fieldType?.length ? 'cell-readonly text-muted-foreground cursor-not-allowed' : ''"
             @dblclick="fieldType?.length ? editON($event, localLength, 'length') : null"
          >{{ localRow.enumValues || localLength || '-' }}</span>
@@ -98,7 +98,7 @@
                v-model="editingContent"
                type="text"
                autofocus
-               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
             <input
@@ -107,7 +107,7 @@
                v-model="editingContent"
                type="number"
                autofocus
-               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
          </template>
@@ -117,7 +117,7 @@
          <template v-if="fieldType?.scale">
             <span
                v-if="!isInlineEditor.numScale"
-               class="cell-content text-center text-[14px]"
+               class="cell-content text-center text-sm"
                @dblclick="editON($event, localRow.numScale, 'numScale')"
             >{{ localRow.numScale }}</span>
             <input
@@ -126,7 +126,7 @@
                v-model="editingContent"
                type="number"
                autofocus
-               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
          </template>
@@ -150,7 +150,7 @@
       </div>
       <!-- 默认值 -->
       <div class="td p-0" tabindex="0">
-         <span class="cell-content text-[14px]" @dblclick="editON($event, localRow.default, 'default')">
+         <span class="cell-content text-sm" @dblclick="editON($event, localRow.default, 'default')">
             {{ fieldDefault }}
          </span>
       </div>
@@ -162,7 +162,7 @@
       >
          <span
             v-if="!isInlineEditor.comment"
-            class="cell-content text-[14px]"
+            class="cell-content text-sm"
             @dblclick="editON($event, localRow.comment, 'comment')"
          >
             {{ localRow.comment }}
@@ -173,7 +173,7 @@
             v-model="editingContent"
             type="text"
             autofocus
-            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @blur="editOFF"
          >
       </div>
@@ -238,7 +238,7 @@
          <template #body>
             <form class="flex flex-col gap-2">
                <!-- noval -->
-               <label class="flex items-center gap-2 cursor-pointer text-[14px]">
+               <label class="flex items-center gap-2 cursor-pointer text-sm">
                   <input
                      v-model="defaultValue.type"
                      type="radio"
@@ -250,7 +250,7 @@
                </label>
                <!-- custom value -->
                <div class="grid grid-cols-[140px_1fr] items-center gap-2">
-                  <label class="flex items-center gap-2 cursor-pointer text-[14px]">
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
                      <input
                         v-model="defaultValue.type"
                         type="radio"
@@ -264,11 +264,11 @@
                      v-model="defaultValue.custom"
                      :disabled="defaultValue.type !== 'custom'"
                      type="text"
-                     class="!h-[32px] !text-[14px]"
+                     class="!h-[32px] !text-sm"
                   />
                </div>
                <!-- NULL -->
-               <label v-if="customizations.nullable" class="flex items-center gap-2 cursor-pointer text-[14px]">
+               <label v-if="customizations.nullable" class="flex items-center gap-2 cursor-pointer text-sm">
                   <input
                      v-model="defaultValue.type"
                      type="radio"
@@ -281,7 +281,7 @@
                <!-- AUTO_INCREMENT -->
                <label
                   v-if="customizations.autoIncrement"
-                  class="flex items-center gap-2 cursor-pointer text-[14px]"
+                  class="flex items-center gap-2 cursor-pointer text-sm"
                   :class="{ 'opacity-50 cursor-not-allowed': !canAutoincrement }"
                >
                   <input
@@ -296,7 +296,7 @@
                </label>
                <!-- expression -->
                <div class="grid grid-cols-[140px_1fr] items-center gap-2">
-                  <label class="flex items-center gap-2 cursor-pointer text-[14px]">
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
                      <input
                         v-model="defaultValue.type"
                         type="radio"
@@ -310,18 +310,18 @@
                      v-model="defaultValue.expression"
                      :disabled="defaultValue.type !== 'expression'"
                      type="text"
-                     class="!h-[32px] !text-[14px]"
+                     class="!h-[32px] !text-sm"
                   />
                </div>
                <!-- ON UPDATE -->
                <div v-if="customizations.onUpdate" class="grid grid-cols-[140px_1fr] items-center gap-2">
-                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.onUpdate') }}
                   </Label>
                   <Input
                      v-model="defaultValue.onUpdate"
                      type="text"
-                     class="!h-[32px] !text-[14px]"
+                     class="!h-[32px] !text-sm"
                   />
                </div>
             </form>

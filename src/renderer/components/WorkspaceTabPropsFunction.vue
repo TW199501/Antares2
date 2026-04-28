@@ -138,7 +138,7 @@
             />
          </PropertyCard>
          <PropertyCard v-if="customizations.functionDeterministic">
-            <label class="flex h-[30px] cursor-pointer items-center gap-2 text-[12px]">
+            <label class="flex h-[30px] cursor-pointer items-center gap-2 text-xs">
                <Checkbox v-model:checked="localFunction.deterministic" />
                {{ t('database.deterministic') }}
             </label>
@@ -147,7 +147,7 @@
 
       <template #content>
          <BaseLoader v-if="isLoading" />
-         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+         <Label class="!text-xs !text-muted-foreground !font-normal !m-0 ml-2">
             {{ t('database.functionBody') }}
          </Label>
          <QueryEditor

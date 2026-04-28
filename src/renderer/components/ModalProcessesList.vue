@@ -41,7 +41,7 @@
                      <Button
                         size="sm"
                         variant="outline"
-                        class="!h-[28px] !px-2 !text-[12px] gap-1 rounded-r-none border-r-0"
+                        class="!h-[28px] !px-2 !text-xs gap-1 rounded-r-none border-r-0"
                         :disabled="isQuering"
                         :title="t('general.refresh')"
                         @click="getProcessesList"
@@ -69,7 +69,7 @@
                      </PopoverTrigger>
                   </div>
                   <PopoverContent class="w-[260px] p-3 space-y-2">
-                     <div class="text-[12px]">
+                     <div class="text-xs">
                         {{ t('general.autoRefresh') }}: <b>{{ +autorefreshTimer ? `${autorefreshTimer}s` : 'OFF' }}</b>
                      </div>
                      <input
@@ -89,7 +89,7 @@
                      <Button
                         size="sm"
                         variant="outline"
-                        class="!h-[28px] !px-2 !text-[12px] gap-1"
+                        class="!h-[28px] !px-2 !text-xs gap-1"
                         :disabled="isQuering"
                      >
                         <BaseIcon icon-name="mdiFileExport" :size="16" />
@@ -100,14 +100,14 @@
                   <PopoverContent class="w-[120px] p-1">
                      <button
                         type="button"
-                        class="flex w-full items-center px-2 py-1.5 text-[12px] rounded hover:bg-muted"
+                        class="flex w-full items-center px-2 py-1.5 text-xs rounded hover:bg-muted"
                         @click="downloadTable('json')"
                      >
                         JSON
                      </button>
                      <button
                         type="button"
-                        class="flex w-full items-center px-2 py-1.5 text-[12px] rounded hover:bg-muted"
+                        class="flex w-full items-center px-2 py-1.5 text-xs rounded hover:bg-muted"
                         @click="downloadTable('csv')"
                      >
                         CSV
@@ -115,7 +115,7 @@
                   </PopoverContent>
                </Popover>
             </div>
-            <div class="text-[12px] text-muted-foreground">
+            <div class="text-xs text-muted-foreground">
                <div v-if="sortedResults.length">
                   {{ t('database.processes') }}: <b class="text-foreground">{{ sortedResults.length.toLocaleString() }}</b>
                </div>

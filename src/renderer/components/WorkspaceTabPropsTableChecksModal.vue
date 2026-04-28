@@ -64,10 +64,10 @@
                            :size="22"
                         />
                         <div class="flex-1 min-w-0">
-                           <div class="text-[14px] truncate">
+                           <div class="text-sm truncate">
                               {{ check.name }}
                            </div>
-                           <div class="text-[12px] text-muted-foreground truncate">
+                           <div class="text-xs text-muted-foreground truncate">
                               {{ check.clause }}
                            </div>
                         </div>
@@ -95,23 +95,23 @@
                   class="flex flex-col gap-3"
                >
                   <div class="grid grid-cols-[100px_1fr] items-center gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
                      </Label>
                      <Input
                         v-model="selectedCheckObj.name"
                         type="text"
-                        class="!h-[32px] !text-[14px]"
+                        class="!h-[32px] !text-sm"
                      />
                   </div>
                   <div class="grid grid-cols-[100px_1fr] items-start gap-2">
-                     <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0 mt-1.5">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.checkClause') }}
                      </Label>
                      <textarea
                         v-model="selectedCheckObj.clause"
                         rows="5"
-                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         style="resize: vertical;"
                      />
                   </div>
@@ -121,7 +121,7 @@
                      icon-name="mdiCheckboxMarkedCircleOutline"
                      :size="48"
                   />
-                  <p class="text-[16px]">
+                  <p class="text-base">
                      {{ t('database.thereAreNoTableChecks') }}
                   </p>
                   <Button @click="addCheck">

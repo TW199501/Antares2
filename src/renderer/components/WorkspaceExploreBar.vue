@@ -21,14 +21,14 @@
                   <BaseSelect
                      v-model="selectedDatabase"
                      :options="databases"
-                     class="min-w-0 flex-1 text-[14px] font-semibold"
+                     class="min-w-0 flex-1 text-sm font-semibold"
                      dropdown-match-parent
                      @keypress.stop=""
                      @keydown.stop=""
                   />
                   <span
                      v-if="databaseComment"
-                     class="max-w-[40%] shrink-0 truncate rounded bg-muted-foreground/15 px-2 py-0.5 text-[12px] font-medium text-muted-foreground"
+                     class="max-w-[40%] shrink-0 truncate rounded bg-muted-foreground/15 px-2 py-0.5 text-xs font-medium text-muted-foreground"
                      :title="databaseComment"
                   >{{ databaseComment }}</span>
                   <BaseIcon
@@ -98,7 +98,7 @@
                   ref="searchInput"
                   v-model="searchTerm"
                   type="text"
-                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-[12px] placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-xs placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
                   :placeholder="t('database.searchForElements')"
                >
                <BaseIcon
@@ -119,7 +119,7 @@
                <input
                   v-model="columnSearchTerm"
                   type="text"
-                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-[12px] placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-xs placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
                   :placeholder="t('database.searchForColumns')"
                   @keypress.stop=""
                   @keydown.stop=""

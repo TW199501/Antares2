@@ -21,7 +21,7 @@
          </DialogHeader>
          <div class="px-5 py-4 space-y-4">
             <div class="space-y-1.5">
-               <Label class="text-[12px] font-medium uppercase tracking-wide">{{ t('application.choseFile') }}</Label>
+               <Label class="text-xs font-medium uppercase tracking-wide">{{ t('application.choseFile') }}</Label>
                <BaseUploadInput
                   :model-value="filePath"
                   :message="t('general.browse')"
@@ -31,7 +31,7 @@
                />
             </div>
             <div class="space-y-1.5">
-               <Label class="text-[12px] font-medium uppercase tracking-wide">{{ t('application.password') }}</Label>
+               <Label class="text-xs font-medium uppercase tracking-wide">{{ t('application.password') }}</Label>
                <div class="flex items-stretch gap-1">
                   <Input
                      ref="passkey"
@@ -53,7 +53,7 @@
                      />
                   </Button>
                </div>
-               <p v-if="isPasswordError" class="text-[12px] text-destructive">
+               <p v-if="isPasswordError" class="text-xs text-destructive">
                   {{ t('application.encryptionPasswordError') }}
                </p>
             </div>

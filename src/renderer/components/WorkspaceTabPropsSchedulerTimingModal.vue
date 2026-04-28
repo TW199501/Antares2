@@ -19,13 +19,13 @@
       <template #body>
          <form class="flex flex-col gap-3">
             <div class="grid grid-cols-[120px_1fr] items-center gap-2">
-               <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.execution') }}
                </Label>
                <BaseSelect
                   v-model="optionsProxy.execution"
                   :options="['EVERY', 'ONCE']"
-                  class="!h-[32px] !text-[14px]"
+                  class="!h-[32px] !text-sm"
                />
             </div>
 
@@ -36,12 +36,12 @@
                      <Input
                         v-model="optionsProxy.every[0]"
                         type="text"
-                        class="!h-[32px] !text-[14px] flex-1"
+                        class="!h-[32px] !text-sm flex-1"
                         @keypress="isNumberOrMinus($event)"
                      />
                      <BaseSelect
                         v-model="optionsProxy.every[1]"
-                        class="uppercase !h-[32px] !text-[14px] flex-[2]"
+                        class="uppercase !h-[32px] !text-sm flex-[2]"
                         :options="['YEAR',
                                    'QUARTER',
                                    'MONTH',
@@ -61,7 +61,7 @@
                   </div>
                </div>
                <div class="grid grid-cols-[120px_1fr] items-center gap-2">
-                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.starts') }}
                   </Label>
                   <div class="flex items-center gap-2">
@@ -70,7 +70,7 @@
                         v-model="optionsProxy.starts"
                         v-mask="'####-##-## ##:##:##'"
                         type="text"
-                        class="!h-[32px] !text-[14px] flex-1"
+                        class="!h-[32px] !text-sm flex-1"
                      />
                      <BaseIcon
                         icon-name="mdiCalendar"
@@ -80,7 +80,7 @@
                   </div>
                </div>
                <div class="grid grid-cols-[120px_1fr] items-center gap-2">
-                  <Label class="!text-[14px] !text-muted-foreground !font-normal !m-0">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.ends') }}
                   </Label>
                   <div class="flex items-center gap-2">
@@ -89,7 +89,7 @@
                         v-model="optionsProxy.ends"
                         v-mask="'####-##-## ##:##:##'"
                         type="text"
-                        class="!h-[32px] !text-[14px] flex-1"
+                        class="!h-[32px] !text-sm flex-1"
                      />
                      <BaseIcon
                         icon-name="mdiCalendar"
@@ -107,7 +107,7 @@
                         v-model="optionsProxy.at"
                         v-mask="'####-##-## ##:##:##'"
                         type="text"
-                        class="!h-[32px] !text-[14px] flex-1"
+                        class="!h-[32px] !text-sm flex-1"
                      />
                      <BaseIcon
                         icon-name="mdiCalendar"
@@ -120,7 +120,7 @@
 
             <div class="grid grid-cols-[120px_1fr] items-center gap-2">
                <span />
-               <label class="flex items-center gap-2 cursor-pointer text-[14px]">
+               <label class="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox v-model:checked="optionsProxy.preserve" />
                   {{ t('database.preserveOnCompletion') }}
                </label>

@@ -19,7 +19,7 @@ const inputId = useId();
       <Label
          v-if="label"
          :for="inputId"
-         class="text-[12px] font-medium"
+         class="text-xs font-medium"
       >
          {{ label }}
       </Label>

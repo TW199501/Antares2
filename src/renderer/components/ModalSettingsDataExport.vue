@@ -38,7 +38,7 @@
                binding, so we set :data-state on the underlying Checkbox.
             -->
             <Card class="!shadow-none !p-0 flex flex-col min-h-0">
-               <div class="grid grid-cols-[1fr_1fr_60px] items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/30 text-[12px] font-semibold uppercase tracking-wide">
+               <div class="grid grid-cols-[1fr_1fr_60px] items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/30 text-xs font-semibold uppercase tracking-wide">
                   <div>{{ t('connection.connectionName') }}</div>
                   <div>{{ t('connection.client') }}</div>
                   <div class="flex items-center justify-center">
@@ -73,7 +73,7 @@
 
             <!-- Right column: options + passkey -->
             <div class="space-y-4 min-h-0">
-               <h5 class="text-[14px] font-semibold uppercase tracking-wide">
+               <h5 class="text-sm font-semibold uppercase tracking-wide">
                   {{ t('general.options') }}
                </h5>
                <div class="space-y-2">
@@ -95,7 +95,7 @@
                   </div>
                </div>
                <div class="space-y-1.5">
-                  <Label class="text-[12px] font-medium uppercase tracking-wide">{{ t('application.encryptionPassword') }}</Label>
+                  <Label class="text-xs font-medium uppercase tracking-wide">{{ t('application.encryptionPassword') }}</Label>
                   <div class="flex items-stretch gap-1">
                      <Input
                         ref="passkey"
@@ -117,7 +117,7 @@
                         />
                      </Button>
                   </div>
-                  <p v-if="isPasswordError" class="text-[12px] text-destructive">
+                  <p v-if="isPasswordError" class="text-xs text-destructive">
                      {{ t('application.encryptionPasswordError') }}
                   </p>
                </div>

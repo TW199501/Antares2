@@ -74,19 +74,19 @@
             <RadioGroup v-model="localScheduler.state" class="flex flex-row items-center gap-3 h-[30px]">
                <div class="flex items-center gap-1.5">
                   <RadioGroupItem id="scheduler-state-enable" value="ENABLE" />
-                  <Label for="scheduler-state-enable" class="!text-[12px] cursor-pointer !m-0">
+                  <Label for="scheduler-state-enable" class="!text-xs cursor-pointer !m-0">
                      ENABLE
                   </Label>
                </div>
                <div class="flex items-center gap-1.5">
                   <RadioGroupItem id="scheduler-state-disable" value="DISABLE" />
-                  <Label for="scheduler-state-disable" class="!text-[12px] cursor-pointer !m-0">
+                  <Label for="scheduler-state-disable" class="!text-xs cursor-pointer !m-0">
                      DISABLE
                   </Label>
                </div>
                <div class="flex items-center gap-1.5">
                   <RadioGroupItem id="scheduler-state-disable-slave" value="DISABLE ON SLAVE" />
-                  <Label for="scheduler-state-disable-slave" class="!text-[12px] cursor-pointer !m-0">
+                  <Label for="scheduler-state-disable-slave" class="!text-xs cursor-pointer !m-0">
                      DISABLE ON SLAVE
                   </Label>
                </div>
@@ -96,7 +96,7 @@
 
       <template #content>
          <BaseLoader v-if="isLoading" />
-         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+         <Label class="!text-xs !text-muted-foreground !font-normal !m-0 ml-2">
             {{ t('database.schedulerBody') }}
          </Label>
          <QueryEditor

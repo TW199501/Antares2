@@ -4,7 +4,7 @@
       :options="foreigns"
       :class="['foreign-key-select', {'small-select': size === 'small'}]"
       :model-value="currentValue"
-      dropdown-class="text-[12px]"
+      dropdown-class="text-xs"
       @update:model-value="onChange"
       @blur="emit('blur')"
    />
