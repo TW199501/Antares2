@@ -1,53 +1,50 @@
 <template>
-   <div class="empty">
-      <div class="empty-icon">
-         <BaseIcon icon-name="mdiCloudDownload" :size="48" />
-      </div>
-      <p class="empty-title h5">
+   <div class="flex flex-col items-center gap-3 py-8 text-center">
+      <BaseIcon icon-name="mdiCloudDownload" :size="48" />
+      <p class="text-[15px] font-semibold">
          {{ updateMessage }}
       </p>
-      <div v-if="updateStatus === 'downloading'">
+      <div v-if="updateStatus === 'downloading'" class="w-full max-w-[320px]">
          <progress
-            class="progress"
+            class="w-full h-2 rounded bg-secondary overflow-hidden"
             :value="downloadPercentage"
             max="100"
          />
-         <p class="empty-subtitle">
+         <p class="text-[12px] text-muted-foreground mt-1">
             {{ downloadPercentage }}%
          </p>
       </div>
-      <div v-if="updateStatus === 'available'">
-         <progress class="progress" max="100" />
+      <div v-if="updateStatus === 'available'" class="w-full max-w-[320px]">
+         <progress class="w-full h-2 rounded bg-secondary overflow-hidden" max="100" />
       </div>
-      <div class="empty-action">
-         <button
+      <div class="mt-2">
+         <Button
             v-if="['noupdate', 'checking', 'nocheck'].includes(updateStatus)"
-            class="btn btn-primary"
-            :class="{'loading': updateStatus === 'checking'}"
+            :disabled="updateStatus === 'checking'"
             @click="checkForUpdates"
          >
             {{ t('application.checkForUpdates') }}
-         </button>
-         <button
+         </Button>
+         <Button
             v-else-if="updateStatus === 'downloaded'"
-            class="btn btn-primary"
             @click="restartToUpdate"
          >
             {{ t('application.restartToInstall') }}
-         </button>
-         <button
+         </Button>
+         <Button
             v-else-if="updateStatus === 'link'"
-            class="btn btn-primary"
             @click="openOutside('https://github.com/TW199501/Antares2/releases/latest')"
          >
             {{ t('application.goToDownloadPage') }}
-         </button>
+         </Button>
       </div>
-      <div class="form-group mt-4">
-         <label class="form-switch d-inline-block" @click.prevent="toggleAllowPrerelease">
-            <input type="checkbox" :checked="allowPrerelease">
-            <i class="form-icon" /> {{ t('application.includeBetaUpdates') }}
-         </label>
+      <div class="flex items-center gap-2 mt-4">
+         <Switch
+            id="allow-prerelease"
+            :checked="allowPrerelease"
+            @update:checked="toggleAllowPrerelease"
+         />
+         <Label for="allow-prerelease" class="text-[13px]">{{ t('application.includeBetaUpdates') }}</Label>
       </div>
    </div>
 </template>
@@ -59,6 +56,9 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useApplicationStore } from '@/stores/application';
 import { useSettingsStore } from '@/stores/settings';
 
@@ -106,7 +106,7 @@ const restartToUpdate = () => {
    installUpdate();
 };
 
-const toggleAllowPrerelease = () => {
-   changeAllowPrerelease(!allowPrerelease.value);
+const toggleAllowPrerelease = (val: boolean) => {
+   changeAllowPrerelease(val);
 };
 </script>
