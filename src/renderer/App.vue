@@ -1,35 +1,38 @@
 <template>
-   <div id="wrapper" :class="[`theme-${applicationTheme}`, !disableBlur || 'no-blur']">
-      <TheTitleBar />
-      <div id="window-content">
-         <TheSettingBar @show-connections-modal="isAllConnectionsModal = true" />
-         <div id="main-content" class="container">
-            <div class="columns col-gapless">
-               <Workspace
-                  v-for="connection in connections"
-                  :key="connection.uid"
-                  :connection="connection"
-               />
-               <WorkspaceAddConnectionPanel v-if="selectedWorkspace === 'NEW'" />
+   <TooltipProvider :delay-duration="300">
+      <div id="wrapper" :class="[`theme-${applicationTheme}`, !disableBlur || 'no-blur']">
+         <TheTitleBar />
+         <div id="window-content">
+            <TheSettingBar @show-connections-modal="isAllConnectionsModal = true" />
+            <div id="main-content" class="container">
+               <div class="columns col-gapless">
+                  <Workspace
+                     v-for="connection in connections"
+                     :key="connection.uid"
+                     :connection="connection"
+                  />
+                  <WorkspaceAddConnectionPanel v-if="selectedWorkspace === 'NEW'" />
+               </div>
+               <TheFooter />
+               <TheScratchpad v-if="isScratchpad" />
+               <TheSpecSnapInspector v-if="isSpecsnap" />
+               <ModalSettings v-if="isSettingModal" />
+               <BaseTextEditor class="d-none" value="" />
             </div>
-            <TheFooter />
-            <TheNotificationsBoard />
-            <TheScratchpad v-if="isScratchpad" />
-            <TheSpecSnapInspector v-if="isSpecsnap" />
-            <ModalSettings v-if="isSettingModal" />
-            <BaseTextEditor class="d-none" value="" />
          </div>
-      </div>
-      <ModalAllConnections
-         v-if="isAllConnectionsModal"
-         @close="isAllConnectionsModal = false"
-      />
+         <ModalAllConnections
+            v-if="isAllConnectionsModal"
+            @close="isAllConnectionsModal = false"
+         />
 
-      <ModalExportSchema
-         v-if="isExportSchemaModal"
-         @close="hideExportModal"
-      />
-   </div>
+         <ModalExportSchema
+            v-if="isExportSchemaModal"
+            @close="hideExportModal"
+         />
+
+         <Sonner />
+      </div>
+   </TooltipProvider>
 </template>
 
 <script setup lang="ts">
@@ -38,6 +41,8 @@ import { defineAsyncComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
 
 import ModalExportSchema from '@/components/ModalExportSchema.vue';
 import TheSettingBar from '@/components/TheSettingBar.vue';
+import { Sonner } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useShortcutDispatcher } from '@/composables/useShortcutDispatcher';
 import { useApplicationStore } from '@/stores/application';
 import { useConnectionsStore } from '@/stores/connections';
@@ -48,7 +53,6 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 
 const TheTitleBar = defineAsyncComponent(() => import(/* webpackChunkName: "TheTitleBar" */'@/components/TheTitleBar.vue'));
 const TheFooter = defineAsyncComponent(() => import(/* webpackChunkName: "TheFooter" */'@/components/TheFooter.vue'));
-const TheNotificationsBoard = defineAsyncComponent(() => import(/* webpackChunkName: "TheNotificationsBoard" */'@/components/TheNotificationsBoard.vue'));
 const Workspace = defineAsyncComponent(() => import(/* webpackChunkName: "Workspace" */'@/components/Workspace.vue'));
 const WorkspaceAddConnectionPanel = defineAsyncComponent(() => import(/* webpackChunkName: "WorkspaceAddConnectionPanel" */'@/components/WorkspaceAddConnectionPanel.vue'));
 const ModalSettings = defineAsyncComponent(() => import(/* webpackChunkName: "ModalSettings" */'@/components/ModalSettings.vue'));

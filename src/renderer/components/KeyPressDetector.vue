@@ -1,18 +1,18 @@
 <template>
-   <div class="form-group has-icon-right m-0">
-      <input
-         class="form-input"
+   <div class="relative m-0">
+      <Input
+         class="!pr-8 overflow-hidden text-ellipsis [caret-color:transparent]"
          type="text"
-         :value="pressedKeys"
+         :model-value="pressedKeys"
          :placeholder="t('application.registerAShortcut')"
          @focus="isFocus = true"
          @blur="isFocus = false"
          @keydown.prevent.stop="onKey"
-      >
+      />
       <BaseIcon
          icon-name="mdiKeyboardOutline"
-         class="form-icon"
-         :size="24"
+         class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground"
+         :size="20"
       />
    </div>
 </template>
@@ -21,6 +21,7 @@ import { computed, PropType, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Input } from '@/components/ui/input';
 import Application from '@/ipc-api/Application';
 
 const { t } = useI18n();
@@ -117,16 +118,3 @@ watch(isFocus, (val) => {
       Application.reloadShortcuts();
 });
 </script>
-<style lang="scss" scoped>
-.has-icon-right {
-   .form-input {
-      padding-right: 1.8rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      caret-color: transparent;
-   }
-   .form-icon {
-      right: 0.4rem;
-   }
-}
-</style>

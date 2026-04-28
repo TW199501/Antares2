@@ -599,8 +599,11 @@
                />
             </template>
          </div>
-         <div v-else class="connection-panel-wrapper p-relative">
-            <div v-if="workspace?.connectionStatus === 'connecting'" class="empty">
+         <div v-else class="connection-panel-wrapper relative">
+            <div
+               v-if="workspace?.connectionStatus === 'connecting'"
+               class="flex items-center justify-center w-full h-full"
+            >
                <div class="loading loading-lg" />
             </div>
             <WorkspaceEditConnectionPanel v-else :connection="connection" />

@@ -2,12 +2,10 @@
    <BaseSelect
       ref="editField"
       :options="foreigns"
-      class="form-select pl-1 pr-4"
-      :class="{'small-select': size === 'small'}"
-      :value="currentValue"
+      :class="['foreign-key-select', {'small-select': size === 'small'}]"
+      :model-value="currentValue"
       dropdown-class="select-sm"
-      dropdown-container=".workspace-query-results > .vscroll"
-      @change="onChange"
+      @update:model-value="onChange"
       @blur="emit('blur')"
    />
 </template>
@@ -19,9 +17,9 @@ import { storeToRefs } from 'pinia';
 import { computed, Ref, ref, watch } from 'vue';
 
 import BaseSelect from '@/components/BaseSelect.vue';
+import { toast } from '@/components/ui/sonner';
 import { useFilters } from '@/composables/useFilters';
 import Tables from '@/ipc-api/Tables';
-import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 const props = defineProps({
@@ -38,7 +36,6 @@ const emit = defineEmits<{
    'blur': [];
 }>();
 
-const { addNotification } = useNotificationsStore();
 const workspacesStore = useWorkspacesStore();
 const { cutText } = useFilters();
 
@@ -46,7 +43,7 @@ const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 
 const editField: Ref<HTMLSelectElement> = ref(null);
 const foreignList = ref([]);
-const currentValue = ref(null);
+const currentValue = ref(props.modelValue);
 
 const isValidDefault = computed(() => {
    if (!foreignList.value.length) return true;
@@ -63,8 +60,9 @@ const foreigns = computed(() => {
    return list;
 });
 
-const onChange = (opt: HTMLSelectElement) => {
-   emit('update:modelValue', opt.value);
+const onChange = (val: any) => {
+   currentValue.value = val;
+   emit('update:modelValue', val);
 };
 
 watch(() => props.modelValue, () => {
@@ -87,10 +85,10 @@ const params = {
          foreignDesc = textField ? textField.name : false;
       }
       else
-         addNotification({ status: 'error', message: response });
+         toast.error(response);
    }
    catch (err) {
-      addNotification({ status: 'error', message: err.stack });
+      toast.error(err.stack);
    }
 
    try { // Foregn list
@@ -103,10 +101,10 @@ const params = {
       if (status === 'success')
          foreignList.value = response.rows;
       else
-         addNotification({ status: 'error', message: response });
+         toast.error(response);
    }
    catch (err) {
-      addNotification({ status: 'error', message: err.stack });
+      toast.error(err.stack);
    }
 })();
 </script>
