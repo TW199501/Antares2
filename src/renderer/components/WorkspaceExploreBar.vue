@@ -9,38 +9,33 @@
          @keypress="explorebarSearch"
          @keydown="explorebarSearch"
       >
-         <div class="flex h-[32px] items-center gap-1.5 px-2">
+         <div class="flex items-start gap-1.5 px-2 py-1">
             <div
                v-if="customizations.database && databases.length"
                class="min-w-0 flex-1"
             >
                <div
-                  class="flex h-[32px] items-center gap-1.5 rounded-md border border-muted-foreground/40 bg-muted/40 px-2 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
+                  class="flex flex-col rounded-md border border-muted-foreground/40 bg-muted/40 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
                   :title="t('database.switchDatabase')"
                >
                   <BaseSelect
                      v-model="selectedDatabase"
                      :options="databases"
-                     class="min-w-0 flex-1 text-sm font-semibold"
+                     class="min-w-0 w-full text-sm font-semibold"
                      dropdown-match-parent
                      @keypress.stop=""
                      @keydown.stop=""
                   />
                   <span
                      v-if="databaseComment"
-                     class="max-w-[40%] shrink-0 truncate rounded bg-muted-foreground/15 px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                     class="truncate px-2 pb-1 text-[11px] font-medium leading-tight text-muted-foreground"
                      :title="databaseComment"
                   >{{ databaseComment }}</span>
-                  <BaseIcon
-                     icon-name="mdiChevronDown"
-                     :size="18"
-                     class="shrink-0 text-muted-foreground"
-                  />
                </div>
             </div>
             <span
                v-else
-               class="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-wide"
+               class="min-w-0 flex-1 truncate self-center text-[11px] font-bold uppercase tracking-wide"
             >{{ connectionName }}</span>
             <div
                v-if="workspace.connectionStatus === 'connected'"

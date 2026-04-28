@@ -9,7 +9,7 @@
       </ContextMenuItem>
       <ContextMenuItem
          v-if="props.selectedMisc === 'materializedView'"
-         @select="emit('open-create-materializedView-tab')"
+         @select="emit('open-create-materialized-view-tab')"
       >
          <BaseIcon icon-name="mdiTableCog" :size="16" />
          <span>{{ t('database.createNewMaterializedView') }}</span>
@@ -67,11 +67,12 @@ const props = defineProps({
 
 const emit = defineEmits<{
    'open-create-view-tab': [];
-   'open-create-materializedView-tab': [];
+   'open-create-materialized-view-tab': [];
    'open-create-trigger-tab': [];
    'open-create-routine-tab': [];
    'open-create-function-tab': [];
    'open-create-trigger-function-tab': [];
    'open-create-scheduler-tab': [];
+   'reload': [];
 }>();
 </script>

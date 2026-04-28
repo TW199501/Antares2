@@ -2,7 +2,6 @@
    <Dialog :open="true" @update:open="(v) => { if (!v) hideModal(); }">
       <DialogContent
          :class="[modalSizeClass, '!p-0 !gap-0 !rounded-xl !shadow-2xl !border-border/70 overflow-hidden']"
-         aria-describedby="undefined"
          @open-auto-focus="onOpenAutoFocus"
          @escape-key-down.prevent="hideModal"
          @pointer-down-outside.prevent="hideModal"
@@ -12,6 +11,9 @@
                <slot name="header" />
                <slot />
             </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ confirmText || t('general.confirm') }}
+            </DialogDescription>
          </DialogHeader>
          <div
             v-if="hasBody"
@@ -48,7 +50,7 @@ import { computed, PropType, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const { t } = useI18n();
 
