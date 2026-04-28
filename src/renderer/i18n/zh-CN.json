@@ -78,7 +78,8 @@
     "archive": "归档",
     "undo": "重做",
     "moveTo": "移动到",
-    "error": "错误"
+    "error": "错误",
+    "copied": "已复制"
   },
   "connection": {
     "connection": "连接",

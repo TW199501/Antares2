@@ -78,7 +78,8 @@
     "archive": "보관",
     "undo": "실행 취소",
     "moveTo": "이동",
-    "error": "오류"
+    "error": "오류",
+    "copied": "복사됨"
   },
   "connection": {
     "connectionName": "연결 이름",

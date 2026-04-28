@@ -78,7 +78,8 @@
     "archive": "Archive",
     "undo": "Undo",
     "moveTo": "Move to",
-    "error": "Error"
+    "error": "Error",
+    "copied": "Copied"
   },
   "connection": {
     "connection": "Connection",

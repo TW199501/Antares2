@@ -78,7 +78,8 @@
     "archive": "アーカイブ",
     "undo": "元に戻す",
     "moveTo": "移動",
-    "error": "エラー"
+    "error": "エラー",
+    "copied": "コピーしました"
   },
   "connection": {
     "connection": "接続",

@@ -78,7 +78,8 @@
     "archive": "封存",
     "undo": "重做",
     "moveTo": "移動到",
-    "error": "錯誤"
+    "error": "錯誤",
+    "copied": "已複製"
   },
   "connection": {
     "connection": "連線",

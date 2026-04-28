@@ -32,7 +32,7 @@
                         ? 'border border-primary bg-primary text-primary-foreground'
                         : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
                   ]"
-                  :title="useCommentHeader ? t('application.showColumnNames') : t('application.showColumnComments')"
+                  :title="useCommentHeader ? t('database.showColumnNames') : t('database.showColumnComments')"
                   @click="useCommentHeader = !useCommentHeader"
                >
                   {{ useCommentHeader ? '中' : 'A' }}
@@ -44,7 +44,7 @@
                      variant="outline"
                      class="h-[32px] gap-1.5 px-[10px] !text-sm"
                      :disabled="isQuering || isSystemSchema"
-                     :title="isSystemSchema ? t('application.systemSchemaReadonly') : ''"
+                     :title="isSystemSchema ? t('database.systemSchemaReadonly') : ''"
                      @click="showFakerModal()"
                   >
                      <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
