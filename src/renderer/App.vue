@@ -4,7 +4,7 @@
          <TheTitleBar />
          <div id="window-content">
             <TheSettingBar @show-connections-modal="isAllConnectionsModal = true" />
-            <div id="main-content" class="container">
+            <div id="main-content">
                <div class="flex">
                   <Workspace
                      v-for="connection in connections"
