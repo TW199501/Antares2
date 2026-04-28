@@ -29,7 +29,13 @@
             />
          </ComboboxTrigger>
       </ComboboxAnchor>
-      <ComboboxList :class="['select-base__list', dropdownClass]">
+      <ComboboxList
+         :class="[
+            'select-base__list',
+            dropdownMatchParent && 'select-base__list--match-parent',
+            dropdownClass
+         ]"
+      >
          <ComboboxEmpty>{{ noResultsText }}</ComboboxEmpty>
          <template v-for="(group, gIdx) in normalizedOptions" :key="group.id">
             <ComboboxGroup>
@@ -73,7 +79,13 @@
             {{ currentOptionLabel }}
          </SelectValue>
       </SelectTrigger>
-      <SelectContent :class="['select-base__list', dropdownClass]">
+      <SelectContent
+         :class="[
+            'select-base__list',
+            dropdownMatchParent && 'select-base__list--match-parent',
+            dropdownClass
+         ]"
+      >
          <template v-for="(group, gIdx) in normalizedOptions" :key="group.id">
             <SelectGroup>
                <SelectLabel v-if="group.$type === 'group' && group.label">
@@ -400,5 +412,16 @@ onMounted(() => {
    &__list {
       max-height: 300px;
    }
+
+}
+
+/* Match the dropdown panel to the trigger anchor width. Reka-UI's Popper
+   sets --reka-popper-anchor-width on the popper container (the panel and
+   its parent). Verified via Playwright: anchor width 263.66px matches the
+   visual wrapper. The :global() escapes <style scoped> because the panel
+   is teleported via Portal — scoped selectors would never match. */
+:global(.select-base__list--match-parent) {
+   width: var(--reka-popper-anchor-width, auto);
+   min-width: var(--reka-popper-anchor-width, auto);
 }
 </style>
