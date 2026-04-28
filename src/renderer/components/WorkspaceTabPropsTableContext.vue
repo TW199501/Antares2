@@ -4,14 +4,14 @@
       @close-context="closeContext"
    >
       <div class="context-element">
-         <span class="d-flex">
+         <span class="flex items-center gap-1.5 text-foreground">
             <BaseIcon
-               class="text-light mt-1 mr-1"
                icon-name="mdiKeyPlus"
                :size="18"
-            /> {{ t('database.createNewIndex') }}</span>
+            />
+            {{ t('database.createNewIndex') }}
+         </span>
          <BaseIcon
-            class="text-light mt-1"
             icon-name="mdiChevronRight"
             :size="18"
          />
@@ -23,26 +23,28 @@
                :class="{'disabled': index === 'PRIMARY' && hasPrimary}"
                @click="addNewIndex(index)"
             >
-               <span class="d-flex">
+               <span class="flex items-center gap-1.5 text-foreground">
                   <BaseIcon
-                     class="column-key pr-1 mt-1 mr-1"
+                     class="column-key pr-1"
                      :class="`key-${index}`"
                      icon-name="mdiKey"
                      :rotate="45"
                      :size="20"
-                  /> {{ index }}</span>
+                  />
+                  {{ index }}
+               </span>
             </div>
          </div>
       </div>
       <div v-if="indexes.length" class="context-element">
-         <span class="d-flex">
+         <span class="flex items-center gap-1.5 text-foreground">
             <BaseIcon
-               class="text-light mt-1 mr-1"
                icon-name="mdiKeyArrowRight"
                :size="18"
-            /> {{ t('database.addToIndex') }}</span>
+            />
+            {{ t('database.addToIndex') }}
+         </span>
          <BaseIcon
-            class="text-light mt-1"
             icon-name="mdiChevronRight"
             :size="18"
          />
@@ -54,32 +56,36 @@
                :class="{'disabled': index.fields.includes(selectedField.name)}"
                @click="addToIndex(index._antares_id)"
             >
-               <span class="d-flex">
+               <span class="flex items-center gap-1.5 text-foreground">
                   <BaseIcon
-                     class="column-key pr-1 mt-1 mr-1"
+                     class="column-key pr-1"
                      :class="`key-${index.type}`"
                      icon-name="mdiKey"
                      :rotate="45"
                      :size="20"
-                  /> {{ index.name }}</span>
+                  />
+                  {{ index.name }}
+               </span>
             </div>
          </div>
       </div>
       <div class="context-element" @click="duplicateField">
-         <span class="d-flex">
+         <span class="flex items-center gap-1.5 text-foreground">
             <BaseIcon
-               class="text-light mt-1 mr-1"
                icon-name="mdiContentDuplicate"
                :size="18"
-            /> {{ t('general.duplicate') }}</span>
+            />
+            {{ t('general.duplicate') }}
+         </span>
       </div>
       <div class="context-element" @click="deleteField">
-         <span class="d-flex">
+         <span class="flex items-center gap-1.5 text-destructive">
             <BaseIcon
-               class="text-light mt-1 mr-1"
                icon-name="mdiDelete"
                :size="18"
-            /> {{ t('database.deleteField') }}</span>
+            />
+            {{ t('database.deleteField') }}
+         </span>
       </div>
    </BaseContextMenu>
 </template>

@@ -1,106 +1,93 @@
 <template>
-   <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
-      <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons">
-               <button
-                  class="btn btn-primary btn-sm"
-                  :disabled="!isChanged"
-                  :class="{'loading':isSaving}"
-                  @click="saveChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiContentSave"
-                     :size="24"
-                  />
-                  <span>{{ t('general.save') }}</span>
-               </button>
-               <button
-                  :disabled="!isChanged"
-                  class="btn btn-link btn-sm mr-0"
-                  :title="t('database.clearChanges')"
-                  @click="clearChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiDeleteSweep"
-                     :size="24"
-                  />
-                  <span>{{ t('general.clear') }}</span>
-               </button>
-            </div>
-            <div class="workspace-query-info">
-               <div class="d-flex" :title="t('database.schema')">
-                  <BaseIcon
-                     class="mt-1 mr-1"
-                     icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="container">
-         <div class="columns">
-            <div class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('general.name') }}</label>
-                  <input
-                     v-model="localView.name"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
-            </div>
-            <div class="column col-auto">
-               <div v-if="workspace.customizations.definer" class="form-group">
-                  <label class="form-label">{{ t('database.definer') }}</label>
-                  <BaseSelect
-                     v-model="localView.definer"
-                     :options="users"
-                     :option-label="(user: any) => user.value === '' ? t('database.currentUser') : `${user.name}@${user.host}`"
-                     :option-track-by="(user: any) => user.value === '' ? '' : `\`${user.name}\`@\`${user.host}\``"
-                     class="form-select"
-                  />
-               </div>
-            </div>
-            <div class="column col-auto mr-2">
-               <div v-if="workspace.customizations.viewSqlSecurity" class="form-group">
-                  <label class="form-label">{{ t('database.sqlSecurity') }}</label>
-                  <BaseSelect
-                     v-model="localView.security"
-                     :options="['DEFINER', 'INVOKER']"
-                     class="form-select"
-                  />
-               </div>
-            </div>
-            <div class="column col-auto mr-2">
-               <div v-if="workspace.customizations.viewAlgorithm" class="form-group">
-                  <label class="form-label">{{ t('database.algorithm') }}</label>
-                  <BaseSelect
-                     v-model="localView.algorithm"
-                     :options="['UNDEFINED', 'MERGE', 'TEMPTABLE']"
-                     class="form-select"
-                  />
-               </div>
-            </div>
-            <div v-if="workspace.customizations.viewUpdateOption" class="column col-auto mr-2">
-               <div class="form-group">
-                  <label class="form-label">{{ t('database.updateOption') }}</label>
-                  <BaseSelect
-                     v-model="localView.updateOption"
-                     :option-track-by="(user: any) => user.value"
-                     :options="[{label: 'None', value: ''}, {label: 'CASCADED', value: 'CASCADED'}, {label: 'LOCAL', value: 'LOCAL'}]"
-                     class="form-select"
-                  />
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="workspace-query-results column col-12 mt-2 p-relative">
+   <PropsTabShell :is-selected="isSelected" :schema="schema">
+      <template #toolbar>
+         <Button
+            variant="default"
+            size="sm"
+            :disabled="!isChanged || isSaving"
+            @click="saveChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiContentSave"
+               :size="16"
+            />
+            {{ t('general.save') }}
+         </Button>
+         <Button
+            variant="ghost"
+            size="sm"
+            :disabled="!isChanged"
+            :title="t('database.clearChanges')"
+            @click="clearChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiDeleteSweep"
+               :size="16"
+            />
+            {{ t('general.clear') }}
+         </Button>
+      </template>
+
+      <template #metadata>
+         <PropertyCard :label="t('general.name')">
+            <Input
+               v-model="localView.name"
+               type="text"
+               class="!h-[30px] w-[200px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.definer"
+            :label="t('database.definer')"
+         >
+            <BaseSelect
+               v-model="localView.definer"
+               :options="users"
+               :option-label="(user: any) => user.value === '' ? t('database.currentUser') : `${user.name}@${user.host}`"
+               :option-track-by="(user: any) => user.value === '' ? '' : `\`${user.name}\`@\`${user.host}\``"
+               class="!h-[30px] w-[180px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.viewSqlSecurity"
+            :label="t('database.sqlSecurity')"
+         >
+            <BaseSelect
+               v-model="localView.security"
+               :options="['DEFINER', 'INVOKER']"
+               class="!h-[30px] w-[140px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.viewAlgorithm"
+            :label="t('database.algorithm')"
+         >
+            <BaseSelect
+               v-model="localView.algorithm"
+               :options="['UNDEFINED', 'MERGE', 'TEMPTABLE']"
+               class="!h-[30px] w-[140px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.viewUpdateOption"
+            :label="t('database.updateOption')"
+         >
+            <BaseSelect
+               v-model="localView.updateOption"
+               :option-track-by="(user: any) => user.value"
+               :options="[{label: 'None', value: ''}, {label: 'CASCADED', value: 'CASCADED'}, {label: 'LOCAL', value: 'LOCAL'}]"
+               class="!h-[30px] w-[140px]"
+            />
+         </PropertyCard>
+      </template>
+
+      <template #content>
          <BaseLoader v-if="isLoading" />
-         <label class="form-label ml-2">{{ t('database.selectStatement') }}</label>
+         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+            {{ t('database.selectStatement') }}
+         </Label>
          <QueryEditor
             v-show="isSelected"
             ref="queryEditor"
@@ -109,8 +96,8 @@
             :schema="schema"
             :height="editorHeight"
          />
-      </div>
-   </div>
+      </template>
+   </PropsTabShell>
 </template>
 
 <script setup lang="ts">
@@ -122,6 +109,11 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import QueryEditor from '@/components/QueryEditor.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import PropertyCard from '@/components/workspace/props/PropertyCard.vue';
+import PropsTabShell from '@/components/workspace/props/PropsTabShell.vue';
 import Views from '@/ipc-api/Views';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';

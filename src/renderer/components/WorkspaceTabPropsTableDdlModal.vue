@@ -2,23 +2,39 @@
    <ConfirmModal
       :confirm-text="t('general.confirm')"
       size="large"
-      class="options-modal"
       :cancel-text="t('general.close')"
       :hide-footer="true"
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="flex items-center">
-            <BaseIcon
-               class="mr-1"
-               icon-name="mdiCodeTags"
-               :size="24"
-            />
-            <span class="cut-text">{{ t('database.ddl') }} "{{ table }}"</span>
+         <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center min-w-0">
+               <BaseIcon
+                  class="mr-1 shrink-0"
+                  icon-name="mdiCodeTags"
+                  :size="22"
+               />
+               <span class="truncate">{{ t('database.ddl') }} "{{ table }}"</span>
+            </div>
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[28px] !text-[12px] mr-8"
+               :disabled="!createDdl"
+               :title="t('general.copy')"
+               @click="copyDdl"
+            >
+               <BaseIcon
+                  class="mr-1"
+                  icon-name="mdiContentCopy"
+                  :size="14"
+               />
+               {{ t('general.copy') }}
+            </Button>
          </div>
       </template>
       <template #body>
-         <div class="pb-4">
+         <div class="pb-2">
             <BaseTextEditor
                ref="queryEditor"
                v-model="createDdl"
@@ -38,6 +54,7 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseTextEditor from '@/components/BaseTextEditor.vue';
+import { Button } from '@/components/ui/button';
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 
@@ -56,6 +73,17 @@ defineEmits<{
 }>();
 
 const { addNotification } = useNotificationsStore();
+
+const copyDdl = async () => {
+   if (!createDdl.value) return;
+   try {
+      await navigator.clipboard.writeText(createDdl.value);
+      addNotification({ status: 'success', message: t('general.copied') });
+   }
+   catch (err) {
+      addNotification({ status: 'error', message: err.message });
+   }
+};
 
 onMounted(async () => {
    try {
