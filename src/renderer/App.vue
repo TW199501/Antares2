@@ -193,6 +193,8 @@ window.addEventListener('error', (event) => {
   #wrapper {
     height: 100vh;
     position: relative;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 
   #window-content {
