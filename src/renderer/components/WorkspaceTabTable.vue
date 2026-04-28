@@ -2,34 +2,36 @@
    <div v-show="isSelected" class="workspace-query-tab no-outline flex w-full flex-col p-0">
       <div class="workspace-query-runner flex w-full flex-col">
          <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-sm">
-            <div class="workspace-query-buttons">
-               <!-- 資料 / 屬性 切換 -->
-               <Tabs v-model="viewMode" class="mr-2">
-                  <TabsList class="h-[32px] gap-0 p-[2px]">
+            <div class="workspace-query-buttons flex items-center gap-2">
+               <!-- 資料 / 屬性 切換 — mode switch uses accent (NOT primary) to
+                    visually separate "mode toggle" from "primary action buttons" -->
+               <Tabs v-model="viewMode">
+                  <TabsList class="h-[32px] gap-0 p-0">
                      <TabsTrigger
                         value="data"
-                        class="h-[28px] gap-1 px-[10px] py-0 !text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiTable" :size="14" />
                         {{ t('general.data') }}
                      </TabsTrigger>
                      <TabsTrigger
                         value="props"
-                        class="h-[28px] gap-1 px-[10px] py-0 !text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiWrenchCog" :size="14" />
                         {{ t('general.properties') }}
                      </TabsTrigger>
                   </TabsList>
                </Tabs>
-               <!-- Column header 英文名 / 中文 comment 切換 (僅 data 模式有效) -->
+               <!-- Column header 英文名 / 中文 comment 切換 (僅 data 模式有效)
+                    — also a mode toggle, uses accent on active for consistency -->
                <button
                   v-show="viewMode === 'data'"
                   type="button"
                   :class="[
-                     'mr-3 flex h-[32px] w-[32px] items-center justify-center rounded-md !text-sm font-semibold transition-colors',
+                     'flex h-[32px] w-[32px] items-center justify-center rounded-md !text-sm font-semibold transition-colors',
                      useCommentHeader
-                        ? 'border border-primary bg-primary text-primary-foreground'
+                        ? 'border border-sky-500 bg-sky-500 text-white'
                         : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
                   ]"
                   :title="useCommentHeader ? t('database.showColumnNames') : t('database.showColumnComments')"
@@ -37,20 +39,20 @@
                >
                   {{ useCommentHeader ? '中' : 'A' }}
                </button>
-               <div v-show="viewMode === 'data'" class="flex items-center gap-1">
-                  <!-- Insert row -->
-                  <Button
-                     v-if="isTable && !connection.readonly"
-                     variant="outline"
-                     class="h-[32px] gap-1.5 px-[10px] !text-sm"
-                     :disabled="isQuering || isSystemSchema"
-                     :title="isSystemSchema ? t('database.systemSchemaReadonly') : ''"
-                     @click="showFakerModal()"
-                  >
-                     <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
-                     <span>{{ t('general.add') }}</span>
-                  </Button>
-               </div>
+               <!-- Insert row — primary action (orange brand). Sized to match
+                    the toggle group height so the toolbar reads as one row. -->
+               <Button
+                  v-show="viewMode === 'data'"
+                  v-if="isTable && !connection.readonly"
+                  variant="default"
+                  class="h-[32px] gap-1.5 px-3 !text-sm"
+                  :disabled="isQuering || isSystemSchema"
+                  :title="isSystemSchema ? t('database.systemSchemaReadonly') : ''"
+                  @click="showFakerModal()"
+               >
+                  <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
+                  <span>{{ t('general.add') }}</span>
+               </Button>
                <!-- Teleport target for props-mode toolbar (Save/Clear/Add/Indexes/ForeignKeys/DDL) -->
                <div
                   v-show="viewMode === 'props'"
