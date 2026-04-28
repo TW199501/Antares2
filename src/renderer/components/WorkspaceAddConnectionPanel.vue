@@ -54,7 +54,6 @@
                            :options="clients"
                            option-track-by="slug"
                            option-label="name"
-                           class="form-select"
                         />
                      </FormField>
 

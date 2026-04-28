@@ -1,10 +1,10 @@
 <template>
    <div
       v-show="isSelected"
-      class="workspace-query-tab column col-12 columns col-gapless no-outline p-0"
+      class="workspace-query-tab no-outline flex w-full flex-col p-0"
       tabindex="0"
    >
-      <div class="workspace-query-runner column col-12">
+      <div class="workspace-query-runner flex w-full flex-col">
          <QueryEditor
             v-show="isSelected"
             id="query-editor"
@@ -189,7 +189,6 @@
                      :options="[{value: true, label: t('database.autoCommit')}, {value: false, label: t('database.manualCommit')}]"
                      :option-label="(opt: any) => opt.label"
                      :option-track-by="(opt: any) => opt.value"
-                     class="form-select select-sm text-bold"
                   />
                </div>
             </div>
@@ -239,14 +238,13 @@
                   <BaseSelect
                      v-model="selectedSchema"
                      :options="[{value: null, label: t('database.noSchema')}, ...databaseSchemas.map(el => ({label: el, value: el}))]"
-                     class="form-select select-sm text-bold"
                   />
                </div>
             </div>
          </div>
       </div>
       <WorkspaceTabQueryEmptyState v-if="!results.length && !isQuering" :customizations="workspace.customizations" />
-      <div class="workspace-query-results p-relative column col-12">
+      <div class="workspace-query-results p-relative w-full">
          <BaseLoader v-if="isQuering" />
          <WorkspaceTabQueryTable
             v-if="results"
@@ -878,7 +876,7 @@ onBeforeUnmount(() => {
         border: 1px solid var(--border);
         background: var(--secondary);
 
-        :deep(.form-select) {
+        :deep(.select-base) {
           border: none;
           background: transparent;
           height: 28px;

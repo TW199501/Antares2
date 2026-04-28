@@ -1,6 +1,6 @@
 <template>
-   <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless no-outline p-0">
-      <div class="workspace-query-runner column col-12">
+   <div v-show="isSelected" class="workspace-query-tab no-outline flex w-full flex-col p-0">
+      <div class="workspace-query-runner flex w-full flex-col">
          <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-[14px]">
             <div class="workspace-query-buttons">
                <!-- 資料 / 屬性 切換 -->
@@ -118,7 +118,7 @@
             </div>
          </div>
       </div>
-      <div v-show="viewMode === 'data'" class="workspace-query-results column col-12 relative">
+      <div v-show="viewMode === 'data'" class="workspace-query-results relative w-full">
          <BaseLoader v-if="isQuering" />
          <BaseSplitV
             :top-height="tableQueryAreaHeight"

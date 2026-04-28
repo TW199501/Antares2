@@ -155,7 +155,7 @@
                         :options="schemaTables"
                         option-label="name"
                         option-track-by="name"
-                        class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                        class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-[14px]"
                         @change="reloadRefFields"
                      />
                   </div>
@@ -184,7 +184,7 @@
                      <BaseSelect
                         v-model="selectedForeignObj.onUpdate"
                         :options="foreignActions"
-                        class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                        class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-[14px]"
                      />
                   </div>
                   <div class="grid grid-cols-[100px_1fr] items-center gap-2">
@@ -194,7 +194,7 @@
                      <BaseSelect
                         v-model="selectedForeignObj.onDelete"
                         :options="foreignActions"
-                        class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                        class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-[14px]"
                      />
                   </div>
                </form>
@@ -281,7 +281,7 @@ const selectForeign = (event: MouseEvent, id: string) => {
 };
 
 const getModalInnerHeight = () => {
-   const modalBody = document.querySelector('.modal-body');
+   const modalBody = document.querySelector('[data-modal-body]');
    if (modalBody)
       modalInnerHeight.value = modalBody.clientHeight - (parseFloat(getComputedStyle(modalBody).paddingTop) + parseFloat(getComputedStyle(modalBody).paddingBottom));
 };

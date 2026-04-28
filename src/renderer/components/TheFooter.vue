@@ -44,7 +44,7 @@
       <div v-if="activePager" class="footer-center-elements">
          <button
             type="button"
-            class="footer-pager-btn"
+            class="footer-pager-chip"
             :disabled="!activePager.hasPrev"
             :title="t('application.previousResultsPage')"
             @click="activePager.onPrev()"
@@ -54,7 +54,7 @@
          <span class="footer-pager-page">{{ activePager.page }}</span>
          <button
             type="button"
-            class="footer-pager-btn"
+            class="footer-pager-chip"
             :disabled="!activePager.hasNext"
             :title="t('application.nextResultsPage')"
             @click="activePager.onNext()"
@@ -65,7 +65,7 @@
             <DropdownMenuTrigger as-child>
                <button
                   type="button"
-                  class="footer-pager-btn footer-pager-export"
+                  class="footer-pager-chip footer-pager-export"
                   :disabled="activePager.isQuering"
                   :title="t('database.export')"
                >
@@ -255,7 +255,7 @@ changeAccentColor();
       // White icon + text shows clearly without inverting the surface
       // hierarchy. --primary-color-dark is already defined in main.scss
       // as the brand color mixed with 30% black.
-      .footer-pager-btn {
+      .footer-pager-chip {
         height: 24px;
         display: inline-flex;
         align-items: center;

@@ -114,7 +114,7 @@
                         v-model="selectedIndexObj.type"
                         :options="indexTypes"
                         :option-disabled="(opt: any) => opt === 'PRIMARY' && hasPrimary"
-                        class="form-select [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                        class="!h-[32px] !text-[14px]"
                      />
                   </div>
                   <div class="grid grid-cols-[100px_1fr] items-start gap-2">

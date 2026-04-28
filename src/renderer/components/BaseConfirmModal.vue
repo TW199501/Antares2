@@ -15,6 +15,7 @@
          </DialogHeader>
          <div
             v-if="hasBody"
+            data-modal-body
             class="px-5 py-4 overflow-auto"
             :class="bodyMaxHeightClass"
          >
