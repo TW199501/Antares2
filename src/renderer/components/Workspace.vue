@@ -1,5 +1,5 @@
 <template>
-   <div v-show="isSelected" class="workspace column columns col-gapless">
+   <div v-show="isSelected" class="workspace flex flex-row w-full">
       <WorkspaceTabsContext
          v-if="isTabContext"
          :context-event="contextEvent"
@@ -15,8 +15,8 @@
          :connection="connection"
          :is-selected="isSelected"
       />
-      <div class="workspace-tabs column">
-         <div v-if="workspace?.connectionStatus === 'connected'" class="columns col-gapless">
+      <div class="workspace-tabs flex-1 min-w-0 flex flex-col">
+         <div v-if="workspace?.connectionStatus === 'connected'" class="flex flex-row flex-shrink-0">
             <Draggable
                ref="tabWrap"
                v-model="draggableTabs"
