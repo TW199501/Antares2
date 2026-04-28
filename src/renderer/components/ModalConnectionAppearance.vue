@@ -1,122 +1,137 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiBrushVariant"
-                        class="mr-1"
-                        :size="24"
-                     />
-                     <span class="cut-text">{{ t('application.editConnectionAppearance') }}</span>
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               <div class="content">
-                  <form class="form-horizontal">
-                     <div class="form-group mb-4">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('application.label') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <input
-                              ref="firstInput"
-                              v-model="localConnection.name"
-                              class="form-input"
-                              type="text"
-                              :placeholder="getConnectionName(localConnection.uid)"
-                           >
-                        </div>
-                     </div>
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('application.icon') }}</label>
-                        </div>
-                        <div class="col-9 icons-wrapper">
-                           <div
-                              v-for="icon in icons"
-                              :key="icon.name"
-                           >
-                              <BaseIcon
-                                 v-if="icon.code"
-                                 :icon-name="camelize(icon.code)"
-                                 :size="36"
-                                 class="icon-box"
-                                 :title="icon.name"
-                                 :class="[{'selected': localConnection.icon === icon.code}]"
-                                 @click="setIcon(icon.code)"
-                              />
-                              <div
-                                 v-else
-                                 class="icon-box"
-                                 :title="icon.name"
-                                 :class="[`dbi dbi-${connection.client}`, {'selected': localConnection.icon === null}]"
-                                 @click="setIcon(null)"
-                              />
-                           </div>
-                        </div>
-                     </div>
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('application.customIcon') }}</label>
-                        </div>
-                        <div class="col-9 icons-wrapper">
-                           <div
-                              v-for="icon in customIcons"
-                              :key="icon.uid"
-                           >
-                              <BaseIcon
-                                 v-if="icon.uid"
-                                 :icon-name="icon.uid"
-                                 type="custom"
-                                 :size="36"
-                                 class="icon-box"
-                                 :class="[{'selected': localConnection.icon === icon.uid}]"
-                                 @click="setIcon(icon.uid, 'custom')"
-                                 @contextmenu.prevent="contextMenu($event, icon.uid)"
-                              />
-                           </div>
-                           <BaseIcon
-                              :icon-name="'mdiPlus'"
-                              :size="36"
-                              class="icon-box"
-                              @click="openFile"
-                           />
-                        </div>
-                     </div>
-                  </form>
-               </div>
-            </div>
-            <div class="modal-footer">
-               <button class="btn btn-primary mr-2" @click.stop="editFolderAppearance">
-                  {{ t('application.update') }}
-               </button>
-               <button class="btn btn-link" @click.stop="closeModal">
-                  {{ t('general.close') }}
-               </button>
-            </div>
-         </div>
-      </div>
-      <BaseContextMenu
-         v-if="isContext"
-         :context-event="contextEvent"
-         @close-context="isContext = false"
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <!--
+         Connection appearance editor: edit a sidebar connection's display name
+         + icon. Three icon families stack vertically:
+           1. Built-in MDI icons (~40 entries) — clickable BaseIcon swatches.
+           2. Custom user-uploaded SVG icons — same swatch grid; right-click
+              opens a context menu with Delete.
+           3. A "+" plus tile that opens the Tauri file picker for a new SVG.
+         Icon swatches use 36px BaseIcon inside a 40×40 hover-able tile;
+         active selection gets ring-2 ring-ring outline (was outline-2
+         var(--primary-color) under spectre).
+      -->
+      <DialogContent
+         class="!max-w-[420px] !p-0 !gap-0 [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent="closeModal"
       >
-         <div class="context-element" @click="removeIconHandler">
-            <span class="d-flex">
-               <BaseIcon
-                  class="text-light mt-1 mr-1"
-                  icon-name="mdiDelete"
-                  :size="18"
-               /> {{ t('general.delete') }}</span>
+         <DialogHeader class="px-5 pt-4 pb-3 border-b border-border/60 flex flex-row items-center justify-between !space-y-0">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1">
+               <BaseIcon icon-name="mdiBrushVariant" :size="20" />
+               <span class="cut-text">{{ t('application.editConnectionAppearance') }}</span>
+            </DialogTitle>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
+
+         <div class="px-5 py-4 space-y-4">
+            <div class="grid grid-cols-[80px_1fr] items-center gap-3">
+               <Label for="conn-label" class="!text-[13px] font-medium">{{ t('application.label') }}</Label>
+               <Input
+                  id="conn-label"
+                  ref="firstInput"
+                  v-model="localConnection.name"
+                  type="text"
+                  :placeholder="getConnectionName(localConnection.uid)"
+               />
+            </div>
+            <div class="grid grid-cols-[80px_1fr] items-start gap-3">
+               <Label class="!text-[13px] font-medium pt-1">{{ t('application.icon') }}</Label>
+               <div class="grid grid-cols-[repeat(auto-fill,40px)] gap-1.5">
+                  <template v-for="icon in icons" :key="icon.name">
+                     <button
+                        v-if="icon.code"
+                        type="button"
+                        class="flex h-10 w-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus:outline-none"
+                        :class="localConnection.icon === icon.code ? 'ring-2 ring-ring' : ''"
+                        :title="icon.name"
+                        @click="setIcon(icon.code)"
+                     >
+                        <BaseIcon :icon-name="camelize(icon.code)" :size="28" />
+                     </button>
+                     <button
+                        v-else
+                        type="button"
+                        class="flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted focus:outline-none"
+                        :class="[`dbi dbi-${connection.client}`, localConnection.icon === null ? 'ring-2 ring-ring' : '']"
+                        :title="icon.name"
+                        @click="setIcon(null)"
+                     />
+                  </template>
+               </div>
+            </div>
+            <div class="grid grid-cols-[80px_1fr] items-start gap-3">
+               <Label class="!text-[13px] font-medium pt-1">{{ t('application.customIcon') }}</Label>
+               <div class="grid grid-cols-[repeat(auto-fill,40px)] gap-1.5">
+                  <button
+                     v-for="icon in customIcons"
+                     :key="icon.uid"
+                     type="button"
+                     class="flex h-10 w-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus:outline-none"
+                     :class="localConnection.icon === icon.uid ? 'ring-2 ring-ring' : ''"
+                     @click="setIcon(icon.uid, 'custom')"
+                     @contextmenu.prevent="contextMenu($event, icon.uid)"
+                  >
+                     <BaseIcon
+                        :icon-name="icon.uid"
+                        type="custom"
+                        :size="28"
+                     />
+                  </button>
+                  <!-- Add new SVG tile -->
+                  <button
+                     type="button"
+                     class="flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none"
+                     :title="t('general.add')"
+                     @click="openFile"
+                  >
+                     <BaseIcon icon-name="mdiPlus" :size="28" />
+                  </button>
+               </div>
+            </div>
          </div>
-      </BaseContextMenu>
-   </Teleport>
+
+         <DialogFooter class="!flex !flex-row !justify-end !gap-2 !px-5 !py-3 border-t border-border/60 bg-muted/30">
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="closeModal"
+            >
+               {{ t('general.close') }}
+            </Button>
+            <Button
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="editFolderAppearance"
+            >
+               {{ t('application.update') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
+
+   <BaseContextMenu
+      v-if="isContext"
+      :context-event="contextEvent"
+      @close-context="isContext = false"
+   >
+      <div class="context-element" @click="removeIconHandler">
+         <span class="d-flex">
+            <BaseIcon
+               class="text-light mt-1 mr-1"
+               icon-name="mdiDelete"
+               :size="18"
+            /> {{ t('general.delete') }}</span>
+      </div>
+   </BaseContextMenu>
 </template>
 
 <script setup lang="ts">
@@ -126,7 +141,10 @@ import { useI18n } from 'vue-i18n';
 
 import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Application from '@/ipc-api/Application';
 import { camelize } from '@/libs/camelize';
 import { unproxify } from '@/libs/unproxify';
@@ -204,8 +222,6 @@ const icons = [
    { name: 'apple', code: 'mdi-apple' },
    { name: 'android', code: 'mdi-android' }
 ];
-
-const { trapRef } = useFocusTrap();
 
 const firstInput: Ref<HTMLInputElement> = ref(null);
 const localConnection: Ref<SidebarElement> = ref(unproxify(props.connection));
@@ -296,47 +312,17 @@ const onKey =(e: KeyboardEvent) => {
       closeModal();
 };
 
+window.addEventListener('keydown', onKey);
+
 onBeforeUnmount(() => {
    window.removeEventListener('keydown', onKey);
 });
-
 </script>
 
 <style scoped lang="scss">
-  .modal-container {
-    max-width: 360px;
-  }
-
-  .icons-wrapper{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, 40px);
-      gap: 5px;
-
-     .icon-box {
-         height: 40px;
-         width: 40px;
-         border-radius: 4px;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         cursor: pointer;
-
-         &.selected {
-            outline: 2px solid var(--primary-color);
-            border-radius: 8px;
-         }
-     }
-  }
-
   .theme-light {
-      .icons-wrapper {
-         .dbi {
-            filter: invert(100%) opacity(.8);
-
-            &.selected {
-               outline-color: #1c96d6;
-            }
-         }
+      .dbi {
+         filter: invert(100%) opacity(.8);
       }
   }
 </style>

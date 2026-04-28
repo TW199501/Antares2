@@ -1,152 +1,196 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <ModalProcessesListContext
-            v-if="isContext"
-            :context-event="contextEvent"
-            :selected-row="selectedRow"
-            :selected-cell="selectedCell"
-            @copy-cell="copyCell"
-            @copy-row="copyRow"
-            @kill-process="killProcess"
-            @close-context="closeContext"
-         />
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0 pb-4">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiMemory"
-                        class="mr-1"
-                        :size="24"
-                     />
-                     <span class="cut-text">{{ t('database.processesList') }}: {{ connectionName }}</span>
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="processes-toolbar py-2 px-4">
-               <div class="workspace-query-buttons">
-                  <div class="dropdown pr-1">
-                     <div class="btn-group">
-                        <button
-                           class="btn btn-dark btn-sm mr-0 pr-1 d-flex"
-                           :class="{'loading':isQuering}"
-                           :title="`${t('general.refresh')}`"
-                           @click="getProcessesList"
-                        >
-                           <BaseIcon
-                              v-if="!+autorefreshTimer"
-                              icon-name="mdiRefresh"
-                              :size="24"
-                           />
-                           <BaseIcon
-                              v-else
-                              icon-name="mdiHistory"
-                              flip="horizontal"
-                              class="mr-1"
-                              :size="24"
-                           />
-                        </button>
-                        <div class="btn btn-dark btn-sm dropdown-toggle pl-0 pr-0" tabindex="0">
-                           <BaseIcon icon-name="mdiMenuDown" :size="24" />
-                        </div>
-                        <div class="menu px-3">
-                           <span>{{ t('general.autoRefresh') }}: <b>{{ +autorefreshTimer ? `${autorefreshTimer}s` : 'OFF' }}</b></span>
-                           <input
-                              v-model="autorefreshTimer"
-                              class="slider no-border"
-                              type="range"
-                              min="0"
-                              max="15"
-                              step="0.5"
-                              @change="setRefreshInterval"
-                           >
-                        </div>
-                     </div>
-                  </div>
-                  <div class="dropdown table-dropdown">
-                     <button
-                        :disabled="isQuering"
-                        class="btn btn-dark btn-sm dropdown-toggle d-flex mr-0 pr-0"
-                        tabindex="0"
-                     >
-                        <BaseIcon icon-name="mdiFileExport" :size="24" />
-                        <span>{{ t('database.export') }}</span>
-                        <BaseIcon icon-name="mdiMenuDown" :size="24" />
-                     </button>
-                     <ul class="menu text-left">
-                        <li class="menu-item">
-                           <a class="c-hand" @click="downloadTable('json')">JSON</a>
-                        </li>
-                        <li class="menu-item">
-                           <a class="c-hand" @click="downloadTable('csv')">CSV</a>
-                        </li>
-                     </ul>
-                  </div>
-               </div>
-               <div class="workspace-query-info">
-                  <div v-if="sortedResults.length">
-                     {{ t('database.processes') }}: <b>{{ sortedResults.length.toLocaleString() }}</b>
-                  </div>
-               </div>
-            </div>
-            <div class="modal-body py-0 workspace-query-results">
-               <div
-                  ref="tableWrapper"
-                  class="vscroll"
-                  :style="{'height': resultsSize+'px'}"
-               >
-                  <div ref="table" class="table table-hover">
-                     <div class="thead">
-                        <div class="tr">
-                           <div
-                              v-for="(field, index) in fields"
-                              :key="index"
-                              class="th c-hand"
-                           >
-                              <div ref="columnResize" class="column-resizable">
-                                 <div class="table-column-title" @click="sort(field)">
-                                    <span>{{ field.toUpperCase() }}</span>
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <!--
+         Processes-list browser. Wraps the existing BaseVirtualScroll table
+         intact (Batch 9 will revisit virtual table internals); only the
+         outer Dialog shell + toolbar are migrated to shadcn here.
+         max-w-[75vw] preserves the original wide-table footprint so MSSQL's
+         12-column session list stays comfortably readable.
+      -->
+      <DialogContent
+         class="!max-w-[75vw] !w-[75vw] !max-h-[85vh] !p-0 !gap-0 flex flex-col [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent="closeModal"
+         @interact-outside.prevent
+      >
+         <DialogHeader class="px-5 py-3 border-b border-border/60 bg-muted/30 flex flex-row items-center justify-between !space-y-0">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1.5">
+               <BaseIcon icon-name="mdiMemory" :size="20" />
+               <span class="cut-text">{{ t('database.processesList') }}: {{ connectionName }}</span>
+            </DialogTitle>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
 
-                                    <BaseIcon
-                                       v-if="currentSort === field"
-                                       :icon-name="currentSortDir === 'asc' ? 'mdiSortAscending':'mdiSortDescending'"
-                                       :size="18"
-                                       class="ml-1"
-                                    />
-                                 </div>
+         <!--
+            Toolbar: refresh + auto-refresh popover, export menu, results count.
+            Refresh popover uses shadcn Popover so the legacy `dropdown-toggle`
+            spectre interactions are gone. Export dropdown also moves to
+            Popover; both keep mdi icons + tooltips for affordance.
+         -->
+         <div class="flex items-center justify-between px-4 py-2 border-b border-border/60">
+            <div class="flex items-center gap-2">
+               <Popover>
+                  <div class="flex items-stretch">
+                     <Button
+                        size="sm"
+                        variant="outline"
+                        class="!h-[28px] !px-2 !text-[12px] gap-1 rounded-r-none border-r-0"
+                        :disabled="isQuering"
+                        :title="t('general.refresh')"
+                        @click="getProcessesList"
+                     >
+                        <BaseIcon
+                           v-if="!+autorefreshTimer"
+                           icon-name="mdiRefresh"
+                           :size="16"
+                        />
+                        <BaseIcon
+                           v-else
+                           icon-name="mdiHistory"
+                           flip="horizontal"
+                           :size="16"
+                        />
+                     </Button>
+                     <PopoverTrigger as-child>
+                        <Button
+                           size="sm"
+                           variant="outline"
+                           class="!h-[28px] !w-7 !p-0 rounded-l-none"
+                        >
+                           <BaseIcon icon-name="mdiMenuDown" :size="16" />
+                        </Button>
+                     </PopoverTrigger>
+                  </div>
+                  <PopoverContent class="w-[260px] p-3 space-y-2">
+                     <div class="text-[12px]">
+                        {{ t('general.autoRefresh') }}: <b>{{ +autorefreshTimer ? `${autorefreshTimer}s` : 'OFF' }}</b>
+                     </div>
+                     <input
+                        v-model="autorefreshTimer"
+                        type="range"
+                        min="0"
+                        max="15"
+                        step="0.5"
+                        class="w-full text-foreground"
+                        @change="setRefreshInterval"
+                     >
+                  </PopoverContent>
+               </Popover>
+
+               <Popover>
+                  <PopoverTrigger as-child>
+                     <Button
+                        size="sm"
+                        variant="outline"
+                        class="!h-[28px] !px-2 !text-[12px] gap-1"
+                        :disabled="isQuering"
+                     >
+                        <BaseIcon icon-name="mdiFileExport" :size="16" />
+                        <span>{{ t('database.export') }}</span>
+                        <BaseIcon icon-name="mdiMenuDown" :size="16" />
+                     </Button>
+                  </PopoverTrigger>
+                  <PopoverContent class="w-[120px] p-1">
+                     <button
+                        type="button"
+                        class="flex w-full items-center px-2 py-1.5 text-[12px] rounded hover:bg-muted"
+                        @click="downloadTable('json')"
+                     >
+                        JSON
+                     </button>
+                     <button
+                        type="button"
+                        class="flex w-full items-center px-2 py-1.5 text-[12px] rounded hover:bg-muted"
+                        @click="downloadTable('csv')"
+                     >
+                        CSV
+                     </button>
+                  </PopoverContent>
+               </Popover>
+            </div>
+            <div class="text-[12px] text-muted-foreground">
+               <div v-if="sortedResults.length">
+                  {{ t('database.processes') }}: <b class="text-foreground">{{ sortedResults.length.toLocaleString() }}</b>
+               </div>
+            </div>
+         </div>
+
+         <!--
+            Results table preserves the existing BaseVirtualScroll +
+            ModalProcessesListRow stack (per spec §5.7: don't touch table
+            internals; only Dialog shell + toolbar are in scope here).
+         -->
+         <div class="flex-1 min-h-0 overflow-hidden">
+            <div
+               ref="tableWrapper"
+               class="vscroll h-full"
+            >
+               <div ref="table" class="table table-hover">
+                  <div class="thead">
+                     <div class="tr">
+                        <div
+                           v-for="(field, index) in fields"
+                           :key="index"
+                           class="th c-hand"
+                        >
+                           <div ref="columnResize" class="column-resizable">
+                              <div class="table-column-title" @click="sort(field)">
+                                 <span>{{ field.toUpperCase() }}</span>
+
+                                 <BaseIcon
+                                    v-if="currentSort === field"
+                                    :icon-name="currentSortDir === 'asc' ? 'mdiSortAscending':'mdiSortDescending'"
+                                    :size="18"
+                                    class="ml-1"
+                                 />
                               </div>
                            </div>
                         </div>
                      </div>
-                     <BaseVirtualScroll
-                        ref="resultTable"
-                        :items="sortedResults"
-                        :item-height="22"
-                        class="tbody"
-                        :visible-height="resultsSize"
-                        :scroll-element="scrollElement"
-                     >
-                        <template #default="{ items }">
-                           <ModalProcessesListRow
-                              v-for="row in items"
-                              :key="row.id"
-                              class="process-row"
-                              :row="row"
-                              @select-row="selectRow(row.id)"
-                              @contextmenu="contextMenu"
-                              @stop-refresh="stopRefresh"
-                           />
-                        </template>
-                     </BaseVirtualScroll>
                   </div>
+                  <BaseVirtualScroll
+                     ref="resultTable"
+                     :items="sortedResults"
+                     :item-height="22"
+                     class="tbody"
+                     :visible-height="resultsSize"
+                     :scroll-element="scrollElement"
+                  >
+                     <template #default="{ items }">
+                        <ModalProcessesListRow
+                           v-for="row in items"
+                           :key="row.id"
+                           class="process-row"
+                           :row="row"
+                           @select-row="selectRow(row.id)"
+                           @contextmenu="contextMenu"
+                           @stop-refresh="stopRefresh"
+                        />
+                     </template>
+                  </BaseVirtualScroll>
                </div>
             </div>
          </div>
-      </div>
-   </Teleport>
+      </DialogContent>
+   </Dialog>
+
+   <ModalProcessesListContext
+      v-if="isContext"
+      :context-event="contextEvent"
+      :selected-row="selectedRow"
+      :selected-cell="selectedCell"
+      @copy-cell="copyCell"
+      @copy-row="copyRow"
+      @kill-process="killProcess"
+      @close-context="closeContext"
+   />
 </template>
 
 <script setup lang="ts">
@@ -158,7 +202,9 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import BaseVirtualScroll from '@/components/BaseVirtualScroll.vue';
 import ModalProcessesListContext from '@/components/ModalProcessesListContext.vue';
 import ModalProcessesListRow from '@/components/ModalProcessesListRow.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Schema from '@/ipc-api/Schema';
 import { copyText } from '@/libs/copyText';
 import { useConnectionsStore } from '@/stores/connections';
@@ -170,8 +216,6 @@ const { t } = useI18n();
 
 const { addNotification } = useNotificationsStore();
 const { getConnectionName } = useConnectionsStore();
-
-const { trapRef } = useFocusTrap();
 
 const props = defineProps({
    connection: Object as Prop<ConnectionParams>
@@ -379,7 +423,6 @@ defineExpose({ refreshScroller });
 
 <style lang="scss" scoped>
 .vscroll {
-  height: 1000px;
   overflow: auto;
   overflow-anchor: none;
 }
@@ -401,28 +444,5 @@ defineExpose({ refreshScroller });
   font-size: 0.7rem;
   line-height: 1;
   margin-left: 0.2rem;
-}
-
-.result-tabs {
-  background: transparent !important;
-  margin: 0;
-}
-
-.modal {
-  align-items: flex-start;
-
-  .modal-container {
-    max-width: 75vw;
-    margin-top: 10vh;
-
-    .modal-body {
-      height: 80vh;
-    }
-  }
-}
-
-.processes-toolbar {
-  display: flex;
-  justify-content: space-between;
 }
 </style>
