@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { defineAsyncComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
+import { defineAsyncComponent, onMounted, onUnmounted, Ref, ref, watch } from 'vue';
 
 import ModalExportSchema from '@/components/ModalExportSchema.vue';
 import TheSettingBar from '@/components/TheSettingBar.vue';
@@ -86,6 +86,15 @@ const consoleStore = useConsoleStore();
 const isAllConnectionsModal: Ref<boolean> = ref(false);
 
 useShortcutDispatcher();
+
+// Mirror the active theme class onto <html> so portaled content (Combobox,
+// Dialog, DropdownMenu, Popover, ContextMenu, Tooltip, Sonner) inherits
+// the dark/light tokens — Reka portals teleport to <body>, escaping the
+// theme-* class scope on #wrapper.
+watch(applicationTheme, (val, oldVal) => {
+   if (oldVal) document.documentElement.classList.remove(`theme-${oldVal}`);
+   document.documentElement.classList.add(`theme-${val}`);
+}, { immediate: true });
 
 document.addEventListener('DOMContentLoaded', () => {
    setTimeout(() => {
