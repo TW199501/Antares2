@@ -5,17 +5,14 @@
          :key="index"
          class="workspace-table-filters-row"
       >
-         <label class="form-checkbox my-0">
-            <input
-               v-model="row.active"
-               type="checkbox"
-               :disabled="isQuering"
-               @change="doFilter"
-            ><i class="form-icon" />
-         </label>
+         <Checkbox
+            :checked="row.active"
+            :disabled="isQuering"
+            @update:checked="(v) => { row.active = v; doFilter(); }"
+         />
          <BaseSelect
             v-model="row.field"
-            class="form-select ml-2 col-auto select-sm"
+            class="ml-2 col-auto select-sm"
             :options="fields"
             option-track-by="name"
             option-label="name"
@@ -23,56 +20,59 @@
          />
          <BaseSelect
             v-model="row.op"
-            class="form-select ml-2 col-auto select-sm"
+            class="ml-2 col-auto select-sm"
             :options="operators"
             :disabled="isQuering"
          />
          <div class="workspace-table-filters-row-value ml-2">
-            <input
+            <Input
                v-if="!row.op.includes('NULL')"
                v-model="row.value"
                type="text"
-               class="form-input input-sm"
+               class="!h-8 !text-[14px]"
                :disabled="isQuering"
-            >
-            <input
+            />
+            <Input
                v-if="row.op === 'BETWEEN'"
                v-model="row.value2"
                type="text"
-               class="form-input ml-2 input-sm"
+               class="!h-8 !text-[14px] ml-2"
                :disabled="isQuering"
-            >
+            />
          </div>
-         <button
-            class="btn btn-sm btn-dark mr-0 ml-2"
+         <Button
+            variant="secondary"
+            size="icon"
+            class="ml-2"
             type="button"
             @click="removeRow(index)"
          >
             <BaseIcon
                icon-name="mdiMinusCircleOutline"
-               class="mt-1"
                :size="16"
             />
-         </button>
+         </Button>
       </div>
       <div class="workspace-table-filters-buttons">
-         <button
-            class="btn btn-sm btn-primary mr-0 ml-2"
+         <Button
+            size="sm"
             type="submit"
+            class="ml-2"
          >
             {{ t('general.filter') }}
-         </button>
-         <button
-            class="btn btn-sm btn-dark mr-0 ml-2"
+         </Button>
+         <Button
+            variant="secondary"
+            size="icon"
+            class="ml-2"
             type="button"
             @click="addRow"
          >
             <BaseIcon
                icon-name="mdiPlusCircleOutline"
-               class="mt-1"
                :size="16"
             />
-         </button>
+         </Button>
       </div>
    </form>
 </template>
@@ -87,6 +87,9 @@ import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 
 const { t } = useI18n();
 

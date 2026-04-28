@@ -23,17 +23,23 @@
          @duplicate-row="duplicateRow"
          @close-context="closeContext"
       />
-      <ul v-if="resultsWithRows.length > 1" class="tab tab-block result-tabs">
-         <li
-            v-for="(result, index) in resultsWithRows"
-            :key="index"
-            class="tab-item"
-            :class="{ 'active': resultsetIndex === index }"
-            @click="selectResultset(index)"
-         >
-            <a>{{ result.fields ? result.fields[0]?.tableAlias ?? result.fields[0]?.table : `${t('general.results')} #${index}` }} ({{ result.rows.length }})</a>
-         </li>
-      </ul>
+      <Tabs
+         v-if="resultsWithRows.length > 1"
+         :model-value="String(resultsetIndex)"
+         class="result-tabs"
+         @update:model-value="(v) => selectResultset(Number(v))"
+      >
+         <TabsList class="!h-7 !p-0.5 !bg-transparent !rounded-none gap-0.5 w-full justify-start">
+            <TabsTrigger
+               v-for="(result, index) in resultsWithRows"
+               :key="index"
+               :value="String(index)"
+               class="!text-[12px] !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
+            >
+               {{ result.fields ? result.fields[0]?.tableAlias ?? result.fields[0]?.table : `${t('general.results')} #${index}` }} ({{ result.rows.length }})
+            </TabsTrigger>
+         </TabsList>
+      </Tabs>
       <div ref="table" class="table table-hover">
          <div class="thead">
             <div class="tr [&>.th]:!border-l [&>.th]:!border-white/40">
@@ -142,27 +148,24 @@
          </template>
          <template #body>
             <div class="columns">
-               <label class="column col-12 h6 mb-2 cut-text">{{ t('database.targetTable') }}</label>
+               <Label class="column col-12 h6 mb-2 cut-text">{{ t('database.targetTable') }}</Label>
                <div class="column col-12">
-                  <input
+                  <Input
                      v-model.number="sqlExportOptions.targetTable"
                      type="text"
-                     class="form-input"
                      :placeholder="chunkModalRequest"
-                  >
+                  />
                </div>
-               <label class="column col-12 h6 mb-2 mt-4 cut-text">{{ t('database.newInsertStmtEvery') }}:</label>
+               <Label class="column col-12 h6 mb-2 mt-4 cut-text">{{ t('database.newInsertStmtEvery') }}:</Label>
                <div class="column col-6">
-                  <input
+                  <Input
                      v-model.number="sqlExportOptions.sqlInsertAfter"
                      type="number"
-                     class="form-input"
-                  >
+                  />
                </div>
                <div class="column col-6">
                   <BaseSelect
                      v-model="sqlExportOptions.sqlInsertDivider"
-                     class="form-select"
                      :options="[{ value: 'bytes', label: 'KiB' }, { value: 'rows', label: t('database.row', 2) }]"
                   />
                </div>
@@ -187,26 +190,24 @@
          </template>
          <template #body>
             <div class="columns">
-               <div class="form-group column col-12 columns col-gapless">
+               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
                   <div class="column col-5">
-                     <label class="form-label cut-text">{{ t('application.csvFieldDelimiter') }}:</label>
+                     <Label class="cut-text">{{ t('application.csvFieldDelimiter') }}:</Label>
                   </div>
                   <div class="column col-7">
-                     <input
+                     <Input
                         v-model.number="csvExportOptions.fieldDelimiter"
-                        type="string"
-                        class="form-input"
-                     >
+                        type="text"
+                     />
                   </div>
                </div>
-               <div class="form-group column col-12 columns col-gapless">
+               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
                   <div class="column col-5">
-                     <label class="form-label cut-text">{{ t('application.csvStringDelimiter') }}:</label>
+                     <Label class="cut-text">{{ t('application.csvStringDelimiter') }}:</Label>
                   </div>
                   <div class="column col-7">
                      <BaseSelect
                         v-model="csvExportOptions.stringDelimiter"
-                        class="form-select"
                         :options="[
                            { value: '', label: t('general.none') },
                            { value: 'single', label: t('general.singleQuote') },
@@ -215,33 +216,28 @@
                      />
                   </div>
                </div>
-               <div class="form-group column col-12 columns col-gapless">
+               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
                   <div class="column col-5">
-                     <label class="form-label cut-text">{{ t('application.csvLinesTerminator') }}:</label>
+                     <Label class="cut-text">{{ t('application.csvLinesTerminator') }}:</Label>
                   </div>
                   <div class="column col-7">
                      <textarea
                         v-model.number="csvExportOptions.linesTerminator"
-                        class="form-input"
+                        class="text-foreground bg-background border border-input rounded-md px-3 py-1 w-full text-[14px]"
                         :style="'resize: none'"
                         rows="1"
                      />
                   </div>
                </div>
-               <div class="form-group column col-12 columns col-gapless">
+               <div class="column col-12 columns col-gapless space-y-1.5 mb-2">
                   <div class="column col-5">
-                     <label class="form-label">
-                        {{ t('application.csvIncludeHeader') }}
-                     </label>
+                     <Label>{{ t('application.csvIncludeHeader') }}</Label>
                   </div>
                   <div class="column col-7">
-                     <label
-                        class="form-switch d-inline-block"
-                        @click.prevent="csvExportOptions.header = !csvExportOptions.header"
-                     >
-                        <input type="checkbox" :checked="csvExportOptions.header">
-                        <i class="form-icon" />
-                     </label>
+                     <Switch
+                        :checked="csvExportOptions.header"
+                        @update:checked="(v) => csvExportOptions.header = v"
+                     />
                   </div>
                </div>
             </div>
@@ -268,6 +264,10 @@ import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import BaseVirtualScroll from '@/components/BaseVirtualScroll.vue';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableContext from '@/components/WorkspaceTabQueryTableContext.vue';
 import WorkspaceTabQueryTableRow from '@/components/WorkspaceTabQueryTableRow.vue';
 import { copyText } from '@/libs/copyText';

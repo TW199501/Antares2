@@ -41,7 +41,7 @@
                   v-mask="inputProps.mask"
                   :type="inputProps.type"
                   autofocus
-                  class="editable-field form-input input-sm px-1"
+                  class="editable-field editable-input px-1 text-foreground"
                   @blur="editOFF"
                   @keyup.delete.stop
                >
@@ -49,7 +49,7 @@
                   v-else-if="inputProps.type === 'boolean'"
                   v-model="editingContent"
                   :options="['true', 'false']"
-                  class="form-select small-select editable-field"
+                  class="small-select editable-field"
                   @blur="editOFF"
                   @keyup.delete.stop
                />
@@ -57,7 +57,7 @@
                   v-else-if="enumArray"
                   v-model="editingContent"
                   :options="enumArray"
-                  class="form-select small-select editable-field"
+                  class="small-select editable-field"
                   dropdown-class="small-select"
                   @blur="editOFF"
                   @keyup.delete.stop
@@ -68,7 +68,7 @@
                   v-model="editingContent"
                   :type="inputProps.type"
                   autofocus
-                  class="editable-field form-input input-sm px-1"
+                  class="editable-field editable-input px-1 text-foreground"
                   @blur="editOFF"
                   @keyup.delete.stop
                >
@@ -103,16 +103,16 @@
                </div>
                <div class="editor-field-info p-vcentered">
                   <div class="d-flex p-vcentered">
-                     <label for="editorMode" class="form-label mr-2">
+                     <Label for="editorMode" class="mr-2">
                         <b>{{ t('general.content') }}</b>:
-                     </label>
+                     </Label>
                      <BaseSelect
                         id="editorMode"
                         v-model="editorMode"
                         :options="availableLanguages"
                         option-label="name"
                         option-track-by="slug"
-                        class="form-select select-sm"
+                        class="select-sm"
                      />
                   </div>
                   <div class="d-flex">
@@ -177,22 +177,30 @@
                         <BaseIcon icon-name="mdiFile" :size="36" />
                      </div>
                      <div class="editor-buttons mt-2">
-                        <button class="btn btn-link btn-sm" @click="downloadFile">
+                        <Button
+                           variant="ghost"
+                           size="sm"
+                           @click="downloadFile"
+                        >
                            <span>{{ t('general.download') }}</span>
                            <BaseIcon
                               icon-name="mdiDownload"
                               class="ml-1"
                               :size="24"
                            />
-                        </button>
-                        <button class="btn btn-link btn-sm" @click="prepareToDelete">
+                        </Button>
+                        <Button
+                           variant="ghost"
+                           size="sm"
+                           @click="prepareToDelete"
+                        >
                            <span>{{ t('general.delete') }}</span>
                            <BaseIcon
                               icon-name="mdiDeleteForever"
                               class="ml-1"
                               :size="24"
                            />
-                        </button>
+                        </Button>
                      </div>
                   </div>
                </Transition>
@@ -206,12 +214,11 @@
                   </div>
                </div>
                <div class="mt-3">
-                  <label>{{ t('general.uploadFile') }}</label>
-                  <input
-                     class="form-input"
+                  <Label>{{ t('general.uploadFile') }}</Label>
+                  <Input
                      type="file"
                      @change="filesChange($event as any)"
-                  >
+                  />
                </div>
             </div>
          </template>
@@ -254,6 +261,9 @@ import BaseMap from '@/components/BaseMap.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import TextEditor from '@/components/BaseTextEditor.vue';
 import ForeignKeySelect from '@/components/ForeignKeySelect.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useFilters } from '@/composables/useFilters';
 
 const { t } = useI18n();

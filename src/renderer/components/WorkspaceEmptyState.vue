@@ -7,14 +7,14 @@
          {{ t('application.noOpenTabs') }}
       </p>
       <div class="empty-action">
-         <button class="btn btn-primary d-flex" @click="emit('new-tab')">
+         <Button @click="emit('new-tab')">
             <BaseIcon
                icon-name="mdiTabPlus"
                :size="24"
                class="mr-2"
             />
             {{ t('application.openNewTab') }}
-         </button>
+         </Button>
       </div>
    </div>
 </template>
@@ -24,6 +24,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Button } from '@/components/ui/button';
 import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
 

@@ -23,13 +23,13 @@
                tag="ul"
                item-key="uid"
                group="tabs"
-               class="tab tab-block column col-12"
+               class="ws-tabs-row column col-12"
                draggable=".tab-draggable"
                @mouseover="addWheelEvent"
             >
                <template #item="{element}">
                   <li
-                     class="tab-item tab-draggable"
+                     class="ws-tab-cell tab-draggable"
                      :draggable="true"
                      :class="{'active': selectedTab === element.uid}"
                      @mousedown.left="selectTab({uid: workspace.uid, tab: element.uid})"
@@ -49,11 +49,13 @@
                         <span>
                            <span>{{ cutText(element.elementName || element.content || 'Query', 20, true) }} #{{ element.index }}</span>
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -70,11 +72,13 @@
                         <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
                            <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -87,11 +91,13 @@
                         <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
                            {{ cutText(element.elementName, 20, true) }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -108,11 +114,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newTable') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -129,11 +137,13 @@
                         <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ cutText(element.elementName, 20, true) }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -150,11 +160,13 @@
                         <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.view`)}`">
                            {{ cutText(element.elementName, 20, true) }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -171,11 +183,13 @@
                         <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.view`)}`">
                            {{ cutText(element.elementName, 20, true) }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -192,11 +206,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newView') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -213,11 +229,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newMaterializedView') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -234,11 +252,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newTrigger') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -255,11 +275,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newRoutine') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -276,11 +298,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newFunction') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -297,11 +321,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newTriggerFunction') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -318,11 +344,13 @@
                         <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ t('database.newScheduler') }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -340,11 +368,13 @@
                         <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
 
@@ -361,11 +391,13 @@
                         <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
                            {{ cutText(element.elementName, 20, true) }}
                            <span
-                              class="btn btn-clear"
+                              class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                               :title="t('general.close')"
                               @mousedown.left.stop
                               @click.stop="closeTab(element)"
-                           />
+                           >
+                              <BaseIcon icon-name="mdiClose" :size="12" />
+                           </span>
                         </span>
                      </a>
                   </li>
@@ -373,69 +405,65 @@
                <template #header>
                   <li
                      v-if="workspace.customizations.processesList"
-                     class="tab-item dropdown tools-dropdown"
+                     class="ws-tab-cell ws-tab-tools"
                   >
-                     <a
-                        class="tab-link workspace-tools-link dropdown-toggle"
-                        tabindex="0"
-                        :title="t('general.tools')"
-                     >
-                        <BaseIcon icon-name="mdiTools" :size="24" />
-                     </a>
-                     <ul v-if="hasTools" class="menu text-left text-uppercase">
-                        <li class="menu-item">
-                           <a class="c-hand p-vcentered" @click="showProcessesModal">
+                     <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                           <a
+                              class="workspace-tools-link"
+                              tabindex="0"
+                              :title="t('general.tools')"
+                           >
+                              <BaseIcon icon-name="mdiTools" :size="24" />
+                           </a>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent v-if="hasTools" align="start">
+                           <DropdownMenuItem @select="showProcessesModal">
                               <BaseIcon
                                  icon-name="mdiMemory"
                                  :size="18"
-                                 class="mr-1 tool-icon"
+                                 class="mr-1"
                               />
                               <span>{{ t('database.processesList') }}</span>
-                           </a>
-                        </li>
-                        <li class="menu-item">
-                           <a class="c-hand p-vcentered" @click="toggleConsole">
+                           </DropdownMenuItem>
+                           <DropdownMenuItem @select="toggleConsole">
                               <BaseIcon
                                  icon-name="mdiConsoleLine"
                                  :size="18"
-                                 class="mr-1 tool-icon"
+                                 class="mr-1"
                               />
                               <span>{{ t('application.console') }}</span>
-                           </a>
-                        </li>
-                        <li
-                           v-if="workspace.customizations.variables"
-                           class="menu-item"
-                           title="Coming..."
-                        >
-                           <a class="c-hand p-vcentered disabled">
+                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                              v-if="workspace.customizations.variables"
+                              disabled
+                              title="Coming..."
+                           >
                               <BaseIcon
                                  icon-name="mdiShape"
                                  :size="18"
-                                 class="mr-1 tool-icon"
+                                 class="mr-1"
                               />
                               <span>{{ t('database.variables') }}</span>
-                           </a>
-                        </li>
-                        <li
-                           v-if="workspace.customizations.usersManagement"
-                           class="menu-item"
-                           title="Coming..."
-                        >
-                           <a class="c-hand p-vcentered disabled">
+                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                              v-if="workspace.customizations.usersManagement"
+                              disabled
+                              title="Coming..."
+                           >
                               <BaseIcon
                                  icon-name="mdiAccountGroup"
                                  :size="18"
-                                 class="mr-1 tool-icon"
+                                 class="mr-1"
                               />
                               <span>{{ t('database.manageUsers') }}</span>
-                           </a>
-                        </li>
-                     </ul>
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                     </DropdownMenu>
                   </li>
                </template>
                <template #footer>
-                  <li class="tab-item">
+                  <li class="ws-tab-cell">
                      <a
                         class="tab-add"
                         :title="t('application.openNewTab')"
@@ -635,6 +663,7 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import DebugConsole from '@/components/DebugConsole.vue';
 import ModalDiscardChanges from '@/components/ModalDiscardChanges.vue';
 import ModalProcessesList from '@/components/ModalProcessesList.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceEditConnectionPanel from '@/components/WorkspaceEditConnectionPanel.vue';
 import WorkspaceEmptyState from '@/components/WorkspaceEmptyState.vue';
 import WorkspaceExploreBar from '@/components/WorkspaceExploreBar.vue';
@@ -915,20 +944,23 @@ onUnmounted(() => {
     height: calc(100vh - #{$excluding-size});
     position: relative;
 
-    .tab-block {
+    .ws-tabs-row {
       margin-top: 0;
+      display: flex;
       flex-direction: row;
       align-items: flex-start;
       flex-wrap: nowrap;
       overflow: auto;
       margin-bottom: 0;
+      list-style: none;
+      padding: 0;
 
       &::-webkit-scrollbar {
         width: 2px;
         height: 2px;
       }
 
-      .tab-item {
+      .ws-tab-cell {
         width: fit-content;
         flex: initial;
 
@@ -946,8 +978,7 @@ onUnmounted(() => {
             top: 25px;
           }
 
-          .btn-clear {
-            margin-left: 0.5rem;
+          .tab-close {
             opacity: 0;
             transition: opacity 0.2s;
           }
@@ -955,7 +986,7 @@ onUnmounted(() => {
           &:hover {
             opacity: 1;
 
-            .btn-clear {
+            .tab-close {
               opacity: 1;
             }
           }
@@ -977,52 +1008,25 @@ onUnmounted(() => {
         &.active a {
           opacity: 1;
 
-          .btn-clear {
+          .tab-close {
             opacity: 1;
           }
         }
 
-        &.tools-dropdown {
+        &.ws-tab-tools {
           height: 34px;
 
-          .tab-link:focus {
-            opacity: 1;
-            outline: 0;
-            box-shadow: none;
-          }
-
-          .menu {
-            min-width: 100%;
-
-            .menu-item a {
-              border-radius: $border-radius;
-              color: inherit;
-              display: block;
-              margin: 0 -0.4rem;
-              padding: 0.2rem 0.4rem;
-              text-decoration: none;
-              white-space: nowrap;
-              border: 0;
-
-              .tool-icon {
-                line-height: 1;
-                display: inline-block;
-                font-size: 20px;
-              }
-            }
+          .workspace-tools-link {
+            padding-bottom: 0;
+            padding-top: 0.3rem;
           }
 
           z-index: 9;
           position: absolute;
         }
 
-        &.tools-dropdown + .tab-item {
+        &.ws-tab-tools + .ws-tab-cell {
           margin-left: 56px;
-        }
-
-        .workspace-tools-link {
-          padding-bottom: 0;
-          padding-top: 0.3rem;
         }
       }
     }

@@ -151,33 +151,35 @@
                >
                   <BaseIcon icon-name="mdiHistory" :size="16" />
                </Button>
-               <div class="dropdown table-dropdown">
-                  <Button
-                     variant="secondary"
-                     size="sm"
-                     :disabled="!hasResults || isQuering"
-                     class="dropdown-toggle gap-1"
-                     tabindex="0"
-                  >
-                     <BaseIcon icon-name="mdiFileExport" :size="16" />
-                     <span>{{ t('database.export') }}</span>
-                     <BaseIcon icon-name="mdiMenuDown" :size="16" />
-                  </Button>
-                  <ul class="menu text-left">
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('json')">JSON</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('csv')">CSV</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('php')">{{ t('application.phpArray') }}</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('sql')">SQL INSERT</a>
-                     </li>
-                  </ul>
-               </div>
+               <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        :disabled="!hasResults || isQuering"
+                        class="gap-1"
+                        tabindex="0"
+                     >
+                        <BaseIcon icon-name="mdiFileExport" :size="16" />
+                        <span>{{ t('database.export') }}</span>
+                        <BaseIcon icon-name="mdiMenuDown" :size="16" />
+                     </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                     <DropdownMenuItem @select="downloadTable('json')">
+                        JSON
+                     </DropdownMenuItem>
+                     <DropdownMenuItem @select="downloadTable('csv')">
+                        CSV
+                     </DropdownMenuItem>
+                     <DropdownMenuItem @select="downloadTable('php')">
+                        {{ t('application.phpArray') }}
+                     </DropdownMenuItem>
+                     <DropdownMenuItem @select="downloadTable('sql')">
+                        SQL INSERT
+                     </DropdownMenuItem>
+                  </DropdownMenuContent>
+               </DropdownMenu>
                <div class="commit-mode-select" :title="t('database.commitMode')">
                   <BaseIcon
                      icon-name="mdiSourceCommit"
@@ -284,6 +286,7 @@ import BaseSelect from '@/components/BaseSelect.vue';
 import ModalHistory from '@/components/ModalHistory.vue';
 import QueryEditor from '@/components/QueryEditor.vue';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceTabQueryEmptyState from '@/components/WorkspaceTabQueryEmptyState.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
 import { useResultTables } from '@/composables/useResultTables';
@@ -890,52 +893,6 @@ onBeforeUnmount(() => {
         }
       }
 
-      .dropdown.table-dropdown {
-        position: relative;
-
-        .menu {
-          display: none;
-          position: absolute;
-          top: calc(100% + 4px);
-          right: 0;
-          min-width: 140px;
-          padding: 4px;
-          margin: 0;
-          list-style: none;
-          background: var(--popover);
-          color: var(--popover-foreground);
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
-          z-index: 30;
-
-          .menu-item {
-            padding: 0;
-            margin: 0;
-
-            a {
-              display: block;
-              padding: 6px 10px;
-              font-size: 12px;
-              border-radius: 4px;
-              color: var(--popover-foreground);
-              text-decoration: none;
-              cursor: pointer;
-              transition: background 0.15s;
-
-              &:hover {
-                background: rgba(255, 255, 255, 0.08);
-                color: var(--primary);
-              }
-            }
-          }
-        }
-
-        &:hover .menu,
-        &:focus-within .menu {
-          display: block;
-        }
-      }
     }
   }
 
