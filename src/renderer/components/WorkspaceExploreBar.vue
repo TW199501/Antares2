@@ -151,64 +151,23 @@
                :connection="connection"
                :search-method="searchMethod"
                :column-search-term="columnSearchTerm"
-               @show-schema-context="openSchemaContext"
-               @show-table-context="openTableContext"
-               @show-misc-context="openMiscContext"
-               @show-misc-folder-context="openMiscFolderContext"
+               @reload="refresh"
+               @delete-table="deleteTable"
+               @duplicate-table="duplicateTable"
+               @open-create-table-tab="openCreateElementTab('table', $event)"
+               @open-create-view-tab="openCreateElementTab('view', $event)"
+               @open-create-materialized-view-tab="openCreateElementTab('materialized-view', $event)"
+               @open-create-trigger-tab="openCreateElementTab('trigger', $event)"
+               @open-create-routine-tab="openCreateElementTab('routine', $event)"
+               @open-create-function-tab="openCreateElementTab('function', $event)"
+               @open-create-trigger-function-tab="openCreateElementTab('trigger-function', $event)"
+               @open-create-scheduler-tab="openCreateElementTab('scheduler', $event)"
             />
          </div>
       </div>
       <ModalNewSchema
          v-if="isNewDBModal"
          @close="hideNewDBModal"
-         @reload="refresh"
-      />
-      <DatabaseContext
-         v-if="isDatabaseContext"
-         :selected-schema="selectedSchema"
-         :context-event="databaseContextEvent"
-         @close-context="closeDatabaseContext"
-         @open-create-table-tab="openCreateElementTab('table')"
-         @open-create-view-tab="openCreateElementTab('view')"
-         @open-create-materialized-view-tab="openCreateElementTab('materialized-view')"
-         @open-create-trigger-tab="openCreateElementTab('trigger')"
-         @open-create-routine-tab="openCreateElementTab('routine')"
-         @open-create-function-tab="openCreateElementTab('function')"
-         @open-create-trigger-function-tab="openCreateElementTab('trigger-function')"
-         @open-create-scheduler-tab="openCreateElementTab('scheduler')"
-         @reload="refresh"
-      />
-      <TableContext
-         v-if="isTableContext"
-         :selected-schema="selectedSchema"
-         :selected-table="selectedTable"
-         :context-event="tableContextEvent"
-         @delete-table="deleteTable"
-         @duplicate-table="duplicateTable"
-         @close-context="closeTableContext"
-         @reload="refresh"
-      />
-      <MiscContext
-         v-if="isMiscContext"
-         :selected-misc="selectedMisc"
-         :selected-schema="selectedSchema"
-         :context-event="miscContextEvent"
-         @close-context="closeMiscContext"
-         @reload="refresh"
-      />
-      <MiscFolderContext
-         v-if="isMiscFolderContext"
-         :selected-misc="selectedMisc"
-         :selected-schema="selectedSchema"
-         :context-event="miscContextEvent"
-         @open-create-view-tab="openCreateElementTab('view')"
-         @open-create-materialized-view-tab="openCreateElementTab('materialized-view')"
-         @open-create-trigger-tab="openCreateElementTab('trigger')"
-         @open-create-trigger-function-tab="openCreateElementTab('trigger-function')"
-         @open-create-routine-tab="openCreateElementTab('routine')"
-         @open-create-function-tab="openCreateElementTab('function')"
-         @open-create-scheduler-tab="openCreateElementTab('scheduler')"
-         @close-context="closeMiscFolderContext"
          @reload="refresh"
       />
    </div>
@@ -223,11 +182,7 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import ModalNewSchema from '@/components/ModalNewSchema.vue';
-import MiscContext from '@/components/WorkspaceExploreBarMiscContext.vue';
-import MiscFolderContext from '@/components/WorkspaceExploreBarMiscFolderContext.vue';
 import WorkspaceExploreBarSchema from '@/components/WorkspaceExploreBarSchema.vue';
-import DatabaseContext from '@/components/WorkspaceExploreBarSchemaContext.vue';
-import TableContext from '@/components/WorkspaceExploreBarTableContext.vue';
 import Databases from '@/ipc-api/Databases';
 import Tables from '@/ipc-api/Tables';
 import Views from '@/ipc-api/Views';
@@ -274,17 +229,7 @@ const isNewDBModal = ref(false);
 const localWidth = ref(null);
 const explorebarWidthInterval = ref(null);
 const searchTermInterval = ref(null);
-const isDatabaseContext = ref(false);
-const isTableContext = ref(false);
-const isMiscContext = ref(false);
-const isMiscFolderContext = ref(false);
-const databaseContextEvent = ref(null);
-const tableContextEvent = ref(null);
-const miscContextEvent = ref(null);
 const selectedDatabase = ref(getWorkspace(props.connection.uid)?.database || props.connection.database);
-const selectedSchema = ref('');
-const selectedTable = ref(null);
-const selectedMisc = ref(null);
 const searchTerm = ref('');
 const columnSearchTerm = ref('');
 const databaseComment = ref('');
@@ -412,65 +357,17 @@ const hideNewDBModal = () => {
    isNewDBModal.value = false;
 };
 
-const openCreateElementTab = (element: string) => {
-   closeDatabaseContext();
-   closeMiscFolderContext();
-
+const openCreateElementTab = (element: string, schema: string) => {
    newTab({
       uid: workspace.value.uid,
-      schema: selectedSchema.value,
+      schema,
       elementName: '',
       elementType: element,
       type: `new-${element}`
    });
 };
 
-const openSchemaContext = (payload: { schema: string; event: PointerEvent }) => {
-   selectedSchema.value = payload.schema;
-   databaseContextEvent.value = payload.event;
-   isDatabaseContext.value = true;
-};
-
-const closeDatabaseContext = () => {
-   isDatabaseContext.value = false;
-};
-
-const openTableContext = (payload: { schema: string; table: string; event: PointerEvent }) => {
-   selectedTable.value = payload.table;
-   selectedSchema.value = payload.schema;
-   tableContextEvent.value = payload.event;
-   isTableContext.value = true;
-};
-
-const closeTableContext = () => {
-   isTableContext.value = false;
-};
-
-const openMiscContext = (payload: { schema: string; misc: string; event: PointerEvent }) => {
-   selectedMisc.value = payload.misc;
-   selectedSchema.value = payload.schema;
-   miscContextEvent.value = payload.event;
-   isMiscContext.value = true;
-};
-
-const openMiscFolderContext = (payload: { schema: string; type: string; event: PointerEvent }) => {
-   selectedMisc.value = payload.type;
-   selectedSchema.value = payload.schema;
-   miscContextEvent.value = payload.event;
-   isMiscFolderContext.value = true;
-};
-
-const closeMiscContext = () => {
-   isMiscContext.value = false;
-};
-
-const closeMiscFolderContext = () => {
-   isMiscFolderContext.value = false;
-};
-
-const deleteTable = async (payload: { schema: string; table: { name: string; type: string }; event: PointerEvent }) => {
-   closeTableContext();
-
+const deleteTable = async (payload: { schema: string; table: { name: string; type: string } }) => {
    addLoadingElement({
       name: payload.table.name,
       schema: payload.schema,
@@ -521,9 +418,7 @@ const deleteTable = async (payload: { schema: string; table: { name: string; typ
    });
 };
 
-const duplicateTable = async (payload: { schema: string; table: { name: string }; event: PointerEvent }) => {
-   closeTableContext();
-
+const duplicateTable = async (payload: { schema: string; table: { name: string } }) => {
    addLoadingElement({
       name: payload.table.name,
       schema: payload.schema,

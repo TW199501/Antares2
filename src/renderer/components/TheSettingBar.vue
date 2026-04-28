@@ -1,17 +1,8 @@
 <template>
    <div id="settingbar">
       <div ref="sidebarConnections" class="settingbar-top-elements">
-         <SettingBarContext
-            v-if="isContext"
-            :context-event="contextEvent"
-            :context-connection="contextConnection"
-            @close-context="isContext = false"
-         />
          <ul class="settingbar-elements">
-            <SettingBarConnections
-               v-model="connectionsArr"
-               @context="contextMenu"
-            />
+            <SettingBarConnections v-model="connectionsArr" />
          </ul>
       </div>
 
@@ -24,7 +15,7 @@
                   placement: 'right',
                   content: t('connection.allConnections')
                }"
-               class="settingbar-element btn btn-link"
+               class="settingbar-element"
                @click="emit('show-connections-modal')"
             >
                <div class="settingbar-element-icon-wrapper">
@@ -41,7 +32,7 @@
                   placement: 'right',
                   content: t('connection.addConnection')
                }"
-               class="settingbar-element btn btn-link"
+               class="settingbar-element"
                :class="{ 'selected': 'NEW' === selectedWorkspace }"
                @click="selectWorkspace('NEW')"
             >
@@ -64,7 +55,7 @@
                   placement: 'right',
                   content: t('application.specsnap.inspector')
                }"
-               class="settingbar-element btn btn-link"
+               class="settingbar-element"
                @click="showSpecsnap()"
             >
                <BaseIcon
@@ -79,7 +70,7 @@
                   placement: 'right',
                   content: t('application.note', 2)
                }"
-               class="settingbar-element btn btn-link"
+               class="settingbar-element"
                @click="showScratchpad()"
             >
                <BaseIcon
@@ -94,7 +85,7 @@
                   placement: 'right',
                   content: t('application.settings')
                }"
-               class="settingbar-element btn btn-link"
+               class="settingbar-element"
                @click="showSettingModal('general')"
             >
                <div class="settingbar-element-icon-wrapper">
@@ -122,7 +113,6 @@ import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import SettingBarConnections from '@/components/SettingBarConnections.vue';
-import SettingBarContext from '@/components/SettingBarContext.vue';
 import { useApplicationStore } from '@/stores/application';
 import { SidebarElement, useConnectionsStore } from '@/stores/connections';
 import { useWorkspacesStore } from '@/stores/workspaces';
@@ -147,10 +137,7 @@ const emit = defineEmits<{
 }>();
 
 const sidebarConnections: Ref<HTMLDivElement> = ref(null);
-const isContext: Ref<boolean> = ref(false);
 const isScrollable: Ref<boolean> = ref(false);
-const contextEvent: Ref<MouseEvent> = ref(null);
-const contextConnection: Ref<SidebarElement> = ref(null);
 const sidebarConnectionsHeight = ref(useElementBounding(sidebarConnections)?.height);
 
 const connectionsArr = computed({
@@ -161,12 +148,6 @@ const connectionsArr = computed({
 });
 
 const hasUpdates = computed(() => ['available', 'downloading', 'downloaded', 'link'].includes(updateStatus.value));
-
-const contextMenu = (event: MouseEvent, connection: SidebarElement) => {
-   contextEvent.value = event;
-   contextConnection.value = connection;
-   isContext.value = true;
-};
 
 watch(sidebarConnectionsHeight, (value) => {
    isScrollable.value = value < sidebarConnections.value.scrollHeight;

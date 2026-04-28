@@ -6,7 +6,7 @@
          content: folder.name,
          disabled: isOpen || !folder.name
       }"
-      class="settingbar-element folder btn btn-link p-1"
+      class="settingbar-element folder p-1"
       :class="[{ 'selected-inside': hasSelectedInside && !isOpen }]"
       :style="isOpen ? `height: auto; opacity: 1;` : null"
    >
@@ -26,12 +26,15 @@
          @end="dragStop"
       >
          <template #header>
-            <div
-               v-if="!isOpen"
-               class="folder-overlay"
-               @click="openFolder"
-               @contextmenu.stop="emit('context', {event: $event, content: folder})"
-            />
+            <ContextMenu v-if="!isOpen">
+               <ContextMenuTrigger as-child>
+                  <div
+                     class="folder-overlay"
+                     @click="openFolder"
+                  />
+               </ContextMenuTrigger>
+               <SettingBarContext :context-connection="folder" />
+            </ContextMenu>
             <div
                v-if="isOpen"
                class="folder-icon"
@@ -51,36 +54,40 @@
             </div>
          </template>
          <template #item="{ element }">
-            <div
-               :key="element"
-               v-tooltip="{
-                  strategy: 'fixed',
-                  placement: 'right',
-                  content: getConnectionName(element)
-               }"
-               class="folder-element"
-               :class="{ 'selected': element === selectedWorkspace }"
-               @click="emit('select-workspace', element)"
-               @contextmenu.stop="emit('context', {event: $event, content: getConnectionOrderByUid(element)})"
-            >
-               <div
-                  v-if="getConnectionOrderByUid(element).icon"
-                  class="folder-element-icon"
-                  :class="[getStatusBadge(element)]"
-               >
-                  <BaseIcon
-                     :icon-name="camelize(getConnectionOrderByUid(element).icon)"
-                     :type="getConnectionOrderByUid(element).hasCustomIcon ? 'custom' : 'mdi'"
-                     :size="36"
-                  />
-               </div>
-               <div
-                  v-else
-                  class="folder-element-icon dbi"
-                  :class="[`dbi-${getConnectionOrderByUid(element).client}`, getStatusBadge(element)]"
-               />
-               <small v-if="isOpen" class="folder-element-name">{{ getConnectionOrderByUid(element)?.name || getConnectionName(element) }}</small>
-            </div>
+            <ContextMenu>
+               <ContextMenuTrigger as-child>
+                  <div
+                     :key="element"
+                     v-tooltip="{
+                        strategy: 'fixed',
+                        placement: 'right',
+                        content: getConnectionName(element)
+                     }"
+                     class="folder-element"
+                     :class="{ 'selected': element === selectedWorkspace }"
+                     @click="emit('select-workspace', element)"
+                  >
+                     <div
+                        v-if="getConnectionOrderByUid(element).icon"
+                        class="folder-element-icon"
+                        :class="[getStatusBadge(element)]"
+                     >
+                        <BaseIcon
+                           :icon-name="camelize(getConnectionOrderByUid(element).icon)"
+                           :type="getConnectionOrderByUid(element).hasCustomIcon ? 'custom' : 'mdi'"
+                           :size="36"
+                        />
+                     </div>
+                     <div
+                        v-else
+                        class="folder-element-icon dbi"
+                        :class="[`dbi-${getConnectionOrderByUid(element).client}`, getStatusBadge(element)]"
+                     />
+                     <small v-if="isOpen" class="folder-element-name">{{ getConnectionOrderByUid(element)?.name || getConnectionName(element) }}</small>
+                  </div>
+               </ContextMenuTrigger>
+               <SettingBarContext :context-connection="getConnectionOrderByUid(element)" />
+            </ContextMenu>
          </template>
       </Draggable>
       <SettingBarConnections
@@ -102,6 +109,8 @@ import Draggable from 'vuedraggable';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import SettingBarConnections from '@/components/SettingBarConnections.vue';
+import SettingBarContext from '@/components/SettingBarContext.vue';
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { SidebarElement, useConnectionsStore } from '@/stores/connections';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
@@ -136,7 +145,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-   'context': [payload: { event: MouseEvent; content: SidebarElement }];
    'covered': [];
    'uncovered': [];
    'select-workspace': [uid: string];

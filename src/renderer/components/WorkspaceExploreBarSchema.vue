@@ -4,117 +4,169 @@
       class="accordion workspace-explorebar-database"
       open
    >
-      <summary
-         class="accordion-header database-name"
-         :class="{'text-bold': breadcrumbs.schema === database.name}"
-         @click="selectSchema(database.name)"
-         @contextmenu.prevent="showSchemaContext($event, database.name)"
-      >
-         <div v-if="isLoading" class="icon loading" />
-         <BaseIcon
-            v-else
-            class="icon"
-            icon-name="mdiChevronRight"
-            :size="18"
-         />
-         <BaseIcon
-            class="database-icon mr-1"
-            icon-name="mdiDatabase"
-            :size="18"
-         />
-         <div class="">
-            <span v-html="highlightWord(database.name, 'schemas')" />
-            <div
-               v-if="database.size"
-               class="schema-size tooltip tooltip-left mr-1"
-               :data-tooltip="formatBytes(database.size)"
+      <ContextMenu>
+         <ContextMenuTrigger as-child>
+            <summary
+               class="accordion-header database-name"
+               :class="{'text-bold': breadcrumbs.schema === database.name}"
+               @click="selectSchema(database.name)"
             >
+               <div v-if="isLoading" class="icon loading" />
                <BaseIcon
-                  class="mr-2"
-                  icon-name="mdiInformationOutline"
+                  v-else
+                  class="icon"
+                  icon-name="mdiChevronRight"
                   :size="18"
                />
-            </div>
-         </div>
-      </summary>
+               <BaseIcon
+                  class="database-icon mr-1"
+                  icon-name="mdiDatabase"
+                  :size="18"
+               />
+               <div class="">
+                  <span v-html="highlightWord(database.name, 'schemas')" />
+                  <div
+                     v-if="database.size"
+                     class="schema-size tooltip tooltip-left mr-1"
+                     :data-tooltip="formatBytes(database.size)"
+                  >
+                     <BaseIcon
+                        class="mr-2"
+                        icon-name="mdiInformationOutline"
+                        :size="18"
+                     />
+                  </div>
+               </div>
+            </summary>
+         </ContextMenuTrigger>
+         <DatabaseContext
+            :selected-schema="database.name"
+            @open-create-table-tab="emit('open-create-table-tab', database.name)"
+            @open-create-view-tab="emit('open-create-view-tab', database.name)"
+            @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+            @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+            @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+            @open-create-function-tab="emit('open-create-function-tab', database.name)"
+            @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+            @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+            @reload="emit('reload')"
+         />
+      </ContextMenu>
       <div class="accordion-body">
          <div class="database-tables">
-            <ul class="menu menu-nav pt-0">
-               <li
+            <ul class="pt-0">
+               <ContextMenu
                   v-for="table of filteredTables"
                   :key="table.name"
-                  class="menu-item"
-                  :class="{'selected': breadcrumbs.schema === database.name && [breadcrumbs.table, breadcrumbs.view].includes(table.name)}"
-                  @mousedown.left="selectTable({schema: database.name, table})"
-                  @dblclick="openDataTab({schema: database.name, table})"
-                  @contextmenu.prevent="showTableContext($event, table)"
                >
-                  <a class="table-name">
-                     <div v-if="checkLoadingStatus(table.name, 'table')" class="icon loading mr-1" />
-                     <BaseIcon
-                        v-else
-                        class="table-icon mr-1"
-                        :icon-name="table.type === 'view' ? 'mdiTableEye' : 'mdiTable'"
-                        :size="18"
-                        :style="`min-width: 18px`"
-                     />
-                     <span v-html="highlightWord(table.name)" />
-                     <span v-if="table.comment" class="table-comment">{{ table.comment }}</span>
-                  </a>
-                  <div
-                     v-if="table.type === 'table' && table.size !== false && !isNaN(table.size)"
-                     class="table-size  tooltip tooltip-left mr-1"
-                     :data-tooltip="formatBytes(table.size)"
-                  >
-                     <div class="pie" :style="piePercentage(table.size)" />
-                  </div>
-               </li>
+                  <ContextMenuTrigger as-child>
+                     <li
+                        class="tree-row"
+                        :class="{'selected': breadcrumbs.schema === database.name && [breadcrumbs.table, breadcrumbs.view].includes(table.name)}"
+                        @mousedown.left="selectTable({schema: database.name, table})"
+                        @dblclick="openDataTab({schema: database.name, table})"
+                     >
+                        <a class="table-name">
+                           <div v-if="checkLoadingStatus(table.name, 'table')" class="icon loading mr-1" />
+                           <BaseIcon
+                              v-else
+                              class="table-icon mr-1"
+                              :icon-name="table.type === 'view' ? 'mdiTableEye' : 'mdiTable'"
+                              :size="18"
+                              :style="`min-width: 18px`"
+                           />
+                           <span v-html="highlightWord(table.name)" />
+                           <span v-if="table.comment" class="table-comment">{{ table.comment }}</span>
+                        </a>
+                        <div
+                           v-if="table.type === 'table' && table.size !== false && !isNaN(table.size)"
+                           class="table-size  tooltip tooltip-left mr-1"
+                           :data-tooltip="formatBytes(table.size)"
+                        >
+                           <div class="pie" :style="piePercentage(table.size)" />
+                        </div>
+                     </li>
+                  </ContextMenuTrigger>
+                  <TableContext
+                     :selected-table="table"
+                     :selected-schema="database.name"
+                     @duplicate-table="(p) => emit('duplicate-table', p)"
+                     @delete-table="(p) => emit('delete-table', p)"
+                     @reload="emit('reload')"
+                  />
+               </ContextMenu>
             </ul>
          </div>
 
          <div v-if="filteredViews.length" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.trigger}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'view')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderEye"
-                     :size="18"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.trigger}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderEye"
+                           :size="18"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.view', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'view'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.view', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="view of filteredViews"
                            :key="view.name"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.view === view.name}"
-                           @mousedown.left="selectTable({schema: database.name, table: view})"
-                           @dblclick="openDataTab({schema: database.name, table: view})"
-                           @contextmenu.prevent="showTableContext($event, view)"
                         >
-                           <a class="table-name">
-                              <div v-if="checkLoadingStatus(view.name, 'table')" class="icon loading mr-1" />
-                              <BaseIcon
-                                 v-else
-                                 class="table-icon mr-1"
-                                 icon-name="mdiTableEye"
-                                 :size="18"
-                                 :style="`min-width: 18px`"
-                              />
-                              <span v-html="highlightWord(view.name)" />
-                           </a>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.view === view.name}"
+                                 @mousedown.left="selectTable({schema: database.name, table: view})"
+                                 @dblclick="openDataTab({schema: database.name, table: view})"
+                              >
+                                 <a class="table-name">
+                                    <div v-if="checkLoadingStatus(view.name, 'table')" class="icon loading mr-1" />
+                                    <BaseIcon
+                                       v-else
+                                       class="table-icon mr-1"
+                                       icon-name="mdiTableEye"
+                                       :size="18"
+                                       :style="`min-width: 18px`"
+                                    />
+                                    <span v-html="highlightWord(view.name)" />
+                                 </a>
+                              </li>
+                           </ContextMenuTrigger>
+                           <TableContext
+                              :selected-table="view"
+                              :selected-schema="database.name"
+                              @duplicate-table="(p) => emit('duplicate-table', p)"
+                              @delete-table="(p) => emit('delete-table', p)"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -123,47 +175,73 @@
 
          <div v-if="filteredMatViews.length && customizations.materializedViews" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.trigger}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'materializedView')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderEye"
-                     :size="18"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.trigger}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderEye"
+                           :size="18"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.materializedView', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'materializedView'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.materializedView', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="view of filteredMatViews"
                            :key="view.name"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.view === view.name}"
-                           @mousedown.left="selectTable({schema: database.name, table: view})"
-                           @dblclick="openDataTab({schema: database.name, table: view})"
-                           @contextmenu.prevent="showTableContext($event, view)"
                         >
-                           <a class="table-name">
-                              <div v-if="checkLoadingStatus(view.name, 'table')" class="icon loading mr-1" />
-                              <BaseIcon
-                                 v-else
-                                 class="table-icon mr-1"
-                                 icon-name="mdiTableEye"
-                                 :size="18"
-                                 :style="`min-width: 18px`"
-                              />
-                              <span v-html="highlightWord(view.name)" />
-                           </a>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.view === view.name}"
+                                 @mousedown.left="selectTable({schema: database.name, table: view})"
+                                 @dblclick="openDataTab({schema: database.name, table: view})"
+                              >
+                                 <a class="table-name">
+                                    <div v-if="checkLoadingStatus(view.name, 'table')" class="icon loading mr-1" />
+                                    <BaseIcon
+                                       v-else
+                                       class="table-icon mr-1"
+                                       icon-name="mdiTableEye"
+                                       :size="18"
+                                       :style="`min-width: 18px`"
+                                    />
+                                    <span v-html="highlightWord(view.name)" />
+                                 </a>
+                              </li>
+                           </ContextMenuTrigger>
+                           <TableContext
+                              :selected-table="view"
+                              :selected-schema="database.name"
+                              @duplicate-table="(p) => emit('duplicate-table', p)"
+                              @delete-table="(p) => emit('delete-table', p)"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -172,58 +250,82 @@
 
          <div v-if="filteredTriggers.length && customizations.triggers" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.trigger}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'trigger')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderCog"
-                     :size="18"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.trigger}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderCog"
+                           :size="18"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.trigger', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'trigger'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.trigger', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="trigger of filteredTriggers"
                            :key="trigger.name"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.trigger === trigger.name}"
-                           @mousedown.left="selectMisc({schema: database.name, misc: trigger, type: 'trigger'})"
-                           @dblclick="openMiscPermanentTab({schema: database.name, misc: trigger, type: 'trigger'})"
-                           @contextmenu.prevent="showMiscContext($event, {...trigger, type: 'trigger'})"
                         >
-                           <a class="table-name">
-                              <div v-if="checkLoadingStatus(trigger.name, 'trigger')" class="icon loading mr-1" />
-                              <BaseIcon
-                                 v-else
-                                 class="table-icon mr-1"
-                                 icon-name="mdiTableCog"
-                                 :size="18"
-                                 :style="`min-width: 18px`"
-                              />
-                              <span v-html="highlightWord(trigger.name)" />
-                           </a>
-                           <div
-                              v-if="trigger.enabled === false"
-                              class="tooltip tooltip-left disabled-indicator"
-                              :data-tooltip="t('general.disabled')"
-                           >
-                              <BaseIcon
-                                 class="table-icon mr-1"
-                                 icon-name="mdiPause"
-                                 :size="18"
-                              />
-                           </div>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.trigger === trigger.name}"
+                                 @mousedown.left="selectMisc({schema: database.name, misc: trigger, type: 'trigger'})"
+                                 @dblclick="openMiscPermanentTab({schema: database.name, misc: trigger, type: 'trigger'})"
+                              >
+                                 <a class="table-name">
+                                    <div v-if="checkLoadingStatus(trigger.name, 'trigger')" class="icon loading mr-1" />
+                                    <BaseIcon
+                                       v-else
+                                       class="table-icon mr-1"
+                                       icon-name="mdiTableCog"
+                                       :size="18"
+                                       :style="`min-width: 18px`"
+                                    />
+                                    <span v-html="highlightWord(trigger.name)" />
+                                 </a>
+                                 <div
+                                    v-if="trigger.enabled === false"
+                                    class="tooltip tooltip-left disabled-indicator"
+                                    :data-tooltip="t('general.disabled')"
+                                 >
+                                    <BaseIcon
+                                       class="table-icon mr-1"
+                                       icon-name="mdiPause"
+                                       :size="18"
+                                    />
+                                 </div>
+                              </li>
+                           </ContextMenuTrigger>
+                           <MiscContext
+                              :selected-misc="{...trigger, type: 'trigger'}"
+                              :selected-schema="database.name"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -232,45 +334,69 @@
 
          <div v-if="filteredProcedures.length && customizations.routines" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.routine}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'routine')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderSync"
-                     :size="18"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.routine}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderSync"
+                           :size="18"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.storedRoutine', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'routine'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.storedRoutine', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="(routine, i) of filteredProcedures"
                            :key="`${routine.name}-${i}`"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.routine === routine.name}"
-                           @mousedown.left="selectMisc({schema: database.name, misc: routine, type: 'routine'})"
-                           @dblclick="openMiscPermanentTab({schema: database.name, misc: routine, type: 'routine'})"
-                           @contextmenu.prevent="showMiscContext($event, {...routine, type: 'routine'})"
                         >
-                           <a class="table-name">
-                              <BaseIcon
-                                 class="table-icon mr-1"
-                                 icon-name="mdiSyncCircle"
-                                 :size="18"
-                                 :style="`min-width: 18px`"
-                              />
-                              <span v-html="highlightWord(routine.name)" />
-                           </a>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.routine === routine.name}"
+                                 @mousedown.left="selectMisc({schema: database.name, misc: routine, type: 'routine'})"
+                                 @dblclick="openMiscPermanentTab({schema: database.name, misc: routine, type: 'routine'})"
+                              >
+                                 <a class="table-name">
+                                    <BaseIcon
+                                       class="table-icon mr-1"
+                                       icon-name="mdiSyncCircle"
+                                       :size="18"
+                                       :style="`min-width: 18px`"
+                                    />
+                                    <span v-html="highlightWord(routine.name)" />
+                                 </a>
+                              </li>
+                           </ContextMenuTrigger>
+                           <MiscContext
+                              :selected-misc="{...routine, type: 'routine'}"
+                              :selected-schema="database.name"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -279,45 +405,69 @@
 
          <div v-if="filteredTriggerFunctions.length && customizations.triggerFunctions" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.triggerFunction}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'triggerFunction')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderRefresh"
-                     :size="18"
-                     :style="`min-width: 18px`"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.triggerFunction}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderRefresh"
+                           :size="18"
+                           :style="`min-width: 18px`"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.triggerFunction', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'triggerFunction'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.triggerFunction', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="(func, i) of filteredTriggerFunctions"
                            :key="`${func.name}-${i}`"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.triggerFunction === func.name}"
-                           @mousedown.left="selectMisc({schema: database.name, misc: func, type: 'triggerFunction'})"
-                           @dblclick="openMiscPermanentTab({schema: database.name, misc: func, type: 'triggerFunction'})"
-                           @contextmenu.prevent="showMiscContext($event, {...func, type: 'triggerFunction'})"
                         >
-                           <a class="table-name">
-                              <BaseIcon
-                                 class="misc-icon mr-1"
-                                 icon-name="mdiCogClockwise"
-                                 :size="18"
-                              />
-                              <span v-html="highlightWord(func.name)" />
-                           </a>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.triggerFunction === func.name}"
+                                 @mousedown.left="selectMisc({schema: database.name, misc: func, type: 'triggerFunction'})"
+                                 @dblclick="openMiscPermanentTab({schema: database.name, misc: func, type: 'triggerFunction'})"
+                              >
+                                 <a class="table-name">
+                                    <BaseIcon
+                                       class="misc-icon mr-1"
+                                       icon-name="mdiCogClockwise"
+                                       :size="18"
+                                    />
+                                    <span v-html="highlightWord(func.name)" />
+                                 </a>
+                              </li>
+                           </ContextMenuTrigger>
+                           <MiscContext
+                              :selected-misc="{...func, type: 'triggerFunction'}"
+                              :selected-schema="database.name"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -326,45 +476,69 @@
 
          <div v-if="filteredFunctions.length && customizations.functions" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.function}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'function')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderMove"
-                     :size="18"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.function}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderMove"
+                           :size="18"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.function', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'function'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.function', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="(func, i) of filteredFunctions"
                            :key="`${func.name}-${i}`"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.function === func.name}"
-                           @mousedown.left="selectMisc({schema: database.name, misc: func, type: 'function'})"
-                           @dblclick="openMiscPermanentTab({schema: database.name, misc: func, type: 'function'})"
-                           @contextmenu.prevent="showMiscContext($event, {...func, type: 'function'})"
                         >
-                           <a class="table-name">
-                              <BaseIcon
-                                 class="misc-icon mr-1"
-                                 icon-name="mdiArrowRightBoldBox"
-                                 :size="18"
-                                 :style="`min-width: 18px`"
-                              />
-                              <span v-html="highlightWord(func.name)" />
-                           </a>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.function === func.name}"
+                                 @mousedown.left="selectMisc({schema: database.name, misc: func, type: 'function'})"
+                                 @dblclick="openMiscPermanentTab({schema: database.name, misc: func, type: 'function'})"
+                              >
+                                 <a class="table-name">
+                                    <BaseIcon
+                                       class="misc-icon mr-1"
+                                       icon-name="mdiArrowRightBoldBox"
+                                       :size="18"
+                                       :style="`min-width: 18px`"
+                                    />
+                                    <span v-html="highlightWord(func.name)" />
+                                 </a>
+                              </li>
+                           </ContextMenuTrigger>
+                           <MiscContext
+                              :selected-misc="{...func, type: 'function'}"
+                              :selected-schema="database.name"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -373,57 +547,81 @@
 
          <div v-if="filteredSchedulers.length && customizations.schedulers" class="database-misc">
             <details class="accordion">
-               <summary
-                  class="accordion-header misc-name"
-                  :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.scheduler}"
-                  @contextmenu.prevent="showMiscFolderContext($event, 'scheduler')"
-               >
-                  <BaseIcon
-                     class="misc-icon mr-1"
-                     icon-name="mdiFolderClock"
-                     :size="18"
+               <ContextMenu>
+                  <ContextMenuTrigger as-child>
+                     <summary
+                        class="accordion-header misc-name"
+                        :class="{'text-bold': breadcrumbs.schema === database.name && breadcrumbs.scheduler}"
+                     >
+                        <BaseIcon
+                           class="misc-icon mr-1"
+                           icon-name="mdiFolderClock"
+                           :size="18"
+                        />
+                        <BaseIcon
+                           class="misc-icon open-folder mr-1"
+                           icon-name="mdiFolderOpen"
+                           :size="18"
+                        />
+                        {{ t('database.scheduler', 2) }}
+                     </summary>
+                  </ContextMenuTrigger>
+                  <MiscFolderContext
+                     :selected-misc="'scheduler'"
+                     :selected-schema="database.name"
+                     @open-create-view-tab="emit('open-create-view-tab', database.name)"
+                     @open-create-materialized-view-tab="emit('open-create-materialized-view-tab', database.name)"
+                     @open-create-trigger-tab="emit('open-create-trigger-tab', database.name)"
+                     @open-create-trigger-function-tab="emit('open-create-trigger-function-tab', database.name)"
+                     @open-create-routine-tab="emit('open-create-routine-tab', database.name)"
+                     @open-create-function-tab="emit('open-create-function-tab', database.name)"
+                     @open-create-scheduler-tab="emit('open-create-scheduler-tab', database.name)"
+                     @reload="emit('reload')"
                   />
-                  <BaseIcon
-                     class="misc-icon open-folder mr-1"
-                     icon-name="mdiFolderOpen"
-                     :size="18"
-                  />
-                  {{ t('database.scheduler', 2) }}
-               </summary>
+               </ContextMenu>
                <div class="accordion-body">
                   <div>
-                     <ul class="menu menu-nav pt-0">
-                        <li
+                     <ul class="pt-0">
+                        <ContextMenu
                            v-for="scheduler of filteredSchedulers"
                            :key="scheduler.name"
-                           class="menu-item"
-                           :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.scheduler === scheduler.name}"
-                           @mousedown.left="selectMisc({schema: database.name, misc: scheduler, type: 'scheduler'})"
-                           @dblclick="openMiscPermanentTab({schema: database.name, misc: scheduler, type: 'scheduler'})"
-                           @contextmenu.prevent="showMiscContext($event, {...scheduler, type: 'scheduler'})"
                         >
-                           <a class="table-name">
-                              <div v-if="checkLoadingStatus(scheduler.name, 'scheduler')" class="icon loading mr-1" />
-                              <BaseIcon
-                                 class="misc-icon mr-1"
-                                 icon-name="mdiCalendarClock"
-                                 :size="18"
-                                 :style="`min-width: 18px`"
-                              />
-                              <span v-html="highlightWord(scheduler.name)" />
-                           </a>
-                           <div
-                              v-if="scheduler.enabled === false"
-                              class="tooltip tooltip-left disabled-indicator"
-                              :data-tooltip="t('general.disabled')"
-                           >
-                              <BaseIcon
-                                 class="misc-icon mr-1"
-                                 icon-name="mdiPause"
-                                 :size="18"
-                              />
-                           </div>
-                        </li>
+                           <ContextMenuTrigger as-child>
+                              <li
+                                 class="tree-row"
+                                 :class="{'selected': breadcrumbs.schema === database.name && breadcrumbs.scheduler === scheduler.name}"
+                                 @mousedown.left="selectMisc({schema: database.name, misc: scheduler, type: 'scheduler'})"
+                                 @dblclick="openMiscPermanentTab({schema: database.name, misc: scheduler, type: 'scheduler'})"
+                              >
+                                 <a class="table-name">
+                                    <div v-if="checkLoadingStatus(scheduler.name, 'scheduler')" class="icon loading mr-1" />
+                                    <BaseIcon
+                                       class="misc-icon mr-1"
+                                       icon-name="mdiCalendarClock"
+                                       :size="18"
+                                       :style="`min-width: 18px`"
+                                    />
+                                    <span v-html="highlightWord(scheduler.name)" />
+                                 </a>
+                                 <div
+                                    v-if="scheduler.enabled === false"
+                                    class="tooltip tooltip-left disabled-indicator"
+                                    :data-tooltip="t('general.disabled')"
+                                 >
+                                    <BaseIcon
+                                       class="misc-icon mr-1"
+                                       icon-name="mdiPause"
+                                       :size="18"
+                                    />
+                                 </div>
+                              </li>
+                           </ContextMenuTrigger>
+                           <MiscContext
+                              :selected-misc="{...scheduler, type: 'scheduler'}"
+                              :selected-schema="database.name"
+                              @reload="emit('reload')"
+                           />
+                        </ContextMenu>
                      </ul>
                   </div>
                </div>
@@ -434,13 +632,18 @@
 </template>
 
 <script setup lang="ts">
-import { EventInfos, FunctionInfos, RoutineInfos, TableInfos, TriggerFunctionInfos, TriggerInfos } from 'common/interfaces/antares';
+import { TableInfos } from 'common/interfaces/antares';
 import { formatBytes } from 'common/libs/formatBytes';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, Prop, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
+import MiscContext from '@/components/WorkspaceExploreBarMiscContext.vue';
+import MiscFolderContext from '@/components/WorkspaceExploreBarMiscFolderContext.vue';
+import DatabaseContext from '@/components/WorkspaceExploreBarSchemaContext.vue';
+import TableContext from '@/components/WorkspaceExploreBarTableContext.vue';
 import Tables from '@/ipc-api/Tables';
 import { useSettingsStore } from '@/stores/settings';
 import { Breadcrumb, useWorkspacesStore, WorkspaceStructure } from '@/stores/workspaces';
@@ -455,10 +658,17 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-   'show-schema-context': [payload: { event: MouseEvent; schema: string }];
-   'show-table-context': [payload: { event: any; schema: string; table: any }];
-   'show-misc-context': [payload: { event: any; schema: string; misc: any }];
-   'show-misc-folder-context': [payload: { event: MouseEvent; schema: string; type: string }];
+   'reload': [];
+   'delete-table': [payload: { schema: string; table: { name: string; type: string } }];
+   'duplicate-table': [payload: { schema: string; table: { name: string } }];
+   'open-create-table-tab': [schema: string];
+   'open-create-view-tab': [schema: string];
+   'open-create-materialized-view-tab': [schema: string];
+   'open-create-trigger-tab': [schema: string];
+   'open-create-routine-tab': [schema: string];
+   'open-create-function-tab': [schema: string];
+   'open-create-trigger-function-tab': [schema: string];
+   'open-create-scheduler-tab': [schema: string];
 }>();
 
 const settingsStore = useSettingsStore();
@@ -690,22 +900,6 @@ const openMiscPermanentTab = ({ schema, misc, type }: { schema: string; misc: { 
    setBreadcrumbs({ schema, [type]: misc.name });
 };
 
-const showSchemaContext = (event: MouseEvent, schema: string) => {
-   emit('show-schema-context', { event, schema });
-};
-
-const showTableContext = (event: MouseEvent, table: TableInfos) => {
-   emit('show-table-context', { event, schema: props.database.name, table });
-};
-
-const showMiscContext = (event: MouseEvent, misc: TriggerInfos | TriggerFunctionInfos | RoutineInfos | FunctionInfos | EventInfos) => {
-   emit('show-misc-context', { event, schema: props.database.name, misc });
-};
-
-const showMiscFolderContext = (event: MouseEvent, type: string) => {
-   emit('show-misc-folder-context', { event, schema: props.database.name, type });
-};
-
 const piePercentage = (val: number) => {
    const perc = val / maxSize.value * 100;
    if (applicationTheme.value === 'dark')
@@ -829,7 +1023,7 @@ defineExpose({ selectSchema, schemaAccordion });
   }
 
   // Leaf row (table / view / function / trigger / routine / scheduler)
-  .menu-item {
+  .tree-row {
     list-style: none;
     margin: 0;
     padding: 0;
