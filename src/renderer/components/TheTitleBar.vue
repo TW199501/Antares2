@@ -69,7 +69,18 @@ const isWindows = navigator.platform.startsWith('Win');
 const isLinux = navigator.platform.startsWith('Linux');
 const isMaximized = ref(false);
 
-const appWindow = getCurrentWindow();
+// Dev-only: when running in a plain browser (e.g. Playwright) Tauri's
+// window API throws — fall back to a no-op stub so the rest of the app
+// renders.
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+const appWindow = isTauri
+   ? getCurrentWindow()
+   : {
+      minimize: () => {},
+      maximize: () => {},
+      unmaximize: () => {},
+      isMaximized: async () => false
+   } as ReturnType<typeof getCurrentWindow>;
 
 const windowTitle = computed(() => {
    if (!selectedWorkspace.value) return '';
