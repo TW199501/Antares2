@@ -1,6 +1,6 @@
 {
    "identifier": "default",
-   "description": "Default capabilities for Antares SQL",
+   "description": "Default capabilities for Antares2",
    "windows": ["main"],
    "permissions": [
       "core:default",

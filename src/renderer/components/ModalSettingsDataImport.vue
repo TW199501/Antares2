@@ -1,96 +1,91 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal modal-sm active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiTrayArrowDown"
-                        class="mr-1"
-                        :size="24"
-                     /> {{ t('application.importData') }}
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <DialogContent
+         class="max-w-md !p-0 !gap-0 !rounded-xl !shadow-2xl !border-border/70 overflow-hidden [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent="closeModal"
+      >
+         <DialogHeader class="px-5 pt-4 pb-3 border-b border-border/60 flex flex-row items-center justify-between">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1">
+               <BaseIcon icon-name="mdiTrayArrowDown" :size="20" />
+               <span>{{ t('application.importData') }}</span>
+            </DialogTitle>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
+         <div class="px-5 py-4 space-y-4">
+            <div class="space-y-1.5">
+               <Label class="text-xs font-medium uppercase tracking-wide">{{ t('application.choseFile') }}</Label>
+               <BaseUploadInput
+                  :model-value="filePath"
+                  :message="t('general.browse')"
+                  accept=".antares"
+                  @clear="clearPath"
+                  @change="filesChange($event)"
+               />
             </div>
-            <div class="modal-body pb-0">
-               <div class="mb-2">
-                  <div class="h6 mb-2">
-                     {{ t('application.choseFile') }}
-                  </div>
-                  <BaseUploadInput
-                     :model-value="filePath"
-                     :message="t('general.browse')"
-                     accept=".antares"
-                     @clear="clearPath"
-                     @change="filesChange($event)"
+            <div class="space-y-1.5">
+               <Label class="text-xs font-medium uppercase tracking-wide">{{ t('application.password') }}</Label>
+               <div class="flex items-stretch gap-1">
+                  <Input
+                     ref="passkey"
+                     v-model="options.passkey"
+                     :type="isPasswordVisible ? 'text' : 'password'"
+                     :placeholder="t('application.required')"
+                     :class="isPasswordError ? 'border-destructive' : ''"
                   />
+                  <Button
+                     type="button"
+                     variant="outline"
+                     size="icon"
+                     class="!h-[34px] !w-[34px] shrink-0"
+                     @click="isPasswordVisible = !isPasswordVisible"
+                  >
+                     <BaseIcon
+                        :icon-name="isPasswordVisible ? 'mdiEye' : 'mdiEyeOff'"
+                        :size="16"
+                     />
+                  </Button>
                </div>
-               <div class="mb-2">
-                  <div class="h6 mb-2">
-                     {{ t('application.password') }}
-                  </div>
-                  <fieldset class="form-group" :class="{'has-error': isPasswordError}">
-                     <div class="input-group">
-                        <input
-                           ref="passkey"
-                           v-model="options.passkey"
-                           :type="isPasswordVisible ? 'text' : 'password'"
-                           class="form-input"
-                           :placeholder="t('application.required')"
-                        >
-                        <button
-                           type="button"
-                           class="btn btn-link input-group-addon"
-                           @click="isPasswordVisible = !isPasswordVisible"
-                        >
-                           <BaseIcon
-                              v-if="isPasswordVisible"
-                              icon-name="mdiEye"
-                              class="mt-1 mx-1"
-                              :size="16"
-                           />
-                           <BaseIcon
-                              v-else
-                              icon-name="mdiEyeOff"
-                              class="mt-1 mx-1"
-                              :size="16"
-                           />
-                        </button>
-                     </div>
-                     <span v-if="isPasswordError" class="form-input-hint">
-                        {{ t('application.encryptionPasswordError') }}
-                     </span>
-                  </fieldset>
-               </div>
-               <div class="mb-2">
-                  <label class="form-checkbox">
-                     <input v-model="options.ignoreDuplicates" type="checkbox">
-                     <i class="form-icon" />
-                     {{ t(`application.ignoreDuplicates`) }}
-                  </label>
-               </div>
+               <p v-if="isPasswordError" class="text-xs text-destructive">
+                  {{ t('application.encryptionPasswordError') }}
+               </p>
             </div>
-            <div class="modal-footer">
-               <button
-                  class="btn btn-link mr-2"
-                  @click.stop="closeModal"
-               >
-                  {{ t('general.close') }}
-               </button>
-               <button
-                  class="btn btn-primary mr-2"
-                  :disabled="!filePath"
-                  @click.prevent="importData()"
-               >
-                  {{ t('database.import') }}
-               </button>
+            <div class="flex items-center gap-2">
+               <Checkbox
+                  id="ignore-duplicates"
+                  :checked="options.ignoreDuplicates"
+                  @update:checked="(v) => options.ignoreDuplicates = v"
+               />
+               <Label for="ignore-duplicates" class="text-[13px]">{{ t('application.ignoreDuplicates') }}</Label>
             </div>
          </div>
-      </div>
-   </Teleport>
+         <DialogFooter class="!flex !flex-row !justify-end !gap-2 !px-5 !py-3 border-t border-border/60 bg-muted/30">
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="closeModal"
+            >
+               {{ t('general.close') }}
+            </Button>
+            <Button
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               :disabled="!filePath"
+               @click.prevent="importData()"
+            >
+               {{ t('database.import') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -102,6 +97,11 @@ import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseUploadInput from '@/components/BaseUploadInput.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { unproxify } from '@/libs/unproxify';
 import { CustomIcon, SidebarElement, useConnectionsStore } from '@/stores/connections';
 import { useNotificationsStore } from '@/stores/notifications';
@@ -248,42 +248,3 @@ onBeforeUnmount(() => {
 });
 
 </script>
-
-<style lang="scss" scoped>
-.export-options {
-  flex: 1;
-  overflow: hidden;
-
-  .left {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-}
-
-.workspace-query-results {
-  flex: 1 0 1px;
-
-  .table {
-    width: 100% !important;
-  }
-
-  .form-checkbox {
-    min-height: 0.8rem;
-    padding: 0;
-
-    .form-icon {
-      top: 0.1rem;
-    }
-  }
-}
-
-.modal {
-  .modal-body {
-    max-height: 60vh;
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-</style>

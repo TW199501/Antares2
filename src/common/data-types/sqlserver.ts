@@ -47,8 +47,8 @@ export default [
          { name: 'DATE', length: false, collation: false, unsigned: false, zerofill: false },
          { name: 'TIME', length: true, collation: false, unsigned: false, zerofill: false },
          { name: 'DATETIME', length: false, collation: false, unsigned: false, zerofill: false },
-         { name: 'DATETIME2', length: true, collation: false, unsigned: false, zerofill: false },
-         { name: 'DATETIMEOFFSET', length: true, collation: false, unsigned: false, zerofill: false },
+         { name: 'DATETIME2', length: true, scale: true, collation: false, unsigned: false, zerofill: false },
+         { name: 'DATETIMEOFFSET', length: true, scale: true, collation: false, unsigned: false, zerofill: false },
          { name: 'SMALLDATETIME', length: false, collation: false, unsigned: false, zerofill: false }
       ]
    },

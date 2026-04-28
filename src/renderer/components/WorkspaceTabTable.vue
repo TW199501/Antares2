@@ -1,220 +1,175 @@
 <template>
-   <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless no-outline p-0">
-      <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons">
-               <div class="dropdown">
-                  <div class="btn-group">
-                     <button
-                        class="btn btn-dark btn-sm mr-0 pr-1"
-                        :class="{'loading':isQuering}"
-                        :title="`${t('general.refresh')}`"
-                        @click="reloadTable"
+   <div v-show="isSelected" class="workspace-query-tab no-outline flex w-full flex-col p-0">
+      <div class="workspace-query-runner flex w-full flex-col">
+         <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-sm">
+            <div class="workspace-query-buttons flex items-center gap-2">
+               <!-- 資料 / 屬性 切換 — mode switch uses accent (NOT primary) to
+                    visually separate "mode toggle" from "primary action buttons" -->
+               <Tabs v-model="viewMode">
+                  <TabsList class="h-[32px] gap-0 p-0">
+                     <TabsTrigger
+                        value="data"
+                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-none"
                      >
-                        <BaseIcon
-                           v-if="!+autorefreshTimer"
-                           class="mr-1"
-                           icon-name="mdiRefresh"
-                           :size="24"
-                        />
-                        <BaseIcon
-                           v-else
-                           class="mr-1"
-                           icon-name="mdiHistory"
-                           flip="horizontal"
-                           :size="24"
-                        />
-                     </button>
-                     <div class="btn btn-dark btn-sm dropdown-toggle pl-0 pr-0" tabindex="0">
-                        <BaseIcon icon-name="mdiMenuDown" :size="24" />
-                     </div>
-                     <div class="menu px-3">
-                        <span>{{ t('general.autoRefresh') }}: <b>{{ +autorefreshTimer ? `${autorefreshTimer}s` : 'OFF' }}</b></span>
-                        <input
-                           v-model="autorefreshTimer"
-                           class="slider no-border"
-                           type="range"
-                           min="0"
-                           max="30"
-                           step="1"
-                           @change="setRefreshInterval"
-                        >
-                     </div>
-                  </div>
-               </div>
-               <div class="btn-group">
-                  <button
-                     class="btn btn-dark btn-sm mr-0"
-                     :disabled="isQuering || page === 1"
-                     :title="t('application.previousResultsPage')"
-                     @click="pageChange('prev')"
-                  >
-                     <BaseIcon icon-name="mdiSkipPrevious" :size="24" />
-                  </button>
-                  <div class="dropdown" :class="{'active': isPageMenu}">
-                     <div @click="openPageMenu">
-                        <div class="btn btn-dark btn-sm mr-0 no-radius dropdown-toggle text-bold px-3">
-                           {{ page }}
-                        </div>
-                        <div class="menu px-3">
-                           <span>{{ t('general.pageNumber') }}</span>
-                           <input
-                              ref="pageSelect"
-                              v-model="pageProxy"
-                              type="number"
-                              min="1"
-                              class="form-input"
-                              @blur="setPageNumber"
-                           >
-                        </div>
-                     </div>
-                  </div>
-                  <button
-                     class="btn btn-dark btn-sm mr-0"
-                     :disabled="isQuering || (results.length && results[0].rows.length < limit)"
-                     :title="t('application.nextResultsPage')"
-                     @click="pageChange('next')"
-                  >
-                     <BaseIcon icon-name="mdiSkipNext" :size="24" />
-                  </button>
-               </div>
-
-               <div class="divider-vert py-3" />
-
+                        <BaseIcon icon-name="mdiTable" :size="14" />
+                        {{ t('general.data') }}
+                     </TabsTrigger>
+                     <TabsTrigger
+                        value="props"
+                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-none"
+                     >
+                        <BaseIcon icon-name="mdiWrenchCog" :size="14" />
+                        {{ t('general.properties') }}
+                     </TabsTrigger>
+                  </TabsList>
+               </Tabs>
+               <!-- Column header 英文名 / 中文 comment 切換 (僅 data 模式有效)
+                    — also a mode toggle, uses accent on active for consistency -->
                <button
-                  class="btn btn-sm"
-                  :title="t('general.filter')"
-                  :disabled="isQuering"
-                  :class="{'btn-primary': isSearch, 'btn-dark': !isSearch}"
-                  @click="isSearch = !isSearch"
+                  v-show="viewMode === 'data'"
+                  type="button"
+                  :class="[
+                     'flex h-[32px] w-[32px] items-center justify-center rounded-md !text-sm font-semibold transition-colors',
+                     useCommentHeader
+                        ? 'border border-sky-500 bg-sky-500 text-white'
+                        : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
+                  ]"
+                  :title="useCommentHeader ? t('database.showColumnNames') : t('database.showColumnComments')"
+                  @click="useCommentHeader = !useCommentHeader"
                >
-                  <BaseIcon icon-name="mdiMagnify" :size="24" />
+                  {{ useCommentHeader ? '中' : 'A' }}
                </button>
-               <button
+               <!-- Insert row — primary action (orange brand). Sized to match
+                    the toggle group height so the toolbar reads as one row. -->
+               <Button
+                  v-show="viewMode === 'data'"
                   v-if="isTable && !connection.readonly"
-                  class="btn btn-dark btn-sm"
-                  :disabled="isQuering"
+                  variant="default"
+                  class="h-[32px] gap-1.5 px-3 !text-sm"
+                  :disabled="isQuering || isSystemSchema"
+                  :title="isSystemSchema ? t('database.systemSchemaReadonly') : ''"
                   @click="showFakerModal()"
                >
-                  <BaseIcon
-                     icon-name="mdiPlaylistPlus"
-                     class="mr-1"
-                     :size="24"
-                  />
-                  <span>{{ t('database.insertRow', 2) }}</span>
-               </button>
-
-               <div class="dropdown table-dropdown">
-                  <button
-                     :disabled="isQuering"
-                     class="btn btn-dark btn-sm dropdown-toggle mr-0 pr-0"
-                     tabindex="0"
-                  >
-                     <BaseIcon
-                        icon-name="mdiFileExport"
-                        class="mr-1"
-                        :size="24"
-                     />
-                     <span>{{ t('database.export') }}</span>
-                     <BaseIcon icon-name="mdiMenuDown" :size="24" />
-                  </button>
-                  <ul class="menu text-left">
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('json')">JSON</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('csv')">CSV</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('php')">{{ t('application.phpArray') }}</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('sql')">SQL INSERT</a>
-                     </li>
-                  </ul>
-               </div>
-
-               <div class="divider-vert py-3" />
-
-               <button
-                  class="btn btn-dark btn-sm"
-                  :disabled="isQuering"
-                  :title="t('application.settings')"
-                  @click="openTableSettingTab()"
-               >
-                  <BaseIcon icon-name="mdiCog" :size="24" />
-                  <!-- <span>{{ t('application.settings') }}</span> -->
-               </button>
+                  <BaseIcon icon-name="mdiPlaylistPlus" :size="16" />
+                  <span>{{ t('general.add') }}</span>
+               </Button>
+               <!-- Teleport target for props-mode toolbar (Save/Clear/Add/Indexes/ForeignKeys/DDL) -->
+               <div
+                  v-show="viewMode === 'props'"
+                  :id="propsToolbarSlotId"
+                  class="flex items-center gap-2"
+               />
             </div>
-            <div class="workspace-query-info">
+            <div class="workspace-query-info !gap-0 divide-x divide-border [&>*]:px-[10px] [&>*:first-child]:pl-0 [&>*:last-child]:pr-0">
+               <div v-if="tableInfo && viewMode !== 'props'" :title="t('general.name')">
+                  <BaseIcon icon-name="mdiTableOfContents" :size="14" />
+                  <b>{{ tableInfo.name }}</b>
+               </div>
+               <div
+                  v-if="tableInfo?.comment && viewMode !== 'props'"
+                  class="max-w-[240px] truncate text-muted-foreground"
+                  :title="tableInfo.comment"
+               >
+                  <span>{{ tableInfo.comment }}</span>
+               </div>
+               <div
+                  v-if="tableInfo?.autoIncrement"
+                  :title="t('database.autoIncrement')"
+               >
+                  <BaseIcon icon-name="mdiNumeric" :size="14" />
+                  <span>{{ tableInfo.autoIncrement }}</span>
+               </div>
+               <div
+                  v-if="tableInfo?.collation"
+                  :title="t('database.collation')"
+               >
+                  <BaseIcon icon-name="mdiSortAlphabeticalAscending" :size="14" />
+                  <span>{{ tableInfo.collation }}</span>
+               </div>
                <div
                   v-if="results.length"
-                  class="d-flex"
                   :title="t('database.queryDuration')"
                >
                   <BaseIcon
-                     class="mr-1 mt-1"
                      icon-name="mdiTimerSand"
                      :rotate="180"
-                     :size="16"
-                  /> <b>{{ results[0].duration / 1000 }}s</b>
+                     :size="14"
+                  />
+                  <b>{{ results[0].duration / 1000 }}s</b>
                </div>
                <div v-if="results.length && results[0].rows">
-                  {{ t('general.results') }}: <b>{{ localeString(results[0].rows.length) }}</b>
+                  <span>{{ t('general.results') }}:</span>
+                  <b>{{ localeString(results[0].rows.length) }}</b>
                </div>
                <div v-if="hasApproximately || (page > 1 && approximateCount)">
-                  {{ t('database.total') }}: <b
+                  <span>{{ t('database.total') }}:</span>
+                  <b
                      :title="!customizations.tableRealCount ? t('database.approximately') : ''"
                   >
                      <span v-if="!customizations.tableRealCount">≈</span>
                      {{ localeString(approximateCount) }}
                   </b>
                </div>
-               <div class="d-flex" :title="t('database.schema')">
+               <div :title="t('database.schema')">
                   <BaseIcon
-                     class="mt-1 mr-1"
                      icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
+                     :size="14"
+                  />
+                  <b>{{ schema }}</b>
                </div>
             </div>
          </div>
       </div>
-      <WorkspaceTabTableFilters
-         v-if="isSearch"
-         :fields="fields"
-         :is-quering="isQuering"
-         :conn-client="connection.client"
-         @filter="updateFilters"
-         @filter-change="onFilterChange"
-      />
-      <div class="workspace-query-results p-relative column col-12">
+      <div v-show="viewMode === 'data'" class="workspace-query-results relative w-full">
          <BaseLoader v-if="isQuering" />
-         <div v-if="!isQuering && !results[0]?.rows.length" class="empty">
-            <div class="empty-icon">
-               <BaseIcon icon-name="mdiIsland" :size="56" />
-            </div>
-            <p class="h4 empty-subtitle">
-               {{ t('database.noResultsPresent') }}
-            </p>
-         </div>
-         <WorkspaceTabQueryTable
-            v-if="results"
-            ref="queryTable"
-            :results="results"
-            :is-quering="isQuering"
-            :page="page"
-            :tab-uid="tabUid"
-            :conn-uid="connection.uid"
-            :is-selected="isSelected"
-            mode="table"
-            :element-type="elementType"
-            @update-field="updateField"
-            @delete-selected="deleteSelected"
-            @duplicate-row="showFakerModal"
-            @hard-sort="hardSort"
-         />
+         <BaseSplitV
+            :top-height="tableQueryAreaHeight"
+            :default-top-height="300"
+            class="h-full"
+            @update:top-height="tableQueryAreaHeight = $event"
+            @resize-end="setTableQueryAreaHeight($event)"
+         >
+            <template #top>
+               <WorkspaceTabTableQueryArea />
+            </template>
+            <template #bottom>
+               <div class="relative h-full">
+                  <WorkspaceTabQueryTable
+                     v-if="results"
+                     ref="queryTable"
+                     :results="results"
+                     :is-quering="isQuering"
+                     :page="page"
+                     :tab-uid="tabUid"
+                     :conn-uid="connection.uid"
+                     :is-selected="isSelected"
+                     mode="table"
+                     :element-type="elementType"
+                     :use-comment-header="useCommentHeader"
+                     @update-field="updateField"
+                     @delete-selected="deleteSelected"
+                     @duplicate-row="showFakerModal"
+                     @hard-sort="hardSort"
+                  />
+                  <div
+                     v-if="!isQuering && !results[0]?.rows.length"
+                     class="pointer-events-none absolute inset-x-0 top-[12px] flex justify-center text-xs text-muted-foreground"
+                  >
+                     {{ t('database.noResultsPresent') }}
+                  </div>
+               </div>
+            </template>
+         </BaseSplitV>
       </div>
+      <WorkspaceTabPropsTable
+         v-if="viewMode === 'props'"
+         tab-uid="props"
+         :connection="connection"
+         :is-selected="isSelected && viewMode === 'props'"
+         :table="table"
+         :schema="schema"
+         :toolbar-target="`#${propsToolbarSlotId}`"
+      />
       <ModalFakerRows
          v-if="isFakerModal"
          :fields="fields"
@@ -233,24 +188,31 @@
 import { ConnectionParams } from 'common/interfaces/antares';
 import { TableFilterClausole } from 'common/interfaces/tableApis';
 import { storeToRefs } from 'pinia';
-import { computed, nextTick, onBeforeUnmount, Prop, Ref, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, Prop, Ref, ref, useId, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
+import BaseSplitV from '@/components/BaseSplitV.vue';
 import ModalFakerRows from '@/components/ModalFakerRows.vue';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import WorkspaceTabPropsTable from '@/components/WorkspaceTabPropsTable.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
-import WorkspaceTabTableFilters from '@/components/WorkspaceTabTableFilters.vue';
+import WorkspaceTabTableQueryArea from '@/components/WorkspaceTabTableQueryArea.vue';
 import { useFilters } from '@/composables/useFilters';
 import { useResultTables } from '@/composables/useResultTables';
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
+import { type ExportFormat, useTablePagerStore } from '@/stores/tablePager';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { localeString } = useFilters();
 
 const { t } = useI18n();
+
+const propsToolbarSlotId = `props-toolbar-${useId()}`;
 
 const props = defineProps({
    connection: Object as Prop<ConnectionParams>,
@@ -275,8 +237,10 @@ const {
 const { addNotification } = useNotificationsStore();
 const settingsStore = useSettingsStore();
 const workspacesStore = useWorkspacesStore();
+const tablePagerStore = useTablePagerStore();
 
-const { dataTabLimit: limit } = storeToRefs(settingsStore);
+const { dataTabLimit: limit, tableAutoRefreshInterval, tableQueryAreaHeight } = storeToRefs(settingsStore);
+const { setTableQueryAreaHeight } = settingsStore;
 
 const { changeBreadcrumbs, getWorkspace, newTab } = workspacesStore;
 
@@ -285,9 +249,10 @@ const tabUid = ref('data');
 const isPageMenu = ref(false);
 const isSearch = ref(false);
 const results = ref([]);
+const viewMode = ref<'data' | 'props'>('data');
+const useCommentHeader = ref(false);
 const lastTable = ref(null);
 const isFakerModal = ref(false);
-const autorefreshTimer = ref(0);
 const refreshInterval = ref(null);
 const sortParams = ref({} as { field: string; dir: 'asc' | 'desc'});
 const filters = ref([]);
@@ -306,6 +271,24 @@ const customizations = computed(() => {
 
 const isTable = computed(() => {
    return props.elementType === 'table';
+});
+
+// Reserved / system databases (e.g. SQL Server master, msdb, tempdb, model;
+// MySQL mysql / information_schema / ...). Insert UI is blocked on these to
+// prevent accidental schema pollution. Matches case-insensitively because
+// SQL Server collations are commonly CI by default.
+const isSystemSchema = computed(() => {
+   const list = workspace.value.customizations?.systemSchemas ?? [];
+   if (!props.schema || list.length === 0) return false;
+   const needle = props.schema.toLowerCase();
+   return list.some(name => name.toLowerCase() === needle);
+});
+
+// Read-only table metadata shown in the info bar: table name, comment,
+// autoIncrement value, collation. Source: workspace's structure cache.
+const tableInfo = computed(() => {
+   const db = workspace.value.structure?.find((d: { name: string }) => d.name === props.schema);
+   return db?.tables?.find((t: { name: string }) => t.name === props.table);
 });
 
 const fields = computed(() => {
@@ -412,17 +395,24 @@ const hideFakerModal = () => {
    rowToDuplicate.value = null;
 };
 
-const setRefreshInterval = () => {
+watchEffect((onCleanup) => {
    if (refreshInterval.value)
       clearInterval(refreshInterval.value);
 
-   if (+autorefreshTimer.value) {
+   if (tableAutoRefreshInterval.value > 0) {
       refreshInterval.value = setInterval(() => {
          if (!isQuering.value)
             reloadTable();
-      }, autorefreshTimer.value * 1000);
+      }, tableAutoRefreshInterval.value * 1000);
    }
-};
+   else
+      refreshInterval.value = null;
+
+   onCleanup(() => {
+      if (refreshInterval.value)
+         clearInterval(refreshInterval.value);
+   });
+});
 
 const downloadTable = (format: 'csv' | 'json' | 'sql' | 'php') => {
    queryTable.value.downloadTable(format, props.table);
@@ -510,14 +500,20 @@ const openTableSettingTab = () => {
    });
 };
 
+// NOTE: lastTable is intentionally NOT set here — getTableData() updates it
+// at line ~287 only when it actually runs. If we pre-set it synchronously
+// and the fetch early-returns (e.g. !isSelected at the moment the watcher
+// fires), the isSelected watcher below loses its ability to recover via
+// `if (lastTable.value !== props.table) getTableData()`. Symptom: first
+// table opened shows no column headers until user clicks to another table
+// and back.
 watch(() => props.schema, () => {
    if (props.isSelected) {
       page.value = 1;
       approximateCount.value = 0;
       sortParams.value = {} as { field: string; dir: 'asc' | 'desc'};
       getTableData();
-      lastTable.value = props.table;
-      queryTable.value.resetSort();
+      queryTable.value?.resetSort();
    }
 });
 
@@ -526,11 +522,11 @@ watch(() => props.table, () => {
       page.value = 1;
       filters.value = [];
       isSearch.value = false;
+      viewMode.value = 'data';
       approximateCount.value = 0;
       sortParams.value = {} as { field: string; dir: 'asc' | 'desc'};
       getTableData();
-      lastTable.value = props.table;
-      queryTable.value.resetSort();
+      queryTable.value?.resetSort();
    }
 });
 
@@ -565,11 +561,40 @@ window.addEventListener('antares:open-filter', openFilterListener);
 window.addEventListener('antares:next-page', nextPageListener);
 window.addEventListener('antares:prev-page', prevPageListener);
 
+// Footer pagination + Export bridge.
+// When this tab is the active selection, publish state + handlers into the
+// app-singleton tablePager store so TheFooter can render pagination/export
+// without any prop wiring. Whenever the underlying state changes (page,
+// results, isQuering) we patch the store. We clear on unmount AND when
+// isSelected flips false to avoid stale handlers from background tabs
+// firing into someone else's table.
+function pushPagerState (): void {
+   tablePagerStore.setActivePager({
+      page: page.value,
+      hasNext: !(isQuering.value || (results.value.length && results.value[0].rows.length < limit.value)),
+      hasPrev: !(isQuering.value || page.value === 1),
+      isQuering: isQuering.value,
+      onPrev: () => pageChange('prev'),
+      onNext: () => pageChange('next'),
+      onExport: (format: ExportFormat) => downloadTable(format)
+   });
+}
+
+watch(
+   [() => props.isSelected, () => viewMode.value, page, results, isQuering],
+   () => {
+      if (props.isSelected && viewMode.value === 'data') pushPagerState();
+      else tablePagerStore.clearActivePager();
+   },
+   { immediate: true, deep: true }
+);
+
 onBeforeUnmount(() => {
    clearInterval(refreshInterval.value);
    window.removeEventListener('antares:run-or-reload', reloadListener);
    window.removeEventListener('antares:open-filter', openFilterListener);
    window.removeEventListener('antares:next-page', nextPageListener);
    window.removeEventListener('antares:prev-page', prevPageListener);
+   tablePagerStore.clearActivePager();
 });
 </script>

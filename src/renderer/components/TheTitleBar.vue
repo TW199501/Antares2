@@ -30,7 +30,7 @@
             <BaseIcon icon-name="mdiRefresh" :size="18" />
          </div>
          <div v-if="isWindows" :style="'width: 140px;'" />
-         <div v-if="isLinux" class="d-flex">
+         <div v-if="isLinux" class="flex">
             <div class="titlebar-element" @click="minimize">
                <BaseIcon icon-name="mdiWindowMinimize" :size="18" />
             </div>
@@ -69,7 +69,18 @@ const isWindows = navigator.platform.startsWith('Win');
 const isLinux = navigator.platform.startsWith('Linux');
 const isMaximized = ref(false);
 
-const appWindow = getCurrentWindow();
+// Dev-only: when running in a plain browser (e.g. Playwright) Tauri's
+// window API throws — fall back to a no-op stub so the rest of the app
+// renders.
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+const appWindow = isTauri
+   ? getCurrentWindow()
+   : {
+      minimize: () => {},
+      maximize: () => {},
+      unmaximize: () => {},
+      isMaximized: async () => false
+   } as ReturnType<typeof getCurrentWindow>;
 
 const windowTitle = computed(() => {
    if (!selectedWorkspace.value) return '';
@@ -110,7 +121,7 @@ const onResize = async () => {
 };
 
 watch(windowTitle, (val) => {
-   document.title = val || 'Antares SQL';
+   document.title = val || 'Antares2';
 });
 
 onMounted(async () => {
@@ -130,6 +141,7 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
     height: $titlebar-height;
+    overflow: hidden;
     -webkit-app-region: drag;
     user-select: none;
     z-index: 9999;

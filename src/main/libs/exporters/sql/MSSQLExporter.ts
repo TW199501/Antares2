@@ -5,7 +5,7 @@ import { SQLServerClient } from '../../clients/SQLServerClient';
 import { SqlExporter } from './SqlExporter';
 
 export default class MSSQLExporter extends SqlExporter {
-   protected _client: SQLServerClient;
+   protected declare _client: SQLServerClient;
 
    constructor (client: SQLServerClient, tables: exporter.TableParams[], options: exporter.ExportOptions) {
       super(tables, options);

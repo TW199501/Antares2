@@ -7,143 +7,123 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex items-center">
             <BaseIcon
-               class="mr-1"
+               class="mr-1 shrink-0"
                icon-name="mdiTimer"
-               :size="24"
+               :size="22"
             />
-            <span class="cut-text">{{ t('database.timing') }} "{{ localOptions.name }}"</span>
+            <span class="truncate">{{ t('database.timing') }} "{{ localOptions.name }}"</span>
          </div>
       </template>
       <template #body>
-         <form class="form-horizontal">
-            <div class="form-group">
-               <label class="form-label col-4">
+         <form class="flex flex-col gap-3">
+            <div class="grid grid-cols-[120px_1fr] items-center gap-2">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.execution') }}
-               </label>
-               <div class="column">
-                  <BaseSelect
-                     v-model="optionsProxy.execution"
-                     :options="['EVERY', 'ONCE']"
-                     class="form-select"
-                  />
-               </div>
+               </Label>
+               <BaseSelect
+                  v-model="optionsProxy.execution"
+                  :options="['EVERY', 'ONCE']"
+                  class="!h-[32px] !text-sm"
+               />
             </div>
-            <div v-if="optionsProxy.execution === 'EVERY'">
-               <div class="form-group">
-                  <div class="col-4" />
-                  <div class="column">
-                     <div class="input-group">
-                        <input
-                           v-model="optionsProxy.every[0]"
-                           class="form-input"
-                           type="text"
-                           @keypress="isNumberOrMinus($event)"
-                        >
-                        <BaseSelect
-                           v-model="optionsProxy.every[1]"
-                           class="form-select text-uppercase"
-                           :options="['YEAR',
-                                      'QUARTER',
-                                      'MONTH',
-                                      'WEEK',
-                                      'DAY',
-                                      'HOUR',
-                                      'MINUTE',
-                                      'SECOND',
-                                      'YEAR_MONTH',
-                                      'DAY_HOUR',
-                                      'DAY_MINUTE',
-                                      'DAY_SECOND',
-                                      'HOUR_MINUTE',
-                                      'HOUR_SECOND',
-                                      'MINUTE_SECOND']"
-                           style="width: 0;"
-                        />
-                     </div>
+
+            <template v-if="optionsProxy.execution === 'EVERY'">
+               <div class="grid grid-cols-[120px_1fr] items-center gap-2">
+                  <span />
+                  <div class="flex gap-2">
+                     <Input
+                        v-model="optionsProxy.every[0]"
+                        type="text"
+                        class="!h-[32px] !text-sm flex-1"
+                        @keypress="isNumberOrMinus($event)"
+                     />
+                     <BaseSelect
+                        v-model="optionsProxy.every[1]"
+                        class="uppercase !h-[32px] !text-sm flex-[2]"
+                        :options="['YEAR',
+                                   'QUARTER',
+                                   'MONTH',
+                                   'WEEK',
+                                   'DAY',
+                                   'HOUR',
+                                   'MINUTE',
+                                   'SECOND',
+                                   'YEAR_MONTH',
+                                   'DAY_HOUR',
+                                   'DAY_MINUTE',
+                                   'DAY_SECOND',
+                                   'HOUR_MINUTE',
+                                   'HOUR_SECOND',
+                                   'MINUTE_SECOND']"
+                     />
                   </div>
                </div>
-               <div class="form-group">
-                  <label class="form-label col-4">
+               <div class="grid grid-cols-[120px_1fr] items-center gap-2">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.starts') }}
-                  </label>
-                  <div class="column">
-                     <div class="input-group">
-                        <label class="form-checkbox">
-                           <input v-model="hasStart" type="checkbox"><i class="form-icon" />
-                        </label>
-                        <input
-                           v-model="optionsProxy.starts"
-                           v-mask="'####-##-## ##:##:##'"
-                           type="text"
-                           class="form-input"
-                        >
-                        <span class="input-group-addon p-vcentered">
-                           <BaseIcon
-                              icon-name="mdiCalendar"
-                              :size="18"
-                              class="form-icon"
-                           />
-                        </span>
-                     </div>
+                  </Label>
+                  <div class="flex items-center gap-2">
+                     <Checkbox v-model:checked="hasStart" />
+                     <Input
+                        v-model="optionsProxy.starts"
+                        v-mask="'####-##-## ##:##:##'"
+                        type="text"
+                        class="!h-[32px] !text-sm flex-1"
+                     />
+                     <BaseIcon
+                        icon-name="mdiCalendar"
+                        :size="18"
+                        class="text-muted-foreground"
+                     />
                   </div>
                </div>
-               <div class="form-group">
-                  <label class="form-label col-4">
+               <div class="grid grid-cols-[120px_1fr] items-center gap-2">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.ends') }}
-                  </label>
-                  <div class="column">
-                     <div class="input-group">
-                        <label class="form-checkbox">
-                           <input v-model="hasEnd" type="checkbox"><i class="form-icon" />
-                        </label>
-                        <input
-                           v-model="optionsProxy.ends"
-                           v-mask="'####-##-## ##:##:##'"
-                           type="text"
-                           class="form-input"
-                        >
-                        <span class="input-group-addon p-vcentered">
-                           <BaseIcon
-                              icon-name="mdiCalendar"
-                              :size="18"
-                              class="form-icon"
-                           />
-                        </span>
-                     </div>
+                  </Label>
+                  <div class="flex items-center gap-2">
+                     <Checkbox v-model:checked="hasEnd" />
+                     <Input
+                        v-model="optionsProxy.ends"
+                        v-mask="'####-##-## ##:##:##'"
+                        type="text"
+                        class="!h-[32px] !text-sm flex-1"
+                     />
+                     <BaseIcon
+                        icon-name="mdiCalendar"
+                        :size="18"
+                        class="text-muted-foreground"
+                     />
                   </div>
                </div>
-            </div>
-            <div v-else>
-               <div class="form-group">
-                  <div class="col-4" />
-                  <div class="column">
-                     <div class="input-group">
-                        <input
-                           v-model="optionsProxy.at"
-                           v-mask="'####-##-## ##:##:##'"
-                           type="text"
-                           class="form-input"
-                        >
-                        <span class="input-group-addon p-vcentered">
-                           <BaseIcon
-                              icon-name="mdiCalendar"
-                              :size="18"
-                              class="form-icon"
-                           />
-                        </span>
-                     </div>
+            </template>
+            <template v-else>
+               <div class="grid grid-cols-[120px_1fr] items-center gap-2">
+                  <span />
+                  <div class="flex items-center gap-2">
+                     <Input
+                        v-model="optionsProxy.at"
+                        v-mask="'####-##-## ##:##:##'"
+                        type="text"
+                        class="!h-[32px] !text-sm flex-1"
+                     />
+                     <BaseIcon
+                        icon-name="mdiCalendar"
+                        :size="18"
+                        class="text-muted-foreground"
+                     />
                   </div>
                </div>
-            </div>
-            <div class="form-group">
-               <div class="col-4" />
-               <div class="column">
-                  <label class="form-checkbox form-inline mt-2">
-                     <input v-model="optionsProxy.preserve" type="checkbox"><i class="form-icon" /> {{ t('database.preserveOnCompletion') }}
-                  </label>
-               </div>
+            </template>
+
+            <div class="grid grid-cols-[120px_1fr] items-center gap-2">
+               <span />
+               <label class="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox v-model:checked="optionsProxy.preserve" />
+                  {{ t('database.preserveOnCompletion') }}
+               </label>
             </div>
          </form>
       </template>
@@ -159,6 +139,9 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const { t } = useI18n();
 

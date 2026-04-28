@@ -18,11 +18,11 @@ export class MySQLClient extends BaseClient {
    private _schema?: string;
    private _runningConnections: Map<string, number>;
    private _connectionsToCommit: Map<string, mysql.Connection | mysql.PoolConnection>;
-   private _keepaliveTimer: NodeJS.Timer;
+   private _keepaliveTimer: NodeJS.Timeout;
    private _keepaliveMs: number;
    private sqlMode?: string[];
    _connection?: mysql.Connection | mysql.Pool;
-   _params: mysql.ConnectionOptions & {schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean};
+   declare _params: mysql.ConnectionOptions & {schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean};
 
    private types: Record<number, string> = {
       0: 'DECIMAL',
@@ -563,6 +563,19 @@ export class MySQLClient extends BaseClient {
       });
    }
 
+   async searchColumns ({ schema, search }: { schema: string; search: string }) {
+      type ColRow = { TABLE_NAME: string; COLUMN_NAME: string };
+      const escaped = search.replace(/'/g, '\'\'');
+      const { rows } = await this.raw<antares.QueryResult<ColRow>>(`
+         SELECT TABLE_NAME, COLUMN_NAME
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = '${schema}'
+         AND (COLUMN_NAME LIKE '%${escaped}%' OR COLUMN_COMMENT LIKE '%${escaped}%')
+         ORDER BY TABLE_NAME, ORDINAL_POSITION
+      `);
+      return (rows || []).map(r => ({ tableName: r.TABLE_NAME, columnName: r.COLUMN_NAME }));
+   }
+
    async getTableColumns ({ schema, table }: { schema: string; table: string }) {
       interface TableColumnsResult {
          COLUMN_TYPE: string;
@@ -809,9 +822,25 @@ export class MySQLClient extends BaseClient {
          Table: string;
       }>>(`SHOW CREATE TABLE \`${schema}\`.\`${table}\``);
 
-      if (rows.length)
-         return rows[0]['Create Table'];
-      else return '';
+      if (!rows.length) return '';
+
+      // Make CREATE TABLE re-runnable: skip when the table already exists.
+      let createSql = rows[0]['Create Table'].replace(/^CREATE TABLE /, 'CREATE TABLE IF NOT EXISTS ');
+
+      // Emit additive ALTER TABLE statements so a re-run also fills in any missing
+      // columns. ADD COLUMN IF NOT EXISTS is supported on MariaDB 10.0.2+; on pure
+      // MySQL it parses as a syntax error and the user can comment those lines out.
+      const columnLines: string[] = [];
+      for (const line of createSql.split('\n')) {
+         const match = line.match(/^\s+`([^`]+)`\s+(.+?),?\s*$/);
+         if (match)
+            columnLines.push(`ALTER TABLE \`${schema}\`.\`${table}\` ADD COLUMN IF NOT EXISTS \`${match[1]}\` ${match[2].replace(/,$/, '')};`);
+      }
+
+      if (columnLines.length)
+         createSql += '\n\n' + columnLines.join('\n');
+
+      return createSql;
    }
 
    async getKeyUsage ({ schema, table }: { schema: string; table: string }) {

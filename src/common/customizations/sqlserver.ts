@@ -7,6 +7,7 @@ export const customizations: Customizations = {
    defaultPort: 1433,
    defaultUser: 'sa',
    defaultDatabase: 'master',
+   systemSchemas: ['master', 'model', 'msdb', 'tempdb'],
    dataTypes: sqlServerTypes,
    indexTypes: ['PRIMARY', 'INDEX', 'UNIQUE'],
    foreignActions: ['RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT', 'NO ACTION'],

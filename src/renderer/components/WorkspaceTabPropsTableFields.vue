@@ -19,84 +19,72 @@
       <div ref="propTable" class="table table-hover">
          <div class="thead">
             <div class="tr">
-               <div class="th">
-                  <div class="text-right">
+               <div class="th th-order">
+                  <div class="table-column-title text-center !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
                      {{ t('database.order') }}
                   </div>
                </div>
                <div class="th">
-                  <div class="table-column-title">
-                     {{ t('database.key', 2) }}
-                  </div>
-               </div>
-               <div class="th">
-                  <div class="column-resizable min-100">
-                     <div class="table-column-title">
-                        {{ t('general.name') }}
+                  <div class="column-resizable min-120">
+                     <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                        {{ t('database.fieldName') }}
                      </div>
                   </div>
                </div>
                <div class="th">
                   <div class="column-resizable min-100">
-                     <div class="table-column-title">
+                     <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.type') }}
                      </div>
                   </div>
                </div>
-               <div v-if="customizations.tableArray" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.array') }}
-                     </div>
+               <div class="th th-chip">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.primaryKey') }}
+                  </div>
+               </div>
+               <div v-if="customizations.autoIncrement" class="th th-chip">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.autoIncrement') }}
+                  </div>
+               </div>
+               <div v-if="customizations.nullable" class="th th-chip">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.allowNull') }}
+                  </div>
+               </div>
+               <div class="th th-num">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.length') }}
+                  </div>
+               </div>
+               <div class="th th-scale">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.precision') }}
+                  </div>
+               </div>
+               <div class="th th-chip2">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     FK / UQ
                   </div>
                </div>
                <div class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.length') }}
-                     </div>
-                  </div>
-               </div>
-               <div v-if="customizations.unsigned" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.unsigned') }}
-                     </div>
-                  </div>
-               </div>
-               <div v-if="customizations.nullable" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.allowNull') }}
-                     </div>
-                  </div>
-               </div>
-               <div v-if="customizations.zerofill" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
-                        {{ t('database.zeroFill') }}
-                     </div>
-                  </div>
-               </div>
-               <div class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
+                  <div class="column-resizable min-100">
+                     <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.default') }}
                      </div>
                   </div>
                </div>
                <div v-if="customizations.comment" class="th">
-                  <div class="column-resizable">
-                     <div class="table-column-title">
+                  <div class="column-resizable min-200">
+                     <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.comment') }}
                      </div>
                   </div>
                </div>
-               <div v-if="customizations.collation" class="th">
-                  <div class="column-resizable min-100">
-                     <div class="table-column-title">
-                        {{ t('database.collation') }}
-                     </div>
+               <div class="th th-ops">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('general.actions') }}
                   </div>
                </div>
             </div>
@@ -117,6 +105,10 @@
                   :customizations="customizations"
                   @contextmenu="contextMenu"
                   @rename-field="emit('rename-field', $event)"
+                  @move-up="moveFieldUp"
+                  @move-down="moveFieldDown"
+                  @remove-field-row="removeFieldById"
+                  @edit-field="emit('edit-field', $event)"
                />
             </template>
          </Draggable>
@@ -156,6 +148,7 @@ const emit = defineEmits<{
    'rename-field': [field: any];
    'duplicate-field': [id: string];
    'remove-field': [id: string];
+   'edit-field': [id: string];
 }>();
 
 const workspacesStore = useWorkspacesStore();
@@ -212,6 +205,24 @@ const duplicateField = () => {
 
 const removeField = () => {
    emit('remove-field', selectedField.value._antares_id);
+};
+
+const removeFieldById = (id: string) => {
+   emit('remove-field', id);
+};
+
+const moveFieldUp = (id: string) => {
+   const idx = props.fields.findIndex(f => f._antares_id === id);
+   if (idx <= 0) return;
+   const arr = props.fields as typeof props.fields;
+   [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+};
+
+const moveFieldDown = (id: string) => {
+   const idx = props.fields.findIndex(f => f._antares_id === id);
+   if (idx < 0 || idx >= props.fields.length - 1) return;
+   const arr = props.fields as typeof props.fields;
+   [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
 };
 
 const getIndexes = (field: string) => {
@@ -271,5 +282,57 @@ defineExpose({ tableWrapper });
 
 .min-100 {
   min-width: 100px !important;
+}
+
+.min-120 {
+  min-width: 120px !important;
+}
+
+.min-200 {
+  min-width: 200px !important;
+}
+
+// Fixed-width header cells
+.th-order {
+  width: 55px;
+  min-width: 55px;
+  max-width: 55px;
+}
+
+.th-chip {
+  width: 54px;
+  min-width: 54px;
+  max-width: 54px;
+  text-align: center;
+}
+
+.th-num {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+}
+
+.th-chip2 {
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  text-align: center;
+}
+
+.th-scale {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+.th-ops {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  text-align: center;
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: var(--background);
 }
 </style>

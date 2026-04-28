@@ -1,152 +1,149 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiTrayArrowUp"
-                        class="mr-1"
-                        :size="24"
-                     /> {{ t('application.exportData') }}
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               <div class="columns export-options">
-                  <div class="column col-8 left">
-                     <div class="workspace-query-results" :style="'min-height: 300px;'">
-                        <div ref="table" class="table table-hover">
-                           <div class="thead">
-                              <div class="tr text-center">
-                                 <div class="th no-border" :style="'width:50%'" />
-                                 <div class="th no-border" />
-                                 <div class="th no-border">
-                                    <label
-                                       class="form-checkbox m-0 px-2 form-inline"
-                                       @click.prevent="toggleAllConnections()"
-                                    >
-                                       <input
-                                          type="checkbox"
-                                          :indeterminate="includeConnectionStatus === 2"
-                                          :checked="!!includeConnectionStatus"
-                                       >
-                                       <i class="form-icon" />
-                                    </label>
-                                 </div>
-                              </div>
-                              <div class="tr">
-                                 <div class="th">
-                                    <div class="table-column-title">
-                                       <span>{{ t('connection.connectionName') }}</span>
-                                    </div>
-                                 </div>
-                                 <div class="th">
-                                    <div class="table-column-title">
-                                       <span>{{ t('connection.client') }}</span>
-                                    </div>
-                                 </div>
-                                 <div class="th text-center">
-                                    <div class="table-column-title">
-                                       <span>{{ t('general.include') }}</span>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <!--
+         Backup-bundle export wizard. Two-column layout inside the dialog
+         body: left column lists every saved connection with a per-row
+         "include" checkbox + a master-toggle in the table header (mirrors
+         spectre's indeterminate / all / none tri-state). Right column
+         carries options (passwords / folders) and the encryption passkey.
+         Output is a hex-encoded encrypted JSON written to disk via a
+         throwaway anchor click — same logic as before; only chrome moves.
+      -->
+      <DialogContent
+         class="!max-w-[800px] !w-[800px] !p-0 !gap-0 [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent="closeModal"
+      >
+         <DialogHeader class="px-5 pt-4 pb-3 border-b border-border/60 flex flex-row items-center justify-between !space-y-0">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1">
+               <BaseIcon icon-name="mdiTrayArrowUp" :size="20" />
+               <span>{{ t('application.exportData') }}</span>
+            </DialogTitle>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
 
-                           <div class="tbody">
-                              <div
-                                 v-for="(item, i) in connections"
-                                 :key="i"
-                                 class="tr"
-                              >
-                                 <div class="td">
-                                    {{ getConnectionName(item.uid) }}
-                                 </div>
-                                 <div class="td">
-                                    {{ item.client }}
-                                 </div>
-                                 <div class="td text-center">
-                                    <label class="form-checkbox m-0 px-2 form-inline">
-                                       <input v-model="connectionToggles[item.uid]" type="checkbox">
-                                       <i class="form-icon" />
-                                    </label>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="column col-4">
-                     <h5 class="h5">
-                        {{ t('general.options') }}
-                     </h5>
-                     <label class="form-checkbox">
-                        <input v-model="options.includes.passwords" type="checkbox">
-                        <i class="form-icon" />
-                        {{ t(`application.includeConnectionPasswords`) }}
-                     </label>
-                     <label class="form-checkbox">
-                        <input v-model="options.includes.folders" type="checkbox">
-                        <i class="form-icon" />
-                        {{ t(`application.includeFolders`) }}
-                     </label>
-                     <div class="h6 mt-4 mb-2">
-                        {{ t('application.encryptionPassword') }}
-                     </div>
-                     <fieldset class="form-group" :class="{'has-error': isPasswordError}">
-                        <div class="input-group">
-                           <input
-                              ref="passkey"
-                              v-model="options.passkey"
-                              :type="isPasswordVisible ? 'text' : 'password'"
-                              class="form-input"
-                              :placeholder="t('application.required')"
-                           >
-                           <button
-                              type="button"
-                              class="btn btn-link input-group-addon"
-                              @click="isPasswordVisible = !isPasswordVisible"
-                           >
-                              <BaseIcon
-                                 v-if="isPasswordVisible"
-                                 icon-name="mdiEye"
-                                 class="mt-1 mx-1"
-                                 :size="16"
-                              />
-                              <BaseIcon
-                                 v-else
-                                 icon-name="mdiEyeOff"
-                                 class="mt-1 mx-1"
-                                 :size="16"
-                              />
-                           </button>
-                        </div>
-                        <span v-if="isPasswordError" class="form-input-hint">
-                           {{ t('application.encryptionPasswordError') }}
-                        </span>
-                     </fieldset>
+         <div class="grid grid-cols-[2fr_1fr] gap-4 px-5 py-4 max-h-[60vh] overflow-hidden">
+            <!--
+               Left column: connection picker. Custom HTML grid (NOT a real
+               <table>) keeps the row-hover + checkbox alignment consistent
+               with the rest of the app's "results table" pattern. Indeterminate
+               state on the master checkbox needs an attribute, not a checked
+               binding, so we set :data-state on the underlying Checkbox.
+            -->
+            <Card class="!shadow-none !p-0 flex flex-col min-h-0">
+               <div class="grid grid-cols-[1fr_1fr_60px] items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/30 text-xs font-semibold uppercase tracking-wide">
+                  <div>{{ t('connection.connectionName') }}</div>
+                  <div>{{ t('connection.client') }}</div>
+                  <div class="flex items-center justify-center">
+                     <Checkbox
+                        :checked="includeConnectionStatus === 1"
+                        :data-state="includeConnectionStatus === 2 ? 'indeterminate' : (includeConnectionStatus === 1 ? 'checked' : 'unchecked')"
+                        @update:checked="toggleAllConnections"
+                     />
                   </div>
                </div>
-            </div>
-            <div class="modal-footer">
-               <button class="btn btn-link mr-2" @click.stop="closeModal">
-                  {{ t('general.close') }}
-               </button>
-               <button
-                  class="btn btn-primary mr-2"
-                  autofocus
-                  @click.prevent="exportData()"
-               >
-                  {{ t('database.export') }}
-               </button>
+               <div class="overflow-y-auto flex-1 min-h-[280px]">
+                  <div
+                     v-for="(item, i) in connections"
+                     :key="i"
+                     class="grid grid-cols-[1fr_1fr_60px] items-center gap-2 px-3 py-1.5 text-[13px] border-b border-border/40 hover:bg-muted/40"
+                  >
+                     <div class="truncate">
+                        {{ getConnectionName(item.uid) }}
+                     </div>
+                     <div class="truncate">
+                        {{ item.client }}
+                     </div>
+                     <div class="flex items-center justify-center">
+                        <Checkbox
+                           :checked="connectionToggles[item.uid]"
+                           @update:checked="(v) => connectionToggles[item.uid] = v"
+                        />
+                     </div>
+                  </div>
+               </div>
+            </Card>
+
+            <!-- Right column: options + passkey -->
+            <div class="space-y-4 min-h-0">
+               <h5 class="text-sm font-semibold uppercase tracking-wide">
+                  {{ t('general.options') }}
+               </h5>
+               <div class="space-y-2">
+                  <div class="flex items-center gap-2">
+                     <Checkbox
+                        id="opt-passwords"
+                        :checked="options.includes.passwords"
+                        @update:checked="(v) => options.includes.passwords = v"
+                     />
+                     <Label for="opt-passwords" class="!text-[13px]">{{ t('application.includeConnectionPasswords') }}</Label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                     <Checkbox
+                        id="opt-folders"
+                        :checked="options.includes.folders"
+                        @update:checked="(v) => options.includes.folders = v"
+                     />
+                     <Label for="opt-folders" class="!text-[13px]">{{ t('application.includeFolders') }}</Label>
+                  </div>
+               </div>
+               <div class="space-y-1.5">
+                  <Label class="text-xs font-medium uppercase tracking-wide">{{ t('application.encryptionPassword') }}</Label>
+                  <div class="flex items-stretch gap-1">
+                     <Input
+                        ref="passkey"
+                        v-model="options.passkey"
+                        :type="isPasswordVisible ? 'text' : 'password'"
+                        :placeholder="t('application.required')"
+                        :class="isPasswordError ? 'border-destructive' : ''"
+                     />
+                     <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        class="!h-[34px] !w-[34px] shrink-0"
+                        @click="isPasswordVisible = !isPasswordVisible"
+                     >
+                        <BaseIcon
+                           :icon-name="isPasswordVisible ? 'mdiEye' : 'mdiEyeOff'"
+                           :size="16"
+                        />
+                     </Button>
+                  </div>
+                  <p v-if="isPasswordError" class="text-xs text-destructive">
+                     {{ t('application.encryptionPasswordError') }}
+                  </p>
+               </div>
             </div>
          </div>
-      </div>
-   </Teleport>
+
+         <DialogFooter class="!flex !flex-row !justify-end !gap-2 !px-5 !py-3 border-t border-border/60 bg-muted/30">
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="closeModal"
+            >
+               {{ t('general.close') }}
+            </Button>
+            <Button
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               autofocus
+               @click.prevent="exportData"
+            >
+               {{ t('database.export') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -159,7 +156,12 @@ import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { unproxify } from '@/libs/unproxify';
 import { SidebarElement, useConnectionsStore } from '@/stores/connections';
 
@@ -167,8 +169,6 @@ const { t } = useI18n();
 const emit = defineEmits<{
    'close': [];
 }>();
-
-const { trapRef } = useFocusTrap();
 
 const { getConnectionName } = useConnectionsStore();
 const { connectionsOrder, connections, customIcons } = storeToRefs(useConnectionsStore());
@@ -252,8 +252,6 @@ const exportData = () => {
          customIcons: customIcons.value
       }), options.value.passkey);
 
-      // console.log(exportObj, JSON.parse(decrypt(exportObj, options.value.passkey)));
-
       const blobContent = Buffer.from(JSON.stringify(exportObj), 'utf-8').toString('hex');
       const file = new Blob([blobContent], { type: 'application/octet-stream' });
       const downloadLink = document.createElement('a');
@@ -303,48 +301,4 @@ window.addEventListener('keydown', onKey);
 onBeforeUnmount(() => {
    window.removeEventListener('keydown', onKey);
 });
-
 </script>
-
-<style lang="scss" scoped>
-.export-options {
-  flex: 1;
-  overflow: hidden;
-
-  .left {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-}
-
-.workspace-query-results {
-  flex: 1 0 1px;
-
-  .table {
-    width: 100% !important;
-  }
-
-  .form-checkbox {
-    min-height: 0.8rem;
-    padding: 0;
-
-    .form-icon {
-      top: 0.1rem;
-    }
-  }
-}
-
-.modal {
-  .modal-container {
-    max-width: 800px;
-  }
-
-  .modal-body {
-    max-height: 60vh;
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-</style>

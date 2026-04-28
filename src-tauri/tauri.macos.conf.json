@@ -1,7 +1,8 @@
 {
    "bundle": {
+      "targets": ["dmg", "app"],
       "resources": {
-         "../sidecar/node": "sidecar/node"
+         "resources/sidecar/node": "sidecar/node"
       }
    }
 }

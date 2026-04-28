@@ -27,7 +27,7 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("cannot get exe parent dir")?
         .to_path_buf();
 
-    // Dev build: exe is at <project>/src-tauri/target/debug/antares-sql.exe
+    // Dev build: exe is at <project>/src-tauri/target/debug/antares2.exe
     // Vite's sidecarPlugin already starts the server on port 5555 during `tauri dev`.
     // If port 5555 is already in use, reuse it instead of starting a second process.
     #[cfg(debug_assertions)]

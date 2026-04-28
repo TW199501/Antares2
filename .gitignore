@@ -12,8 +12,19 @@ NOTES.md
 
 # Tauri build artifacts
 src-tauri/target/
+src-tauri/resources/
 
 # Large binary executables (too big for GitHub)
 sidecar/node.exe
 sidecar/node
 src-tauri/binaries/*.exe
+
+# Test / debug artifacts (not for GitHub)
+.playwright-mcp/
+skills-lock.json
+antares-fixed-*.png
+antares-initial.png
+verify-*.png
+debug-*.png
+current-snap.yml
+e2e-results/

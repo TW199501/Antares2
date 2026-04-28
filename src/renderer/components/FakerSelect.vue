@@ -1,13 +1,12 @@
 <template>
-   <fieldset class="input-group mb-0">
+   <fieldset class="flex items-stretch gap-1 mb-0 [&>*]:flex-1">
       <BaseSelect
          v-model="selectedGroup"
-         class="form-select"
          :options="[{name: 'manual'}, ...fakerGroups]"
          :option-label="(opt: any) => opt.name === 'manual' ? t('general.manualValue') : t(`faker.${opt.name}`)"
          option-track-by="name"
          :disabled="!isChecked"
-         :style="'flex-grow: 0;'"
+         class="!flex-grow-0"
          @change="onChange"
       />
 
@@ -17,7 +16,6 @@
          :options="fakerMethods"
          :option-label="(opt: any) => t(`faker.${opt.name}`)"
          option-track-by="name"
-         class="form-select"
          :disabled="!isChecked"
          @change="onChange"
       />
@@ -25,19 +23,17 @@
          v-else-if="foreignKeys.includes(field.name)"
          ref="formInput"
          v-model="selectedValue"
-         class="form-select"
          :key-usage="getKeyUsage(field.name)"
          :disabled="!isChecked"
       />
-      <input
+      <Input
          v-else-if="inputProps().mask"
          ref="formInput"
          v-model="selectedValue"
          v-mask="inputProps().mask"
-         class="form-input"
          :type="inputProps().type"
          :disabled="!isChecked"
-      >
+      />
       <BaseUploadInput
          v-else-if="inputProps().type === 'file'"
          :model-value="selectedValue"
@@ -45,41 +41,37 @@
          @clear="clearValue"
          @select="filesChange"
       />
-      <input
+      <Input
          v-else-if="inputProps().type === 'number'"
          ref="formInput"
          v-model="selectedValue"
-         class="form-input"
          step="any"
          :type="inputProps().type"
          :disabled="!isChecked"
-      >
+      />
       <BaseSelect
          v-else-if="enumArray"
          v-model="selectedValue"
          :options="enumArray"
-         class="form-select"
          :disabled="!isChecked"
          @change="onChange"
       />
-      <input
+      <Input
          v-else
          ref="formInput"
          v-model="selectedValue"
-         class="form-input"
          :type="inputProps().type"
          :disabled="!isChecked"
-      >
+      />
       <template v-if="methodData && 'params' in methodData">
-         <input
+         <Input
             v-for="(option, key) in methodData.params"
             :key="key"
             v-model="methodParams[option]"
-            class="form-input column"
             :type="inputProps().type"
             :disabled="!isChecked"
             :placeholder="option"
-         >
+         />
       </template>
       <slot />
    </fieldset>
@@ -94,6 +86,7 @@ import { useI18n } from 'vue-i18n';
 import BaseSelect from '@/components/BaseSelect.vue';
 import BaseUploadInput from '@/components/BaseUploadInput.vue';
 import ForeignKeySelect from '@/components/ForeignKeySelect.vue';
+import { Input } from '@/components/ui/input';
 
 const { t } = useI18n();
 

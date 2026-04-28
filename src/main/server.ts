@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto';
 import Fastify from 'fastify';
 import * as net from 'net';
 
+import aiRoutes from './routes/ai';
 import applicationRoutes from './routes/application';
 import connectionRoutes from './routes/connection';
 import databaseRoutes from './routes/databases';
@@ -73,6 +74,7 @@ const start = async () => {
    await app.register(databaseRoutes);
    await app.register(userRoutes);
    await app.register(applicationRoutes);
+   await app.register(aiRoutes);
 
    await app.listen({ port, host: '127.0.0.1' });
 

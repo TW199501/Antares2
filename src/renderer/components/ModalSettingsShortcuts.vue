@@ -1,199 +1,184 @@
 <template>
-   <div class="p-relative">
-      <div class="shortcuts-tools pb-2 px-2">
-         <button class="btn btn-dark btn-sm d-flex ml-2" @click="showAddModal">
-            <BaseIcon
-               icon-name="mdiPlus"
-               class="mr-1"
-               :size="24"
-            /><span>{{ t('application.addShortcut') }}</span>
-         </button>
-         <button class="btn btn-dark btn-sm d-flex ml-2" @click="isConfirmRestoreModal = true">
-            <BaseIcon
-               icon-name="mdiUndo"
-               class="mr-1"
-               :size="24"
-            /><span>{{ t('application.restoreDefaults') }}</span>
-         </button>
-      </div>
-      <div class="container workspace-query-results">
-         <div class="table table-hover">
-            <div class="thead">
-               <div class="tr text-uppercase">
-                  <div class="th no-border">
-                     <div>
-                        {{ t('application.event') }}
-                     </div>
-                  </div>
-                  <div class="th no-border" style="width: 100%;">
-                     <div>
-                        {{ t('application.key', 2) }}
-                     </div>
-                  </div>
-                  <div class="th no-border" />
-               </div>
-            </div>
+   <!--
+      Shortcut manager — used as a tab inside ModalSettings (NOT a modal of
+      its own at the top-level template). Renders a header toolbar (Add /
+      Restore-defaults) above a list of shortcut rows. Each row is a 3-col
+      grid: event label / parsed key combo / row-hover edit+delete buttons.
 
-            <div class="tbody">
-               <div
-                  v-for="(shortcut, i) in shortcuts"
-                  :key="i"
-                  class="tr"
-                  tabindex="0"
-               >
-                  <div class="td py-1">
-                     {{ t(shortcutEvents[shortcut.event].i18n, {param: shortcutEvents[shortcut.event].i18nParam}) }}
-                  </div>
-                  <div
-                     class="td py-1"
-                     style="border-right: 0;"
-                     v-html="parseKeys(shortcut.keys)"
-                  />
-                  <div class="td py-1 pr-2">
-                     <button class="shortcut-button btn btn-link btn-sm d-flex p-0 px-1 mr-2" @click="showEditModal({...shortcut, index: i})">
-                        <span>{{ t('general.edit') }}</span>
-                        <BaseIcon
-                           icon-name="mdiPencil"
-                           class="ml-1"
-                           :size="16"
-                        />
-                     </button>
-                     <button class="shortcut-button btn btn-link btn-sm d-flex p-0 px-1" @click="showDeleteModal(shortcut)">
-                        <span>{{ t('general.delete') }}</span>
-                        <BaseIcon
-                           icon-name="mdiDeleteOutline"
-                           class="ml-1"
-                           :size="16"
-                        />
-                     </button>
-                  </div>
+      Three nested ConfirmModals (Add / Edit / Delete / RestoreDefaults) reuse
+      the migrated BaseConfirmModal Dialog shell. KeyPressDetector itself is
+      OUT of scope (Batch 9) and is kept untouched inside the Add/Edit modals.
+   -->
+   <div class="relative">
+      <div class="flex justify-end gap-2 px-2 pb-3">
+         <Button
+            variant="outline"
+            size="sm"
+            class="!h-[32px] gap-1 !text-[13px]"
+            @click="showAddModal"
+         >
+            <BaseIcon icon-name="mdiPlus" :size="18" />
+            <span>{{ t('application.addShortcut') }}</span>
+         </Button>
+         <Button
+            variant="outline"
+            size="sm"
+            class="!h-[32px] gap-1 !text-[13px]"
+            @click="isConfirmRestoreModal = true"
+         >
+            <BaseIcon icon-name="mdiUndo" :size="18" />
+            <span>{{ t('application.restoreDefaults') }}</span>
+         </Button>
+      </div>
+      <!--
+         Shortcut list. Header sits in a sticky-ish bar above the rows;
+         each row uses its own grid so columns line up regardless of the
+         parsed key markup width (parseKeys returns kbd-tagged HTML).
+      -->
+      <div class="container">
+         <div class="grid grid-cols-[200px_1fr_180px] gap-2 px-3 py-2 border-b border-border/60 bg-muted/30 text-xs font-semibold uppercase tracking-wide">
+            <div>{{ t('application.event') }}</div>
+            <div>{{ t('application.key', 2) }}</div>
+            <div />
+         </div>
+         <div class="divide-y divide-border/40">
+            <div
+               v-for="(shortcut, i) in shortcuts"
+               :key="i"
+               class="group grid grid-cols-[200px_1fr_180px] items-center gap-2 px-3 py-1.5 text-[13px] hover:bg-muted/40"
+               tabindex="0"
+            >
+               <div class="truncate">
+                  {{ t(shortcutEvents[shortcut.event].i18n, {param: shortcutEvents[shortcut.event].i18nParam}) }}
+               </div>
+               <div v-html="parseKeys(shortcut.keys)" />
+               <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                     variant="ghost"
+                     size="sm"
+                     class="!h-6 !px-1.5 !text-xs gap-1"
+                     @click="showEditModal({...shortcut, index: i})"
+                  >
+                     <span>{{ t('general.edit') }}</span>
+                     <BaseIcon icon-name="mdiPencil" :size="14" />
+                  </Button>
+                  <Button
+                     variant="ghost"
+                     size="sm"
+                     class="!h-6 !px-1.5 !text-xs gap-1"
+                     @click="showDeleteModal(shortcut)"
+                  >
+                     <span>{{ t('general.delete') }}</span>
+                     <BaseIcon icon-name="mdiDeleteOutline" :size="14" />
+                  </Button>
                </div>
             </div>
          </div>
       </div>
    </div>
-   <Teleport to="#window-content">
-      <ConfirmModal
-         v-if="isConfirmAddModal"
-         :disable-autofocus="true"
-         :confirm-text="t('general.save')"
-         :close-on-confirm="false"
-         @confirm="addShortcut"
-         @hide="closeAddModal"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  icon-name="mdiPlus"
-                  class="mr-1"
-                  :size="24"
-               /> {{ t('application.addShortcut') }}
-            </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               <div class="form-group">
-                  <label class="form-label">{{ t('application.event') }}</label>
-                  <BaseSelect
-                     v-model="shortcutToAdd.event"
-                     class="form-select"
-                     :options="eventOptions"
-                  />
-               </div>
-            </div>
-            <div class="mb-2">
-               <div class="form-group">
-                  <label class="form-label">{{ t('application.key', 2) }}</label>
-                  <KeyPressDetector v-model="typedShortcut" />
-               </div>
-            </div>
-            <small v-if="doesShortcutExists" class="text-warning">{{ t('application.shortcutAlreadyExists') }}</small>
-         </template>
-      </ConfirmModal>
 
-      <ConfirmModal
-         v-if="isConfirmEditModal"
-         :disable-autofocus="true"
-         :confirm-text="t('general.save')"
-         :close-on-confirm="false"
-         @confirm="editShortcut"
-         @hide="closeEditModal"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  icon-name="mdiPencil"
-                  class="mr-1"
-                  :size="24"
-               /> {{ t('application.editShortcut') }}
+   <ConfirmModal
+      v-if="isConfirmAddModal"
+      :disable-autofocus="true"
+      :confirm-text="t('general.save')"
+      :close-on-confirm="false"
+      @confirm="addShortcut"
+      @hide="closeAddModal"
+   >
+      <template #header>
+         <div class="flex items-center gap-1">
+            <BaseIcon icon-name="mdiPlus" :size="20" />
+            <span>{{ t('application.addShortcut') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="space-y-3">
+            <div class="space-y-1.5">
+               <Label class="!text-[13px] font-medium">{{ t('application.event') }}</Label>
+               <BaseSelect
+                  v-model="shortcutToAdd.event"
+                  :options="eventOptions"
+               />
             </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               <div class="form-group">
-                  <label class="form-label">{{ t('application.event') }}</label>
-                  <BaseSelect
-                     v-model="shortcutToEdit.event"
-                     class="form-select"
-                     :options="eventOptions"
-                     :disabled="true"
-                  />
-               </div>
+            <div class="space-y-1.5">
+               <Label class="!text-[13px] font-medium">{{ t('application.key', 2) }}</Label>
+               <KeyPressDetector v-model="typedShortcut" />
             </div>
-            <div class="mb-2">
-               <div class="form-group">
-                  <label class="form-label">{{ t('application.key', 2) }}</label>
-                  <KeyPressDetector v-model="shortcutToEdit.keys[0]" />
-               </div>
-            </div>
-            <small v-if="doesShortcutExists" class="text-warning">{{ t('application.shortcutAlreadyExists') }}</small>
-         </template>
-      </ConfirmModal>
+            <small v-if="doesShortcutExists" class="text-xs text-yellow-600 dark:text-yellow-400">{{ t('application.shortcutAlreadyExists') }}</small>
+         </div>
+      </template>
+   </ConfirmModal>
 
-      <ConfirmModal
-         v-if="isConfirmDeleteModal"
-         :disable-autofocus="true"
-         @confirm="deleteShortcut"
-         @hide="isConfirmDeleteModal = false"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  icon-name="mdiDelete"
-                  class="mr-1"
-                  :size="24"
-               /> {{ t('application.deleteShortcut') }}
+   <ConfirmModal
+      v-if="isConfirmEditModal"
+      :disable-autofocus="true"
+      :confirm-text="t('general.save')"
+      :close-on-confirm="false"
+      @confirm="editShortcut"
+      @hide="closeEditModal"
+   >
+      <template #header>
+         <div class="flex items-center gap-1">
+            <BaseIcon icon-name="mdiPencil" :size="20" />
+            <span>{{ t('application.editShortcut') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="space-y-3">
+            <div class="space-y-1.5">
+               <Label class="!text-[13px] font-medium">{{ t('application.event') }}</Label>
+               <BaseSelect
+                  v-model="shortcutToEdit.event"
+                  :options="eventOptions"
+                  :disabled="true"
+               />
             </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               {{ t('general.deleteConfirm') }} <b>{{ t(shortcutEvents[shortcutToDelete.event].i18n, {param: shortcutEvents[shortcutToDelete.event].i18nParam}) }} (<span v-html="parseKeys(shortcutToDelete.keys)" />)</b>?
+            <div class="space-y-1.5">
+               <Label class="!text-[13px] font-medium">{{ t('application.key', 2) }}</Label>
+               <KeyPressDetector v-model="shortcutToEdit.keys[0]" />
             </div>
-         </template>
-      </ConfirmModal>
+            <small v-if="doesShortcutExists" class="text-xs text-yellow-600 dark:text-yellow-400">{{ t('application.shortcutAlreadyExists') }}</small>
+         </div>
+      </template>
+   </ConfirmModal>
 
-      <ConfirmModal
-         v-if="isConfirmRestoreModal"
-         :disable-autofocus="true"
-         @confirm="restoreDefaults"
-         @hide="isConfirmRestoreModal = false"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  icon-name="mdiUndo"
-                  class="mr-1"
-                  :size="24"
-               /> {{ t('application.restoreDefaults') }}
-            </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               {{ t('application.restoreDefaultsQuestion') }}
-            </div>
-         </template>
-      </ConfirmModal>
-   </Teleport>
+   <ConfirmModal
+      v-if="isConfirmDeleteModal"
+      :disable-autofocus="true"
+      @confirm="deleteShortcut"
+      @hide="isConfirmDeleteModal = false"
+   >
+      <template #header>
+         <div class="flex items-center gap-1">
+            <BaseIcon icon-name="mdiDelete" :size="20" />
+            <span>{{ t('application.deleteShortcut') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="text-[13px]">
+            {{ t('general.deleteConfirm') }} <b>{{ t(shortcutEvents[shortcutToDelete.event].i18n, {param: shortcutEvents[shortcutToDelete.event].i18nParam}) }} (<span v-html="parseKeys(shortcutToDelete.keys)" />)</b>?
+         </div>
+      </template>
+   </ConfirmModal>
+
+   <ConfirmModal
+      v-if="isConfirmRestoreModal"
+      :disable-autofocus="true"
+      @confirm="restoreDefaults"
+      @hide="isConfirmRestoreModal = false"
+   >
+      <template #header>
+         <div class="flex items-center gap-1">
+            <BaseIcon icon-name="mdiUndo" :size="20" />
+            <span>{{ t('application.restoreDefaults') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="text-[13px]">
+            {{ t('application.restoreDefaultsQuestion') }}
+         </div>
+      </template>
+   </ConfirmModal>
 </template>
 <script setup lang="ts">
 import { shortcutEvents, ShortcutRecord } from 'common/shortcuts';
@@ -204,6 +189,8 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { useFilters } from '@/composables/useFilters';
 import Application from '@/ipc-api/Application';
 import { useSettingsStore } from '@/stores/settings';
@@ -319,34 +306,3 @@ watch(typedShortcut, () => {
    ));
 });
 </script>
-<style lang="scss" scoped>
-  .table {
-    .tr {
-      .td {
-        border-right: 3px solid;
-        border-bottom: 3px solid;
-      }
-
-      &:hover {
-        .shortcut-button {
-          opacity: 1;
-        }
-      }
-
-      .shortcut-button {
-        font-size: 0.7rem;
-        height: 1rem;
-        line-height: 1rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-      }
-    }
-  }
-
-  .shortcuts-tools {
-    display: flex;
-    justify-content: flex-end;
-  }
-</style>

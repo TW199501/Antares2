@@ -104,4 +104,9 @@ export interface Customizations {
    parametersLength?: boolean;
    languages?: string[];
    readOnlyMode?: boolean;
+   // System / reserved database names where data-insert UI must be locked.
+   // Each client defines its own (SQL Server: master/msdb/model/tempdb;
+   // MySQL: mysql/information_schema/performance_schema/sys; etc.).
+   // Compared against schema name case-insensitively at the call site.
+   systemSchemas?: string[];
 }

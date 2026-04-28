@@ -48,6 +48,19 @@ export default async function tableRoutes (app: FastifyInstance) {
       }
    });
 
+   // POST /api/tables/searchColumns
+   app.post('/api/tables/searchColumns', async (request) => {
+      const params = request.body as any;
+
+      try {
+         const result = await requireConnection(params.uid).searchColumns(params);
+         return { status: 'success', response: result };
+      }
+      catch (err) {
+         return { status: 'error', response: safeErrorMessage(err) };
+      }
+   });
+
    // POST /api/tables/getData
    app.post('/api/tables/getData', async (request) => {
       const { uid, schema, table, limit, page, sortParams, where } = request.body as any;
@@ -472,7 +485,7 @@ export default async function tableRoutes (app: FastifyInstance) {
                   let fakeValue;
 
                   if (params.locale)
-                     fakerCustom.locale = params.locale;
+                     fakerCustom.setLocale(params.locale);
 
                   if (Object.keys(params.row[key].params).length) {
                      Object.keys(params.row[key].params).forEach(param => {

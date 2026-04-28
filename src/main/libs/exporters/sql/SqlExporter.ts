@@ -1,4 +1,4 @@
-import * as moment from 'moment';
+import moment from 'moment';
 
 import { MySQLClient } from '../../clients/MySQLClient';
 import { PostgreSQLClient } from '../../clients/PostgreSQLClient';
@@ -135,11 +135,10 @@ export class SqlExporter extends BaseExporter {
    async getSqlHeader () {
       const serverVersion = await this.getServerVersion();
       const header = `************************************************************
-Antares - SQL Client
+Antares2 - SQL Client (fork of antares-sql/antares)
 Version ${process.env.PACKAGE_VERSION}
 
-https://antares-sql.app/
-https://github.com/antares-sql/antares
+https://github.com/TW199501/Antares2
 
 Host: ${this.host} (${serverVersion})
 Database: ${this.schemaName}

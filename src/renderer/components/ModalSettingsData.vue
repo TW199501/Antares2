@@ -1,48 +1,43 @@
 <template>
-   <div class="container">
-      <div class="columns">
-         <div class="column col-12 h6 text-uppercase mb-2">
-            {{ t('application.exportData') }}
-         </div>
-         <div class="column col-12">
-            {{ t('application.exportDataExplanation') }}
-         </div>
-         <div class="column col-12 text-right">
-            <button
-               class="btn btn-primary d-inline-flex"
-               @click="isExportModal=true"
-            >
-               <BaseIcon
-                  icon-name="mdiTrayArrowUp"
-                  class="mr-2"
-                  :size="24"
-               />
+   <div class="px-2 py-2 space-y-6">
+      <Card class="!shadow-none">
+         <CardHeader class="!p-4 !pb-2">
+            <CardTitle class="text-sm font-semibold uppercase tracking-wide">
+               {{ t('application.exportData') }}
+            </CardTitle>
+            <CardDescription class="text-xs">
+               {{ t('application.exportDataExplanation') }}
+            </CardDescription>
+         </CardHeader>
+         <CardContent class="!p-4 !pt-2 flex justify-end">
+            <Button class="inline-flex items-center gap-2" @click="isExportModal=true">
+               <BaseIcon icon-name="mdiTrayArrowUp" :size="20" />
                <span>{{ t('application.exportData') }}</span>
-            </button>
-         </div>
-      </div>
+            </Button>
+         </CardContent>
+      </Card>
 
-      <div class="columns mt-4 mb-2">
-         <div class="column col-12 h6 text-uppercase mb-2 mt-4">
-            {{ t('application.importData') }}
-         </div>
-         <div class="column col-12">
-            {{ t('application.importDataExplanation') }}
-         </div>
-         <div class="column col-12 text-right">
-            <button
-               class="btn btn-dark d-inline-flex ml-auto"
+      <Card class="!shadow-none">
+         <CardHeader class="!p-4 !pb-2">
+            <CardTitle class="text-sm font-semibold uppercase tracking-wide">
+               {{ t('application.importData') }}
+            </CardTitle>
+            <CardDescription class="text-xs">
+               {{ t('application.importDataExplanation') }}
+            </CardDescription>
+         </CardHeader>
+         <CardContent class="!p-4 !pt-2 flex justify-end">
+            <Button
+               variant="secondary"
+               class="inline-flex items-center gap-2"
                @click="isImportModal=true"
             >
-               <BaseIcon
-                  icon-name="mdiTrayArrowDown"
-                  class="mr-2"
-                  :size="24"
-               />
+               <BaseIcon icon-name="mdiTrayArrowDown" :size="20" />
                <span>{{ t('application.importData') }}</span>
-            </button>
-         </div>
-      </div>
+            </Button>
+         </CardContent>
+      </Card>
+
       <ModalSettingsDataExport
          v-if="isExportModal"
          @close="isExportModal = false"
@@ -60,6 +55,8 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import ModalSettingsDataExport from '@/components/ModalSettingsDataExport.vue';
 import ModalSettingsDataImport from '@/components/ModalSettingsDataImport.vue';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const { t } = useI18n();
 

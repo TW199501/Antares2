@@ -7,6 +7,10 @@ export default class {
       return apiCall('/api/tables/getColumns', params);
    }
 
+   static searchColumns (params: { uid: string; schema: string; search: string }): Promise<IpcResponse> {
+      return apiCall('/api/tables/searchColumns', params);
+   }
+
    static getTableData (params: {
       uid: string;
       schema: string;

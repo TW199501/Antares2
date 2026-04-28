@@ -2,174 +2,160 @@
    <ConfirmModal
       :confirm-text="t('general.confirm')"
       size="medium"
-      class="options-modal"
       @confirm="confirmParametersChange"
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex items-center">
             <BaseIcon
-               class="mr-1"
+               class="mr-1 shrink-0"
                icon-name="mdiDotsHorizontal"
-               :size="24"
+               :size="22"
             />
-            <span class="cut-text">{{ t('database.parameters') }} "{{ routine }}"</span>
+            <span class="truncate">{{ t('database.parameters') }} "{{ routine }}"</span>
          </div>
       </template>
       <template #body>
-         <div class="columns col-gapless">
-            <div class="column col-5">
-               <div class="panel" :style="{ height: modalInnerHeight + 'px'}">
-                  <div class="panel-header pt-0 pl-0">
-                     <div class="d-flex">
-                        <button class="btn btn-dark btn-sm d-flex" @click="addParameter">
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiPlus"
-                              :size="24"
-                           />
-                           <span>{{ t('general.add') }}</span>
-                        </button>
-                        <button
-                           class="btn btn-dark btn-sm d-flex ml-2 mr-0"
-                           :title="t('database.clearChanges')"
-                           :disabled="!isChanged"
-                           @click.prevent="clearChanges"
-                        >
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiDeleteSweep"
-                              :size="24"
-                           />
-                           <span>{{ t('general.clear') }}</span>
-                        </button>
-                     </div>
+         <div class="grid grid-cols-12 gap-0">
+            <div class="col-span-5">
+               <div class="flex flex-col" :style="{ height: modalInnerHeight + 'px'}">
+                  <div class="flex items-center gap-2 mb-2">
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        @click="addParameter"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiPlus"
+                           :size="16"
+                        />
+                        <span>{{ t('general.add') }}</span>
+                     </Button>
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        :title="t('database.clearChanges')"
+                        :disabled="!isChanged"
+                        @click.prevent="clearChanges"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiDeleteSweep"
+                           :size="16"
+                        />
+                        <span>{{ t('general.clear') }}</span>
+                     </Button>
                   </div>
-                  <div ref="parametersPanel" class="panel-body p-0 pr-1">
+                  <div ref="parametersPanel" class="flex-1 overflow-auto pr-1">
                      <div
                         v-for="param in parametersProxy"
                         :key="param._antares_id"
-                        class="tile tile-centered c-hand mb-1 p-1"
+                        class="param-row flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
                         :class="{'selected-element': selectedParam === param._antares_id}"
                         @click="selectParameter($event, param._antares_id)"
                      >
-                        <div class="tile-icon">
-                           <div>
-                              <BaseIcon
-                                 class="mt-2"
-                                 icon-name="mdiHexagon"
-                                 :class="typeClass(param.type)"
-                                 :size="24"
-                              />
-                           </div>
-                        </div>
-                        <div class="tile-content">
-                           <div class="tile-title">
+                        <BaseIcon
+                           icon-name="mdiHexagon"
+                           :class="typeClass(param.type)"
+                           :size="22"
+                           class="shrink-0"
+                        />
+                        <div class="flex-1 min-w-0">
+                           <div class="text-sm truncate">
                               {{ param.name }}
                            </div>
-                           <small class="tile-subtitle text-gray">{{ param.type }}{{ param.length ? `(${param.length})` : '' }} · {{ param.context }}</small>
+                           <div class="text-xs text-muted-foreground truncate">
+                              {{ param.type }}{{ param.length ? `(${param.length})` : '' }} · {{ param.context }}
+                           </div>
                         </div>
-                        <div class="tile-action">
-                           <button
-                              class="btn btn-link remove-field p-0 mr-2"
-                              :title="t('general.delete')"
-                              @click.prevent="removeParameter(param._antares_id)"
-                           >
-                              <BaseIcon
-                                 icon-name="mdiClose"
-                                 :size="18"
-                                 class="mt-2"
-                              />
-                           </button>
-                        </div>
+                        <Button
+                           variant="ghost"
+                           size="icon"
+                           class="param-action !h-[24px] !w-[24px] remove-field"
+                           :title="t('general.delete')"
+                           @click.prevent="removeParameter(param._antares_id)"
+                        >
+                           <BaseIcon
+                              icon-name="mdiClose"
+                              :size="16"
+                           />
+                        </Button>
                      </div>
                   </div>
                </div>
             </div>
 
-            <div class="column col-7 pl-2 editor-col">
+            <div class="col-span-7 pl-2">
                <form
                   v-if="selectedParamObj"
                   :style="{ height: modalInnerHeight + 'px'}"
-                  class="form-horizontal"
+                  class="flex flex-col gap-3"
                >
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="selectedParamObj.name"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
+                     </Label>
+                     <Input
+                        v-model="selectedParamObj.name"
+                        type="text"
+                        class="!h-[32px] !text-sm"
+                     />
                   </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.type') }}
-                     </label>
-                     <div class="column">
-                        <BaseSelect
-                           v-model="selectedParamObj.type"
-                           class="form-select text-uppercase"
-                           :options="workspace.dataTypes"
-                           group-label="group"
-                           group-values="types"
-                           option-label="name"
-                           option-track-by="name"
-                        />
-                     </div>
+                     </Label>
+                     <BaseSelect
+                        v-model="selectedParamObj.type"
+                        class="uppercase !h-[32px] !text-sm"
+                        :options="workspace.dataTypes"
+                        group-label="group"
+                        group-values="types"
+                        option-label="name"
+                        option-track-by="name"
+                     />
                   </div>
-                  <div v-if="customizations.parametersLength" class="form-group">
-                     <label class="form-label col-3">
+                  <div v-if="customizations.parametersLength" class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.length') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="selectedParamObj.length"
-                           class="form-input"
-                           type="number"
-                           min="0"
-                        >
-                     </div>
+                     </Label>
+                     <Input
+                        v-model="selectedParamObj.length"
+                        type="number"
+                        min="0"
+                        class="!h-[32px] !text-sm"
+                     />
                   </div>
-                  <div v-if="customizations.procedureContext" class="form-group">
-                     <label class="form-label col-3">
+                  <div v-if="customizations.procedureContext" class="grid grid-cols-[100px_1fr] items-start gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.context') }}
-                     </label>
-                     <div class="column">
+                     </Label>
+                     <RadioGroup v-model="selectedParamObj.context" class="flex flex-col gap-1.5 pt-1">
                         <label
                            v-for="condext in customizations.procedureContextValues"
                            :key="condext"
-                           class="form-radio"
+                           class="flex items-center gap-2 cursor-pointer text-sm"
                         >
-                           <input
-                              v-model="selectedParamObj.context"
-                              type="radio"
-                              name="context"
-                              :value="condext"
-                           > <i class="form-icon" /> {{ condext }}
+                           <RadioGroupItem :value="condext" />
+                           {{ condext }}
                         </label>
-                     </div>
+                     </RadioGroup>
                   </div>
                </form>
-               <div v-if="!parametersProxy.length" class="empty">
-                  <div class="empty-icon">
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiDotsHorizontal"
-                        :size="48"
-                     />
-                  </div>
-                  <p class="empty-title h5">
+               <div v-if="!parametersProxy.length" class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                  <BaseIcon
+                     icon-name="mdiDotsHorizontal"
+                     :size="48"
+                  />
+                  <p class="text-[15px]">
                      {{ t('database.thereAreNoParameters') }}
                   </p>
-                  <div class="empty-action">
-                     <button class="btn btn-primary" @click="addParameter">
-                        {{ t('database.createNewParameter') }}
-                     </button>
-                  </div>
+                  <Button @click="addParameter">
+                     {{ t('database.createNewParameter') }}
+                  </Button>
                </div>
             </div>
          </div>
@@ -185,6 +171,10 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const { t } = useI18n();
 
@@ -237,7 +227,7 @@ const selectParameter = (event: MouseEvent, uid: string) => {
 };
 
 const getModalInnerHeight = () => {
-   const modalBody = document.querySelector('.modal-body');
+   const modalBody = document.querySelector('[data-modal-body]');
    if (modalBody)
       modalInnerHeight.value = modalBody.clientHeight - (parseFloat(getComputedStyle(modalBody).paddingTop) + parseFloat(getComputedStyle(modalBody).paddingBottom));
 };
@@ -297,31 +287,27 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.tile {
-  border-radius: $border-radius;
+.param-row {
   opacity: 0.5;
-  transition: background 0.2s;
-  transition: opacity 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 
-  .tile-action {
+  .param-action {
     opacity: 0;
     transition: opacity 0.2s;
   }
 
   &:hover {
-    .tile-action {
+    background: rgb(255 255 255 / 0.04);
+
+    .param-action {
       opacity: 1;
     }
   }
 
   &.selected-element {
     opacity: 1;
+    background: rgb(255 255 255 / 0.06);
   }
-}
-
-.fields-list {
-  max-height: 300px;
-  overflow: auto;
 }
 
 .remove-field svg {

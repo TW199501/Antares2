@@ -12,7 +12,7 @@ export class FirebirdSQLClient extends BaseClient {
    private _runningConnections: Map<string, number>;
    private _connectionsToCommit: Map<string, firebird.Transaction>;
    protected _connection?: firebird.Database | firebird.ConnectionPool;
-   _params: firebird.Options;
+   declare _params: firebird.Options;
 
    private _types: Record<number, string> ={
       452: 'CHAR', // Array of char

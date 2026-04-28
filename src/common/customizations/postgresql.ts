@@ -8,6 +8,11 @@ export const customizations: Customizations = {
    defaultPort: 5432,
    defaultUser: 'postgres',
    defaultDatabase: 'postgres',
+   // Postgres has two layers: reserved DB names AND per-DB system schemas.
+   // For the insert-row gate we only check the DB name level (matches what
+   // workspace.schema holds in the renderer). information_schema / pg_catalog
+   // are *schemas* inside every DB, gated separately if ever needed.
+   systemSchemas: ['postgres', 'template0', 'template1'],
    dataTypes: postgresqlTypes,
    indexTypes: [
       'PRIMARY',

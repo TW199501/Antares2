@@ -23,24 +23,30 @@
          @duplicate-row="duplicateRow"
          @close-context="closeContext"
       />
-      <ul v-if="resultsWithRows.length > 1" class="tab tab-block result-tabs">
-         <li
-            v-for="(result, index) in resultsWithRows"
-            :key="index"
-            class="tab-item"
-            :class="{ 'active': resultsetIndex === index }"
-            @click="selectResultset(index)"
-         >
-            <a>{{ result.fields ? result.fields[0]?.tableAlias ?? result.fields[0]?.table : `${t('general.results')} #${index}` }} ({{ result.rows.length }})</a>
-         </li>
-      </ul>
+      <Tabs
+         v-if="resultsWithRows.length > 1"
+         :model-value="String(resultsetIndex)"
+         class="result-tabs"
+         @update:model-value="(v) => selectResultset(Number(v))"
+      >
+         <TabsList class="!h-7 !p-0.5 !bg-transparent !rounded-none gap-0.5 w-full justify-start">
+            <TabsTrigger
+               v-for="(result, index) in resultsWithRows"
+               :key="index"
+               :value="String(index)"
+               class="!text-xs !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
+            >
+               {{ result.fields ? result.fields[0]?.tableAlias ?? result.fields[0]?.table : `${t('general.results')} #${index}` }} ({{ result.rows.length }})
+            </TabsTrigger>
+         </TabsList>
+      </Tabs>
       <div ref="table" class="table table-hover">
          <div class="thead">
-            <div class="tr">
+            <div class="tr [&>.th]:!border-l [&>.th]:!border-white/40">
                <div
                   v-for="(field, index) in filteredFields"
                   :key="index"
-                  class="th c-hand"
+                  class="th cursor-pointer !h-[32px] !py-0 !align-middle !bg-primary !text-primary-foreground"
                   :title="`${field.type} ${fieldLength(field) ? `(${fieldLength(field)})` : ''}`"
                >
                   <div ref="columnResize" class="column-resizable">
@@ -54,7 +60,7 @@
                               :class="`key-${field.key}`"
                            />
                         </div>
-                        <span>{{ field.alias || field.name }}</span>
+                        <span :title="field.alias || field.name">{{ headerLabel(field) }}</span>
                         <BaseIcon
                            v-if="isSortable && currentSort[resultsetIndex]?.field === field.name || currentSort[resultsetIndex]?.field === `${field.tableAlias || field.table}.${field.name}`"
                            :icon-name="currentSort[resultsetIndex].dir === 'asc' ? 'mdiSortAscending' : 'mdiSortDescending'"
@@ -65,7 +71,7 @@
                            v-else
                            icon-name="mdiMinus"
                            :size="18"
-                           class="sort-icon d-invisible"
+                           class="sort-icon invisible"
                         />
                      </div>
                   </div>
@@ -109,7 +115,7 @@
          @hide="hideDeleteConfirmModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiDelete"
                   class="mr-1"
@@ -131,7 +137,7 @@
          @hide="chunkModalRequest = false"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiFileExport"
                   class="mr-1"
@@ -141,28 +147,21 @@
             </div>
          </template>
          <template #body>
-            <div class="columns">
-               <label class="column col-12 h6 mb-2 cut-text">{{ t('database.targetTable') }}</label>
-               <div class="column col-12">
-                  <input
-                     v-model.number="sqlExportOptions.targetTable"
-                     type="text"
-                     class="form-input"
-                     :placeholder="chunkModalRequest"
-                  >
-               </div>
-               <label class="column col-12 h6 mb-2 mt-4 cut-text">{{ t('database.newInsertStmtEvery') }}:</label>
-               <div class="column col-6">
-                  <input
+            <div class="flex flex-col gap-2">
+               <Label class="text-sm font-semibold cut-text">{{ t('database.targetTable') }}</Label>
+               <Input
+                  v-model.number="sqlExportOptions.targetTable"
+                  type="text"
+                  :placeholder="chunkModalRequest"
+               />
+               <Label class="text-sm font-semibold cut-text mt-3">{{ t('database.newInsertStmtEvery') }}:</Label>
+               <div class="grid grid-cols-2 gap-2">
+                  <Input
                      v-model.number="sqlExportOptions.sqlInsertAfter"
                      type="number"
-                     class="form-input"
-                  >
-               </div>
-               <div class="column col-6">
+                  />
                   <BaseSelect
                      v-model="sqlExportOptions.sqlInsertDivider"
-                     class="form-select"
                      :options="[{ value: 'bytes', label: 'KiB' }, { value: 'rows', label: t('database.row', 2) }]"
                   />
                </div>
@@ -176,7 +175,7 @@
          @hide="csvModalRequest = false"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex">
                <BaseIcon
                   icon-name="mdiFileExport"
                   class="mr-1"
@@ -186,63 +185,40 @@
             </div>
          </template>
          <template #body>
-            <div class="columns">
-               <div class="form-group column col-12 columns col-gapless">
-                  <div class="column col-5">
-                     <label class="form-label cut-text">{{ t('application.csvFieldDelimiter') }}:</label>
-                  </div>
-                  <div class="column col-7">
-                     <input
-                        v-model.number="csvExportOptions.fieldDelimiter"
-                        type="string"
-                        class="form-input"
-                     >
-                  </div>
+            <div class="flex flex-col gap-2">
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label class="cut-text">{{ t('application.csvFieldDelimiter') }}:</Label>
+                  <Input
+                     v-model.number="csvExportOptions.fieldDelimiter"
+                     type="text"
+                  />
                </div>
-               <div class="form-group column col-12 columns col-gapless">
-                  <div class="column col-5">
-                     <label class="form-label cut-text">{{ t('application.csvStringDelimiter') }}:</label>
-                  </div>
-                  <div class="column col-7">
-                     <BaseSelect
-                        v-model="csvExportOptions.stringDelimiter"
-                        class="form-select"
-                        :options="[
-                           { value: '', label: t('general.none') },
-                           { value: 'single', label: t('general.singleQuote') },
-                           { value: 'double', label: t('general.doubleQuote') }
-                        ]"
-                     />
-                  </div>
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label class="cut-text">{{ t('application.csvStringDelimiter') }}:</Label>
+                  <BaseSelect
+                     v-model="csvExportOptions.stringDelimiter"
+                     :options="[
+                        { value: '', label: t('general.none') },
+                        { value: 'single', label: t('general.singleQuote') },
+                        { value: 'double', label: t('general.doubleQuote') }
+                     ]"
+                  />
                </div>
-               <div class="form-group column col-12 columns col-gapless">
-                  <div class="column col-5">
-                     <label class="form-label cut-text">{{ t('application.csvLinesTerminator') }}:</label>
-                  </div>
-                  <div class="column col-7">
-                     <textarea
-                        v-model.number="csvExportOptions.linesTerminator"
-                        class="form-input"
-                        :style="'resize: none'"
-                        rows="1"
-                     />
-                  </div>
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label class="cut-text">{{ t('application.csvLinesTerminator') }}:</Label>
+                  <textarea
+                     v-model.number="csvExportOptions.linesTerminator"
+                     class="text-foreground bg-background border border-input rounded-md px-3 py-1 w-full text-sm"
+                     :style="'resize: none'"
+                     rows="1"
+                  />
                </div>
-               <div class="form-group column col-12 columns col-gapless">
-                  <div class="column col-5">
-                     <label class="form-label">
-                        {{ t('application.csvIncludeHeader') }}
-                     </label>
-                  </div>
-                  <div class="column col-7">
-                     <label
-                        class="form-switch d-inline-block"
-                        @click.prevent="csvExportOptions.header = !csvExportOptions.header"
-                     >
-                        <input type="checkbox" :checked="csvExportOptions.header">
-                        <i class="form-icon" />
-                     </label>
-                  </div>
+               <div class="grid grid-cols-[5fr_7fr] gap-2 items-center">
+                  <Label>{{ t('application.csvIncludeHeader') }}</Label>
+                  <Switch
+                     :checked="csvExportOptions.header"
+                     @update:checked="(v) => csvExportOptions.header = v"
+                  />
                </div>
             </div>
          </template>
@@ -268,6 +244,10 @@ import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import BaseVirtualScroll from '@/components/BaseVirtualScroll.vue';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableContext from '@/components/WorkspaceTabQueryTableContext.vue';
 import WorkspaceTabQueryTableRow from '@/components/WorkspaceTabQueryTableRow.vue';
 import { copyText } from '@/libs/copyText';
@@ -298,7 +278,8 @@ const props = defineProps({
       required: false
    },
    isSelected: Boolean,
-   elementType: { type: String, default: 'table' }
+   elementType: { type: String, default: 'table' },
+   useCommentHeader: { type: Boolean, default: false }
 });
 
 const emit = defineEmits<{
@@ -391,13 +372,33 @@ const sortedResults = computed(() => {
 });
 
 const resultsWithRows = computed(() => props.results.filter(result => result.rows.length));
-const fields = computed(() => resultsWithRows.value.length ? resultsWithRows.value[resultsetIndex.value].fields : []);
+// Headers must show even when the table has 0 rows (schema preview).
+// Falls back to the first un-filtered result so column metadata still renders.
+const fields = computed(() => {
+   const source = resultsWithRows.value[resultsetIndex.value] ?? props.results[0];
+   return source?.fields ?? [];
+});
+// Dedupe by deep-equality (JSON string) — prevents duplicate column headers
+// from JOIN queries that return the same field from aliased tables. Previous
+// code used `if (findIndex(...))` which is inverted: `0` is falsy so the
+// first match was silently excluded and higher indices re-pushed duplicates.
 const filteredFields = computed(() => fields.value.reduce((acc, cur) => {
-   if (acc.findIndex(f => JSON.stringify(f) === JSON.stringify(cur)))
+   if (acc.findIndex(f => JSON.stringify(f) === JSON.stringify(cur)) === -1)
       acc.push(cur);
    return acc;
 }, [] as TableField[]));
-const keyUsage = computed(() => resultsWithRows.value.length ? resultsWithRows.value[resultsetIndex.value].keys : []);
+const keyUsage = computed(() => {
+   const source = resultsWithRows.value[resultsetIndex.value] ?? props.results[0];
+   return source?.keys ?? [];
+});
+
+// Column header 顯示策略：useCommentHeader=true 時顯示 DB 欄位註解，沒註解就空白（讓使用者看出 schema 缺口）。
+// 原欄位名透過 <span title=…> 放在 tooltip 保留可操作性。
+function headerLabel (field: TableField): string {
+   if (props.useCommentHeader)
+      return field.comment ?? '';
+   return field.alias || field.name;
+}
 
 const fieldsObj = computed(() => {
    if (sortedResults.value.length) {
@@ -488,21 +489,28 @@ const setLocalResults = () => {
 };
 
 const resizeResults = () => {
-   if (resultTable.value && props.isSelected) {
-      const el = tableWrapper.value;
+   if (!props.isSelected) return;
 
-      if (el) {
-         let sizeToSubtract = 0;
-         const footer = document.getElementById('footer');
-         if (footer) sizeToSubtract += footer.offsetHeight;
+   // Height must be computed regardless of BaseVirtualScroll being mounted:
+   // when the table has 0 rows, <BaseVirtualScroll v-if> stays unmounted
+   // (see template), so gating the whole body on `resultTable.value` would
+   // leave the wrapper at height 0 and clip the header row. See e2e/
+   // mssql-empty-table-header.spec.ts for the regression this guards.
+   const el = tableWrapper.value;
+   if (el) {
+      let sizeToSubtract = 0;
+      const footer = document.getElementById('footer');
+      if (footer) sizeToSubtract += footer.offsetHeight;
 
-         sizeToSubtract += consoleHeight.value;
+      sizeToSubtract += consoleHeight.value;
 
-         const size = window.innerHeight - el.getBoundingClientRect().top - sizeToSubtract;
-         resultsSize.value = size;
-      }
-      resultTable.value.updateWindow();
+      const size = window.innerHeight - el.getBoundingClientRect().top - sizeToSubtract;
+      resultsSize.value = size;
    }
+
+   // updateWindow only makes sense when the virtual scroller is actually
+   // in the DOM (i.e. there are rows to virtualize).
+   resultTable.value?.updateWindow();
 };
 
 const refreshScroller = () => resizeResults();
@@ -811,7 +819,9 @@ const sort = (field: TableField) => {
 
    selectedRows.value = [];
    let fieldName = field.name;
-   const hasTableInFieldname = Object.keys(localResults.value[0]).find(k => k !== '_antares_id').includes('.');
+   const firstRow = localResults.value[0];
+   const sampleKey = firstRow ? Object.keys(firstRow).find(k => k !== '_antares_id') : undefined;
+   const hasTableInFieldname = !!sampleKey && sampleKey.includes('.');
 
    if (props.mode === 'query' && hasTableInFieldname)
       fieldName = `${field.tableAlias || field.table}.${field.name}`;
@@ -1062,9 +1072,15 @@ onUpdated(() => {
    });
 });
 
-onMounted(() => {
+onMounted(async () => {
    window.addEventListener('resize', resizeResults);
    window.addEventListener('keydown', onKey);
+
+   // Size the wrapper once on mount so the header is visible even when the
+   // first opened table has 0 rows (BaseVirtualScroll would never mount
+   // in that case, so onUpdated-driven sizing cannot rescue us alone).
+   await nextTick();
+   resizeResults();
 });
 
 onUnmounted(() => {

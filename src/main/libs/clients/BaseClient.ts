@@ -161,6 +161,23 @@ export abstract class BaseClient {
       throw new Error('Method "getDatabases" not implemented');
    }
 
+   async getDatabaseComment (): Promise<string> {
+      return '';
+   }
+
+   async searchColumns ({ schema, search }: { schema: string; search: string }) {
+      type ColRow = { TABLE_NAME: string; COLUMN_NAME: string };
+      const escaped = search.replace(/'/g, '\'\'');
+      const { rows } = await this.raw<antares.QueryResult<ColRow>>(`
+         SELECT TABLE_NAME, COLUMN_NAME
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = '${schema}'
+         AND COLUMN_NAME LIKE '%${escaped}%'
+         ORDER BY TABLE_NAME, ORDINAL_POSITION
+      `);
+      return (rows || []).map(r => ({ tableName: r.TABLE_NAME, columnName: r.COLUMN_NAME }));
+   }
+
    createSchema (...args: any) {
       throw new Error('Method "createSchema" not implemented');
    }

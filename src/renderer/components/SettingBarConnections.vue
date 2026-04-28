@@ -16,59 +16,62 @@
             :class="{'folder': element.isFolder}"
             @dragstart="draggedElement = element.uid"
             @dragend="dragEnd"
-            @contextmenu.prevent="emit('context', $event, element)"
          >
-            <div
-               v-if="!element.isFolder && !folderedConnections.includes(element.uid)"
-               v-tooltip="{
-                  strategy: 'fixed',
-                  placement: 'right',
-                  content: getConnectionName(element.uid)
-               }"
-               class="settingbar-element btn btn-link"
-               :class="{ 'selected': element.uid === selectedWorkspace && coveredElement !== element.uid }"
-               placement="right"
-               strategy="fixed"
-               @click.stop="selectWorkspace(element.uid)"
-            >
-               <!-- Creates a new folder -->
-               <SettingBarConnections
-                  v-if="draggedElement && !foldersUid.includes(draggedElement)"
-                  class="drag-area"
-                  :class="[{'folder-preview': coveredElement === element.uid && draggedElement !== coveredElement}]"
-                  :list="dummyNested"
-                  @dragenter="coveredElement = element.uid"
-                  @dragleave="coveredElement = false"
-                  @change="createFolder"
-               />
-               <BaseIcon
-                  v-if="coveredElement === element.uid && draggedElement !== coveredElement"
-                  class="settingbar-element-icon"
-                  icon-name="mdiFolderPlus"
-                  :size="36"
-               />
-               <template v-else>
-                  <div class="settingbar-element-icon-wrapper">
-                     <div
-                        v-if="element.icon"
-                        class="settingbar-element-icon"
-                        :class="[getStatusBadge(element.uid)]"
-                     >
-                        <BaseIcon
-                           :icon-name="camelize(element.icon)"
-                           :type="element.hasCustomIcon ? 'custom' : 'mdi'"
-                           :size="36"
-                        />
-                     </div>
-                     <div
-                        v-else
-                        class="settingbar-element-icon dbi"
-                        :class="[`dbi-${element.client}`, getStatusBadge(element.uid)]"
+            <ContextMenu v-if="!element.isFolder && !folderedConnections.includes(element.uid)">
+               <ContextMenuTrigger as-child>
+                  <div
+                     v-tooltip="{
+                        strategy: 'fixed',
+                        placement: 'right',
+                        content: getConnectionName(element.uid)
+                     }"
+                     class="settingbar-element"
+                     :class="{ 'selected': element.uid === selectedWorkspace && coveredElement !== element.uid }"
+                     placement="right"
+                     strategy="fixed"
+                     @click.stop="selectWorkspace(element.uid)"
+                  >
+                     <!-- Creates a new folder -->
+                     <SettingBarConnections
+                        v-if="draggedElement && !foldersUid.includes(draggedElement)"
+                        class="drag-area"
+                        :class="[{'folder-preview': coveredElement === element.uid && draggedElement !== coveredElement}]"
+                        :list="dummyNested"
+                        @dragenter="coveredElement = element.uid"
+                        @dragleave="coveredElement = false"
+                        @change="createFolder"
                      />
-                     <small class="settingbar-element-name">{{ element.name || getConnectionName(element.uid) }}</small>
+                     <BaseIcon
+                        v-if="coveredElement === element.uid && draggedElement !== coveredElement"
+                        class="settingbar-element-icon"
+                        icon-name="mdiFolderPlus"
+                        :size="36"
+                     />
+                     <template v-else>
+                        <div class="settingbar-element-icon-wrapper">
+                           <div
+                              v-if="element.icon"
+                              class="settingbar-element-icon"
+                              :class="[getStatusBadge(element.uid)]"
+                           >
+                              <BaseIcon
+                                 :icon-name="camelize(element.icon)"
+                                 :type="element.hasCustomIcon ? 'custom' : 'mdi'"
+                                 :size="36"
+                              />
+                           </div>
+                           <div
+                              v-else
+                              class="settingbar-element-icon dbi"
+                              :class="[`dbi-${element.client}`, getStatusBadge(element.uid)]"
+                           />
+                           <small class="settingbar-element-name">{{ element.name || getConnectionName(element.uid) }}</small>
+                        </div>
+                     </template>
                   </div>
-               </template>
-            </div>
+               </ContextMenuTrigger>
+               <SettingBarContext :context-connection="element" />
+            </ContextMenu>
             <SettingBarConnectionsFolder
                v-else-if="element.isFolder"
                :key="`${element.uid}-${element.connections.length}`"
@@ -81,7 +84,6 @@
                @uncovered="coveredElement = false"
                @folder-sort="emit('update:modelValue', localList)"
                @folder-drag="folderDrag = $event"
-               @context="emit('context', $event.event, $event.content)"
             />
          </li>
       </template>
@@ -94,6 +96,8 @@ import Draggable from 'vuedraggable';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import SettingBarConnectionsFolder from '@/components/SettingBarConnectionsFolder.vue';
+import SettingBarContext from '@/components/SettingBarContext.vue';
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { camelize } from '@/libs/camelize';
 import { SidebarElement, useConnectionsStore } from '@/stores/connections';
 import { useWorkspacesStore } from '@/stores/workspaces';
@@ -118,7 +122,6 @@ const emit = defineEmits<{
    'start': [event: any];
    'end': [event: any];
    'move': [];
-   'context': [event: MouseEvent, element: SidebarElement];
    'update:modelValue': [list: SidebarElement[]];
 }>();
 

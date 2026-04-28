@@ -11,6 +11,29 @@ export class SQLServerClient extends BaseClient {
    private _runningConnections: Map<string, mssql.Request>;
    private _connectionsToCommit: Map<string, mssql.Transaction>;
    protected _connection?: mssql.ConnectionPool;
+   declare _params: {
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      database?: string;
+      readonly?: boolean;
+      ssl?: {
+         key?: string;
+         cert?: string;
+         ca?: string;
+         ciphers?: string;
+         rejectUnauthorized?: boolean;
+      };
+      ssh?: {
+         host: string;
+         port: number;
+         username?: string;
+         password?: string;
+         privateKey?: string;
+         passphrase?: string;
+      };
+   };
 
    constructor (args: antares.ClientParams) {
       super(args);
@@ -172,6 +195,37 @@ export class SQLServerClient extends BaseClient {
       if (rows)
          return rows.map(row => row.name);
       return [];
+   }
+
+   async searchColumns ({ schema, search }: { schema: string; search: string }) {
+      type ColRow = { TABLE_NAME: string; COLUMN_NAME: string };
+      const escaped = search.replace(/'/g, '\'\'');
+      const { rows } = await this.raw<antares.QueryResult<ColRow>>(`
+         SELECT c.TABLE_NAME, c.COLUMN_NAME
+         FROM INFORMATION_SCHEMA.COLUMNS c
+         LEFT JOIN sys.objects o ON o.name = c.TABLE_NAME AND SCHEMA_NAME(o.schema_id) = c.TABLE_SCHEMA
+         LEFT JOIN sys.columns sc ON sc.object_id = o.object_id AND sc.name = c.COLUMN_NAME
+         LEFT JOIN sys.extended_properties ep ON ep.major_id = o.object_id
+            AND ep.minor_id = sc.column_id AND ep.name = 'MS_Description'
+         WHERE c.TABLE_SCHEMA = '${this._esc(schema)}'
+         AND (c.COLUMN_NAME LIKE '%${escaped}%' OR CAST(ep.value AS NVARCHAR(500)) LIKE '%${escaped}%')
+         ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION
+      `);
+      return (rows || []).map(r => ({ tableName: r.TABLE_NAME, columnName: r.COLUMN_NAME }));
+   }
+
+   async getDatabaseComment (): Promise<string> {
+      try {
+         const { rows } = await this.raw<antares.QueryResult<{ value: string }>>(`
+            SELECT CAST(value AS NVARCHAR(500)) AS value
+            FROM sys.extended_properties
+            WHERE class = 0 AND name = 'MS_Description'
+         `);
+         return rows?.[0]?.value || '';
+      }
+      catch {
+         return '';
+      }
    }
 
    async getStructure (schemas: Set<string>) {
@@ -493,6 +547,7 @@ export class SQLServerClient extends BaseClient {
    async getTableDll ({ schema, table }: { schema: string; table: string }) {
       let createSql = '';
       const columnsSql: string[] = [];
+      const columnDefs: { name: string; ddl: string }[] = [];
 
       // Table columns
       const { rows } = await this.raw(`
@@ -554,13 +609,34 @@ export class SQLServerClient extends BaseClient {
          if (column.COLUMN_DEFAULT)
             columnArr.push(`DEFAULT ${column.COLUMN_DEFAULT}`);
 
-         columnsSql.push(columnArr.join(' '));
+         const colDdl = columnArr.join(' ');
+         columnsSql.push(colDdl);
+         columnDefs.push({ name: column.COLUMN_NAME, ddl: colDdl });
       }
 
       if (Object.keys(primaryKey).length)
          columnsSql.push(`CONSTRAINT [${primaryKey.name}] PRIMARY KEY (${primaryKey.column})`);
 
-      createSql = `CREATE TABLE [${schema}].[${table}] (\n   ${columnsSql.join(',\n   ')}\n);\n`;
+      // Idempotent CREATE TABLE: skip when the table already exists.
+      // SQL Server has no native "CREATE TABLE IF NOT EXISTS", use OBJECT_ID guard.
+      createSql =
+         `IF OBJECT_ID(N'[${schema}].[${table}]', N'U') IS NULL\n` +
+         'BEGIN\n' +
+         `   CREATE TABLE [${schema}].[${table}] (\n      ${columnsSql.join(',\n      ')}\n   );\n` +
+         'END;\nGO\n';
+
+      // Backfill missing columns on tables that exist but are missing some columns.
+      // SQL Server has no "ADD COLUMN IF NOT EXISTS"; guard each ALTER with a sys.columns check.
+      if (columnDefs.length) {
+         createSql += '\n';
+         for (const col of columnDefs) {
+            createSql +=
+               `IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'${this._esc(col.name)}' AND Object_ID = Object_ID(N'[${schema}].[${table}]'))\n` +
+               'BEGIN\n' +
+               `   ALTER TABLE [${schema}].[${table}] ADD ${col.ddl};\n` +
+               'END;\nGO\n';
+         }
+      }
 
       // Non-primary indexes
       const remappedIndexes = indexes
@@ -575,10 +651,12 @@ export class SQLServerClient extends BaseClient {
          }, [] as { name: string; column: string; type: string }[]);
 
       for (const index of remappedIndexes) {
-         if (index.type === 'UNIQUE')
-            createSql += `\nCREATE UNIQUE INDEX [${index.name}] ON [${schema}].[${table}] (${index.column});`;
-         else
-            createSql += `\nCREATE INDEX [${index.name}] ON [${schema}].[${table}] (${index.column});`;
+         const indexKeyword = index.type === 'UNIQUE' ? 'UNIQUE INDEX' : 'INDEX';
+         createSql +=
+            `\nIF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'${this._esc(index.name)}' AND object_id = Object_ID(N'[${schema}].[${table}]'))\n` +
+            'BEGIN\n' +
+            `   CREATE ${indexKeyword} [${index.name}] ON [${schema}].[${table}] (${index.column});\n` +
+            'END;\nGO\n';
       }
 
       return createSql;

@@ -1,56 +1,56 @@
 <template>
-   <div class="dummy-wrapper">
-      <Teleport to="#window-content">
-         <div class="modal active" :class="modalSizeClass">
-            <a class="modal-overlay" @click="hideModal" />
-            <div ref="trapRef" class="modal-container">
-               <div v-if="hasHeader" class="modal-header pl-2">
-                  <div class="modal-title h6">
-                     <slot name="header" />
-                  </div>
-                  <a class="btn btn-clear float-right" @click="hideModal" />
-               </div>
-               <div v-if="hasDefault" class="modal-header">
-                  <div class="modal-title h6">
-                     <slot />
-                  </div>
-                  <a class="btn btn-clear float-right" @click="hideModal" />
-               </div>
-               <div v-if="hasBody" class="modal-body pb-0">
-                  <a
-                     v-if="!hasHeader && !hasDefault"
-                     class="btn btn-clear float-right"
-                     @click="hideModal"
-                  />
-                  <div class="content">
-                     <slot name="body" />
-                  </div>
-               </div>
-               <div v-if="!hideFooter" class="modal-footer">
-                  <button
-                     class="btn btn-primary mr-2"
-                     @click.stop="confirmModal"
-                  >
-                     {{ confirmText || t('general.confirm') }}
-                  </button>
-                  <button
-                     class="btn btn-link"
-                     @click="hideModal"
-                  >
-                     {{ cancelText || t('general.cancel') }}
-                  </button>
-               </div>
-            </div>
+   <Dialog :open="true" @update:open="(v) => { if (!v) hideModal(); }">
+      <DialogContent
+         :class="[modalSizeClass, '!p-0 !gap-0 !rounded-xl !shadow-2xl !border-border/70 overflow-hidden']"
+         @open-auto-focus="onOpenAutoFocus"
+         @escape-key-down.prevent="hideModal"
+         @pointer-down-outside.prevent="hideModal"
+      >
+         <DialogHeader v-if="hasHeader || hasDefault" class="px-5 pt-4 pb-3 border-b border-border/60">
+            <DialogTitle class="!text-[15px] !font-semibold !tracking-normal pr-8">
+               <slot name="header" />
+               <slot />
+            </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ confirmText || t('general.confirm') }}
+            </DialogDescription>
+         </DialogHeader>
+         <div
+            v-if="hasBody"
+            data-modal-body
+            class="px-5 py-4 overflow-auto"
+            :class="bodyMaxHeightClass"
+         >
+            <slot name="body" />
          </div>
-      </Teleport>
-   </div>
+         <DialogFooter v-if="!hideFooter" class="!flex !flex-row !justify-end !gap-2 !px-5 !py-3 border-t border-border/60 bg-muted/30">
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click="hideModal"
+            >
+               {{ cancelText || t('general.cancel') }}
+            </Button>
+            <Button
+               variant="default"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="confirmModal"
+            >
+               {{ confirmText || t('general.confirm') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, PropType, useSlots } from 'vue';
+import { computed, PropType, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const { t } = useI18n();
 
@@ -81,21 +81,24 @@ const emit = defineEmits<{
 }>();
 const slots = useSlots();
 
-const { trapRef } = useFocusTrap({ disableAutofocus: props.disableAutofocus });
-
 const hasHeader = computed(() => !!slots.header);
 const hasBody = computed(() => !!slots.body);
 const hasDefault = computed(() => !!slots.default);
+
 const modalSizeClass = computed(() => {
-   if (props.size === 'small')
-      return 'modal-sm';
-   if (props.size === '400')
-      return 'modal-400';
-   if (props.size === 'resize')
-      return 'modal-resize';
-   else if (props.size === 'large')
-      return 'modal-lg';
-   else return '';
+   switch (props.size) {
+      case 'small': return 'max-w-sm';
+      case 'medium': return 'max-w-md';
+      case '400': return 'max-w-[400px]';
+      case 'large': return 'max-w-2xl';
+      case 'resize': return 'max-w-[95vw] max-h-[95vh]';
+      default: return 'max-w-sm';
+   }
+});
+
+const bodyMaxHeightClass = computed(() => {
+   // Reserve space for header (~52px) + footer (~56px) + margin within viewport
+   return props.size === 'resize' ? 'max-h-[calc(95vh-130px)]' : 'max-h-[calc(85vh-130px)]';
 });
 
 const confirmModal = () => {
@@ -107,31 +110,7 @@ const hideModal = () => {
    emit('hide');
 };
 
-const onKey = (e: KeyboardEvent) => {
-   e.stopPropagation();
-   if (e.key === 'Escape')
-      hideModal();
+const onOpenAutoFocus = (e: Event) => {
+   if (props.disableAutofocus) e.preventDefault();
 };
-
-window.addEventListener('keydown', onKey);
-
-onBeforeUnmount(() => {
-   window.removeEventListener('keydown', onKey);
-});
 </script>
-
-<style scoped>
-.modal-400 .modal-container {
-  max-width: 400px;
-}
-
-.modal-resize .modal-container {
-  max-width: 95vw;
-  max-height: 95vh;
-  width: auto;
-}
-
-.modal.modal-sm .modal-container {
-  padding: 0;
-}
-</style>

@@ -1,0 +1,30 @@
+<script setup lang="ts">
+import { useVModel } from '@vueuse/core';
+import type { HTMLAttributes } from 'vue';
+
+import { cn } from '@/lib/utils';
+
+const props = defineProps<{
+   defaultValue?: string | number;
+   modelValue?: string | number;
+   class?: HTMLAttributes['class'];
+}>();
+
+interface InputEmits {
+   (e: 'update:modelValue', payload: string | number): void;
+}
+
+const emits = defineEmits<InputEmits>();
+
+const modelValue = useVModel(props, 'modelValue', emits, {
+   passive: true,
+   defaultValue: props.defaultValue
+});
+</script>
+
+<template>
+   <input
+      v-model="modelValue"
+      :class="cn('flex h-[34px] w-full rounded-md border border-input bg-secondary px-3 text-[13px] text-foreground transition-colors file:border-0 file:bg-transparent file:text-[13px] file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', props.class)"
+   >
+</template>

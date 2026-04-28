@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(1    python3:*)",
+      "Bash(mv rW3Dm.png 512x512.png)",
+      "Bash(mv 9cRyd.png 256x256.png)",
+      "Bash(mv wgayn.png 128x128.png)",
+      "Bash(mv oudpQ.png 64x64.png)",
+      "Bash(mv xb56x.png 32x32.png)",
+      "Bash(mv -f nmFXB.png 1024x1024.png)",
+      "Bash(ls -la *.png)",
+      "Bash(pnpm vue-tsc *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm tauri:dev)",
+      "Bash(pnpm lint:fix)",
+      "Skill(shadcn)",
+      "Skill(shadcn:*)",
+      "Bash(curl -s https://skills.sh/noartem/laravel-vue-skills/shadcn-vue)",
+      "Bash(pnpm vite:dev)",
+      "Bash(curl -sf http://localhost:5173 -o /dev/null)",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq vite*\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(cargo check *)",
+      "Bash(node -e \"['src-tauri/tauri.conf.json','src-tauri/capabilities/default.json','package.json'].forEach\\(f=>{try{JSON.parse\\(require\\('fs'\\).readFileSync\\(f,'utf8'\\)\\);console.log\\('OK',f\\)}catch\\(e\\){console.error\\('FAIL',f,e.message\\)}}\\)\")",
+      "Bash(tasklist /FI \"PID eq 21528\" /NH)",
+      "Bash(tasklist //FI \"PID eq 21528\" //NH)",
+      "Bash(taskkill //PID 21528 //F)",
+      "Bash(tasklist //FI \"PID eq 68340\" //NH)",
+      "Bash(taskkill //PID 68340 //F)",
+      "Bash(taskkill //PID 47992 //F //T)",
+      "Bash(tasklist //FI \"PID eq 60508\" //NH)"
+    ]
+  }
+}

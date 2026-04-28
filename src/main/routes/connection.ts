@@ -132,7 +132,7 @@ export default async function connectionRoutes (app: FastifyInstance) {
          port: +conn.port,
          user: conn.user,
          password: conn.password,
-         application_name: 'Antares SQL',
+         application_name: 'Antares2',
          readonly: conn.readonly,
          connectionString: conn.connString,
          database: '',

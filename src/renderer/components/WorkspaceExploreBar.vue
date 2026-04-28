@@ -1,90 +1,143 @@
 <template>
-   <div class="column col-auto p-relative">
+   <div class="shrink-0 relative">
       <div ref="resizer" class="workspace-explorebar-resizer" />
       <div
          ref="explorebar"
-         class="workspace-explorebar column"
+         class="workspace-explorebar flex flex-col outline-none"
          :style="{width: localWidth ? localWidth+'px' : ''}"
          tabindex="0"
          @keypress="explorebarSearch"
          @keydown="explorebarSearch"
       >
-         <div class="workspace-explorebar-header">
+         <div class="flex items-start gap-1.5 px-2 py-1">
             <div
                v-if="customizations.database && databases.length"
-               class="workspace-explorebar-database-switch"
-               :title="t('database.switchDatabase')"
+               class="min-w-0 flex-1"
             >
-               <BaseSelect
-                  v-model="selectedDatabase"
-                  :options="databases"
-                  class="form-select select-sm text-bold my-0"
-                  @keypress.stop=""
-                  @keydown.stop=""
-               />
-            </div>
-            <span v-else class="workspace-explorebar-title">{{ connectionName }}</span>
-            <span v-if="workspace.connectionStatus === 'connected'" class="workspace-explorebar-tools">
-               <div :title="t('database.createNewSchema')">
-                  <BaseIcon
-                     v-if="customizations.schemas"
-                     icon-name="mdiDatabasePlus"
-                     :size="18"
-                     class="c-hand mr-2"
-                     @click="showNewDBModal"
+               <div
+                  class="flex flex-col rounded-md border border-muted-foreground/40 bg-muted/40 transition-colors hover:border-ring/60 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/40"
+                  :title="t('database.switchDatabase')"
+               >
+                  <BaseSelect
+                     v-model="selectedDatabase"
+                     :options="databases"
+                     class="min-w-0 w-full text-sm font-semibold"
+                     dropdown-match-parent
+                     @keypress.stop=""
+                     @keydown.stop=""
                   />
+                  <span
+                     v-if="databaseComment"
+                     class="truncate px-2 pb-1 text-[11px] font-medium leading-tight text-muted-foreground"
+                     :title="databaseComment"
+                  >{{ databaseComment }}</span>
                </div>
-               <div :title="t('general.refresh')">
+            </div>
+            <span
+               v-else
+               class="min-w-0 flex-1 truncate self-center text-[11px] font-bold uppercase tracking-wide"
+            >{{ connectionName }}</span>
+            <div
+               v-if="workspace.connectionStatus === 'connected'"
+               class="flex shrink-0 items-center gap-0.5"
+            >
+               <button
+                  v-if="customizations.schemas"
+                  v-tooltip="{
+                     strategy: 'fixed',
+                     placement: 'bottom',
+                     content: t('database.createNewSchema')
+                  }"
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  @click="showNewDBModal"
+               >
+                  <BaseIcon icon-name="mdiDatabasePlus" :size="20" />
+               </button>
+               <button
+                  v-tooltip="{
+                     strategy: 'fixed',
+                     placement: 'bottom',
+                     content: t('general.refresh')
+                  }"
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  @click="refresh"
+               >
                   <BaseIcon
                      icon-name="mdiRefresh"
-                     :size="18"
-                     class="c-hand mr-2"
-                     :class="{'rotate':isRefreshing}"
-                     @click="refresh"
+                     :size="20"
+                     :class="{'rotate': isRefreshing}"
                   />
-               </div>
-               <div :title="t('connection.disconnect')">
-                  <BaseIcon
-                     icon-name="mdiPower"
-                     :size="18"
-                     class="c-hand"
-                     @click="disconnectWorkspace(connection.uid)"
-                  />
-               </div>
-            </span>
-         </div>
-         <div class="workspace-explorebar-search">
-            <div v-if="workspace.connectionStatus === 'connected'" class="input-group has-icon-right">
-               <div
-                  class="input-group-addon px-1 py-0 p-vcentered c-hand"
-                  :title="t('application.switchSearchMethod')"
-                  @click="toggleSearchMethod"
+               </button>
+               <button
+                  v-tooltip="{
+                     strategy: 'fixed',
+                     placement: 'bottom',
+                     content: t('connection.disconnect')
+                  }"
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
+                  @click="disconnectWorkspace(connection.uid)"
                >
-                  <BaseIcon :icon-name="searchMethod === 'elements' ? 'mdiShape' : 'mdiDatabase'" :size="18" />
-               </div>
+                  <BaseIcon icon-name="mdiPower" :size="20" />
+               </button>
+            </div>
+         </div>
+         <div
+            v-if="workspace.connectionStatus === 'connected'"
+            class="flex h-[32px] items-center gap-1 border-b border-border px-2"
+         >
+            <div class="relative flex-[1_1_55%]">
                <input
                   ref="searchInput"
                   v-model="searchTerm"
-                  class="form-input input-sm"
                   type="text"
-                  :placeholder="searchMethod === 'elements' ? t('database.searchForElements') : t('database.searchForSchemas')"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-xs placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+                  :placeholder="t('database.searchForElements')"
                >
                <BaseIcon
                   v-if="!searchTerm"
-                  class="form-icon"
                   icon-name="mdiMagnify"
-                  :size="18"
+                  :size="14"
+                  class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
                />
                <BaseIcon
                   v-else
-                  class="form-icon c-hand pr-1"
                   icon-name="mdiBackspace"
-                  :size="18"
+                  :size="14"
+                  class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
                   @click="searchTerm = ''"
                />
             </div>
+            <div class="relative flex-[1_1_45%]">
+               <input
+                  v-model="columnSearchTerm"
+                  type="text"
+                  class="h-[22px] w-full rounded-md border border-input bg-muted/40 pl-2 pr-6 text-[11px] text-foreground placeholder:text-xs placeholder:text-muted-foreground/70 transition-colors hover:border-ring/60 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+                  :placeholder="t('database.searchForColumns')"
+                  @keypress.stop=""
+                  @keydown.stop=""
+               >
+               <BaseIcon
+                  v-if="!columnSearchTerm"
+                  icon-name="mdiTableColumn"
+                  :size="14"
+                  class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
+               />
+               <BaseIcon
+                  v-else
+                  icon-name="mdiBackspace"
+                  :size="14"
+                  class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
+                  @click="columnSearchTerm = ''"
+               />
+            </div>
          </div>
-         <div class="workspace-explorebar-body" @click="explorebar.focus()">
+         <div
+            class="workspace-explorebar-body min-h-0 flex-1 overflow-auto px-1 py-1"
+            @click="explorebar.focus()"
+         >
             <WorkspaceExploreBarSchema
                v-for="db of filteredSchemas"
                :key="db.name"
@@ -92,64 +145,24 @@
                :database="db"
                :connection="connection"
                :search-method="searchMethod"
-               @show-schema-context="openSchemaContext"
-               @show-table-context="openTableContext"
-               @show-misc-context="openMiscContext"
-               @show-misc-folder-context="openMiscFolderContext"
+               :column-search-term="columnSearchTerm"
+               @reload="refresh"
+               @delete-table="deleteTable"
+               @duplicate-table="duplicateTable"
+               @open-create-table-tab="openCreateElementTab('table', $event)"
+               @open-create-view-tab="openCreateElementTab('view', $event)"
+               @open-create-materialized-view-tab="openCreateElementTab('materialized-view', $event)"
+               @open-create-trigger-tab="openCreateElementTab('trigger', $event)"
+               @open-create-routine-tab="openCreateElementTab('routine', $event)"
+               @open-create-function-tab="openCreateElementTab('function', $event)"
+               @open-create-trigger-function-tab="openCreateElementTab('trigger-function', $event)"
+               @open-create-scheduler-tab="openCreateElementTab('scheduler', $event)"
             />
          </div>
       </div>
       <ModalNewSchema
          v-if="isNewDBModal"
          @close="hideNewDBModal"
-         @reload="refresh"
-      />
-      <DatabaseContext
-         v-if="isDatabaseContext"
-         :selected-schema="selectedSchema"
-         :context-event="databaseContextEvent"
-         @close-context="closeDatabaseContext"
-         @open-create-table-tab="openCreateElementTab('table')"
-         @open-create-view-tab="openCreateElementTab('view')"
-         @open-create-materialized-view-tab="openCreateElementTab('materialized-view')"
-         @open-create-trigger-tab="openCreateElementTab('trigger')"
-         @open-create-routine-tab="openCreateElementTab('routine')"
-         @open-create-function-tab="openCreateElementTab('function')"
-         @open-create-trigger-function-tab="openCreateElementTab('trigger-function')"
-         @open-create-scheduler-tab="openCreateElementTab('scheduler')"
-         @reload="refresh"
-      />
-      <TableContext
-         v-if="isTableContext"
-         :selected-schema="selectedSchema"
-         :selected-table="selectedTable"
-         :context-event="tableContextEvent"
-         @delete-table="deleteTable"
-         @duplicate-table="duplicateTable"
-         @close-context="closeTableContext"
-         @reload="refresh"
-      />
-      <MiscContext
-         v-if="isMiscContext"
-         :selected-misc="selectedMisc"
-         :selected-schema="selectedSchema"
-         :context-event="miscContextEvent"
-         @close-context="closeMiscContext"
-         @reload="refresh"
-      />
-      <MiscFolderContext
-         v-if="isMiscFolderContext"
-         :selected-misc="selectedMisc"
-         :selected-schema="selectedSchema"
-         :context-event="miscContextEvent"
-         @open-create-view-tab="openCreateElementTab('view')"
-         @open-create-materialized-view-tab="openCreateElementTab('materialized-view')"
-         @open-create-trigger-tab="openCreateElementTab('trigger')"
-         @open-create-trigger-function-tab="openCreateElementTab('trigger-function')"
-         @open-create-routine-tab="openCreateElementTab('routine')"
-         @open-create-function-tab="openCreateElementTab('function')"
-         @open-create-scheduler-tab="openCreateElementTab('scheduler')"
-         @close-context="closeMiscFolderContext"
          @reload="refresh"
       />
    </div>
@@ -164,11 +177,7 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import ModalNewSchema from '@/components/ModalNewSchema.vue';
-import MiscContext from '@/components/WorkspaceExploreBarMiscContext.vue';
-import MiscFolderContext from '@/components/WorkspaceExploreBarMiscFolderContext.vue';
 import WorkspaceExploreBarSchema from '@/components/WorkspaceExploreBarSchema.vue';
-import DatabaseContext from '@/components/WorkspaceExploreBarSchemaContext.vue';
-import TableContext from '@/components/WorkspaceExploreBarTableContext.vue';
 import Databases from '@/ipc-api/Databases';
 import Tables from '@/ipc-api/Tables';
 import Views from '@/ipc-api/Views';
@@ -215,19 +224,11 @@ const isNewDBModal = ref(false);
 const localWidth = ref(null);
 const explorebarWidthInterval = ref(null);
 const searchTermInterval = ref(null);
-const isDatabaseContext = ref(false);
-const isTableContext = ref(false);
-const isMiscContext = ref(false);
-const isMiscFolderContext = ref(false);
-const databaseContextEvent = ref(null);
-const tableContextEvent = ref(null);
-const miscContextEvent = ref(null);
-const selectedDatabase = ref(props.connection.database);
-const selectedSchema = ref('');
-const selectedTable = ref(null);
-const selectedMisc = ref(null);
+const selectedDatabase = ref(getWorkspace(props.connection.uid)?.database || props.connection.database);
 const searchTerm = ref('');
-const searchMethod: Ref<'elements' | 'schemas'> = ref('elements');
+const columnSearchTerm = ref('');
+const databaseComment = ref('');
+const searchMethod: Ref<'elements' | 'schemas' | 'columns'> = ref('elements');
 
 const workspace = computed(() => {
    return getWorkspace(props.connection.uid);
@@ -273,6 +274,12 @@ watch(selectedDatabase, (val, oldVal) => {
       switchConnection({ ...props.connection, database: selectedDatabase.value }).catch(() => {});
 });
 
+watch(selectedDatabase, async () => {
+   if (!customizations.value.database) return;
+   const { status, response } = await Databases.getDatabaseComment(props.connection.uid);
+   databaseComment.value = status === 'success' ? (response as string) : '';
+});
+
 localWidth.value = explorebarSize.value;
 
 onMounted(async () => {
@@ -300,6 +307,9 @@ onMounted(async () => {
          }
          else
             addNotification({ status: 'error', message: response });
+
+         const { status: cs, response: comment } = await Databases.getDatabaseComment(props.connection.uid);
+         if (cs === 'success') databaseComment.value = comment as string;
       }
       catch (err) {
          addNotification({ status: 'error', message: err.stack });
@@ -342,65 +352,17 @@ const hideNewDBModal = () => {
    isNewDBModal.value = false;
 };
 
-const openCreateElementTab = (element: string) => {
-   closeDatabaseContext();
-   closeMiscFolderContext();
-
+const openCreateElementTab = (element: string, schema: string) => {
    newTab({
       uid: workspace.value.uid,
-      schema: selectedSchema.value,
+      schema,
       elementName: '',
       elementType: element,
       type: `new-${element}`
    });
 };
 
-const openSchemaContext = (payload: { schema: string; event: PointerEvent }) => {
-   selectedSchema.value = payload.schema;
-   databaseContextEvent.value = payload.event;
-   isDatabaseContext.value = true;
-};
-
-const closeDatabaseContext = () => {
-   isDatabaseContext.value = false;
-};
-
-const openTableContext = (payload: { schema: string; table: string; event: PointerEvent }) => {
-   selectedTable.value = payload.table;
-   selectedSchema.value = payload.schema;
-   tableContextEvent.value = payload.event;
-   isTableContext.value = true;
-};
-
-const closeTableContext = () => {
-   isTableContext.value = false;
-};
-
-const openMiscContext = (payload: { schema: string; misc: string; event: PointerEvent }) => {
-   selectedMisc.value = payload.misc;
-   selectedSchema.value = payload.schema;
-   miscContextEvent.value = payload.event;
-   isMiscContext.value = true;
-};
-
-const openMiscFolderContext = (payload: { schema: string; type: string; event: PointerEvent }) => {
-   selectedMisc.value = payload.type;
-   selectedSchema.value = payload.schema;
-   miscContextEvent.value = payload.event;
-   isMiscFolderContext.value = true;
-};
-
-const closeMiscContext = () => {
-   isMiscContext.value = false;
-};
-
-const closeMiscFolderContext = () => {
-   isMiscFolderContext.value = false;
-};
-
-const deleteTable = async (payload: { schema: string; table: { name: string; type: string }; event: PointerEvent }) => {
-   closeTableContext();
-
+const deleteTable = async (payload: { schema: string; table: { name: string; type: string } }) => {
    addLoadingElement({
       name: payload.table.name,
       schema: payload.schema,
@@ -451,9 +413,7 @@ const deleteTable = async (payload: { schema: string; table: { name: string; typ
    });
 };
 
-const duplicateTable = async (payload: { schema: string; table: { name: string }; event: PointerEvent }) => {
-   closeTableContext();
-
+const duplicateTable = async (payload: { schema: string; table: { name: string } }) => {
    addLoadingElement({
       name: payload.table.name,
       schema: payload.schema,
@@ -489,135 +449,48 @@ const toggleSearchMethod = () => {
 
    if (searchMethod.value === 'elements')
       searchMethod.value = 'schemas';
+   else if (searchMethod.value === 'schemas')
+      searchMethod.value = 'columns';
    else
       searchMethod.value = 'elements';
 };
 </script>
 
-<style lang="scss">
-  .workspace-explorebar-resizer {
-    position: absolute;
-    width: 4px;
-    right: -2px;
-    top: 0;
-    height: calc(100vh - #{$excluding-size});
-    cursor: ew-resize;
-    z-index: 99;
-    transition: background 0.2s;
+<style lang="scss" scoped>
+.workspace-explorebar-resizer {
+  position: absolute;
+  width: 4px;
+  right: -2px;
+  top: 0;
+  height: calc(100vh - #{$excluding-size});
+  cursor: ew-resize;
+  z-index: 99;
+  transition: background 0.2s;
 
-    &:hover {
-      background: var(--primary-color-dark);
-    }
+  &:hover {
+    background: var(--primary);
   }
+}
 
-  .workspace-explorebar {
-    width: $explorebar-width;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    text-align: left;
-    z-index: 8;
-    flex: initial;
-    position: relative;
-    padding: 0;
+.workspace-explorebar {
+  width: $explorebar-width;
+  height: calc(100vh - #{$excluding-size});
+  text-align: left;
+  z-index: 8;
+  flex: initial;
+  position: relative;
+}
 
-    &:focus {
-      outline: none;
-    }
+.workspace-explorebar-body::-webkit-scrollbar {
+  width: 4px;
+}
 
-    .workspace-explorebar-header {
-      width: 100%;
-      padding: 0.3rem;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.6rem;
-      font-weight: 700;
-      text-transform: uppercase;
+.workspace-explorebar-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+  border-radius: 2px;
+}
 
-      .workspace-explorebar-title {
-        width: 80%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-        align-items: center;
-      }
-
-      .workspace-explorebar-tools {
-        display: flex;
-        align-items: center;
-
-         svg {
-          opacity: 0.6;
-          transition: opacity 0.2s;
-          display: flex;
-          align-items: center;
-
-          &:hover {
-            opacity: 1;
-          }
-        }
-      }
-    }
-
-    .workspace-explorebar-database-switch {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      z-index: 20;
-      margin-right: 5px;
-      margin-left: -4px;
-      margin-top: -3px;
-      margin-bottom: -0.5rem;
-      height: 24px;
-
-      .form-select.select-sm {
-         font-size: 0.6rem;
-         height: 1.2rem;
-         line-height: 1rem;
-      }
-    }
-
-    .workspace-explorebar-search {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.6rem;
-      height: 28px;
-      margin: 0 0 5px 0;
-      z-index: 10;
-
-      .has-icon-right {
-        width: 100%;
-        padding: 0.1rem;
-
-        .form-icon {
-          opacity: 0.5;
-          transition: opacity 0.2s;
-        }
-
-        .form-input {
-          height: 1.2rem;
-          padding-left: 0.2rem;
-          border-radius:0 $border-radius $border-radius 0;
-
-          &:focus + .form-icon {
-            opacity: 0.9;
-          }
-
-          &::placeholder {
-            opacity: 0.6;
-          }
-        }
-      }
-    }
-
-    .workspace-explorebar-body {
-      width: 100%;
-      height: calc((100vh - 63px) - #{$excluding-size});
-      overflow: overlay;
-      padding: 0 0.1rem;
-    }
-  }
+.workspace-explorebar-body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+}
 </style>

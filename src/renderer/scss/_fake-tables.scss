@@ -27,12 +27,12 @@
 
   .td,
   .th {
-    padding: $unit-3 $unit-2;
+    padding: 0.6rem 0.4rem;
     display: table-cell;
     border-radius: 3px;
   }
 
   .th {
-    border-bottom-width: $border-width-lg;
+    border-bottom-width: 0.15rem;
   }
 }

@@ -2,7 +2,9 @@
 import 'floating-vue/dist/style.css';
 import 'leaflet/dist/leaflet.css';
 import '@/scss/main.scss';
+import '@/assets/tailwind.css';
 
+import { Buffer } from 'buffer';
 import * as FloatingVue from 'floating-vue';
 import { createPinia } from 'pinia';
 import { VueMaskDirective } from 'v-mask';
@@ -14,6 +16,7 @@ import { setNoConnectionHandler, setSidecarPort } from '@/ipc-api/httpClient';
 import { initTauriFs } from '@/libs/persistStore';
 import { useConnectionsStore } from '@/stores/connections';
 import { useSettingsStore } from '@/stores/settings';
+globalThis.Buffer = Buffer;
 
 // Sidecar port initialization
 async function initSidecar () {

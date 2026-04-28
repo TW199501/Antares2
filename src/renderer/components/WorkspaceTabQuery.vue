@@ -1,10 +1,10 @@
 <template>
    <div
       v-show="isSelected"
-      class="workspace-query-tab column col-12 columns col-gapless no-outline p-0"
+      class="workspace-query-tab no-outline flex w-full flex-col p-0"
       tabindex="0"
    >
-      <div class="workspace-query-runner column col-12">
+      <div class="workspace-query-runner flex w-full flex-col">
          <QueryEditor
             v-show="isSelected"
             id="query-editor"
@@ -24,231 +24,229 @@
                   @mouseenter="setCancelButtonVisibility(true)"
                   @mouseleave="setCancelButtonVisibility(false)"
                >
-                  <button
+                  <Button
                      v-if="showCancel && isQuering"
-                     class="btn btn-primary btn-sm cancellable"
+                     variant="destructive"
+                     size="sm"
                      :disabled="!query"
                      :title="t('general.cancel')"
+                     class="gap-1"
                      @click="killTabQuery()"
                   >
-                     <BaseIcon icon-name="mdiWindowClose" :size="24" />
-                     <span class="d-invisible pr-1">{{ t('general.run') }}</span>
-                  </button>
-                  <button
+                     <BaseIcon icon-name="mdiWindowClose" :size="16" />
+                     <span>{{ t('general.run') }}</span>
+                  </Button>
+                  <Button
                      v-else
-                     class="btn btn-primary btn-sm"
-                     :class="{'loading':isQuering}"
+                     variant="default"
+                     size="sm"
+                     :class="['gap-1', { 'opacity-70': isQuering }]"
                      :disabled="!query"
                      @click="runQuery(query)"
                   >
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiPlay"
-                        :size="24"
-                     />
+                     <BaseIcon icon-name="mdiPlay" :size="16" />
                      <span>{{ t('general.run') }}</span>
-                  </button>
+                  </Button>
                </div>
-               <button
+               <Button
                   v-if="!autocommit"
-                  class="btn btn-dark btn-sm"
-                  :class="{'loading':isQuering}"
+                  variant="secondary"
+                  size="sm"
+                  :class="['gap-1', { 'opacity-70': isQuering }]"
                   @click="commitTab()"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiCubeSend"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiCubeSend" :size="16" />
                   <span>{{ t('database.commit') }}</span>
-               </button>
-               <button
+               </Button>
+               <Button
                   v-if="!autocommit"
-                  class="btn btn-dark btn-sm"
-                  :class="{'loading':isQuering}"
+                  variant="secondary"
+                  size="sm"
+                  :class="['gap-1', { 'opacity-70': isQuering }]"
                   @click="rollbackTab()"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiUndoVariant"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiUndoVariant" :size="16" />
                   <span>{{ t('database.rollback') }}</span>
-               </button>
-               <button
-                  class="btn btn-link btn-sm mr-0"
+               </Button>
+               <Button
+                  variant="ghost"
+                  size="sm"
+                  class="gap-1"
                   :disabled="!query || isQuering"
                   @click="clear()"
                >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiDeleteSweep"
-                     :size="24"
-                  />
+                  <BaseIcon icon-name="mdiDeleteSweep" :size="16" />
                   <span>{{ t('general.clear') }}</span>
-               </button>
+               </Button>
 
-               <div class="divider-vert py-3" />
+               <div class="mx-1 h-5 w-px bg-border/60" />
 
-               <button
-                  class="btn btn-dark btn-sm"
+               <Button
+                  variant="secondary"
+                  size="icon"
+                  class="h-8 w-8"
                   :disabled="!query || isQuering"
                   :title="t('general.format')"
                   @click="beautify()"
                >
-                  <BaseIcon icon-name="mdiBrush" :size="24" />
-               </button>
-               <div class="btn-group">
+                  <BaseIcon icon-name="mdiBrush" :size="16" />
+               </Button>
+               <div class="inline-flex overflow-hidden rounded-md border border-border/60 bg-secondary">
                   <button
-                     class="btn btn-dark btn-sm mr-0"
+                     type="button"
+                     class="inline-flex h-8 w-8 items-center justify-center text-secondary-foreground transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
                      :disabled="!filePath || lastSavedQuery === query"
                      :title="t('application.saveFile')"
                      @click="saveFile()"
                   >
-                     <BaseIcon icon-name="mdiContentSaveCheckOutline" :size="24" />
+                     <BaseIcon icon-name="mdiContentSaveCheckOutline" :size="16" />
                   </button>
+                  <div class="w-px bg-border/60" />
                   <button
-                     class="btn btn-dark btn-sm mr-0"
+                     type="button"
+                     class="inline-flex h-8 w-8 items-center justify-center text-secondary-foreground transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
                      :title="t('application.saveFileAs')"
                      @click="saveFileAs()"
                   >
-                     <BaseIcon icon-name="mdiContentSavePlusOutline" :size="24" />
+                     <BaseIcon icon-name="mdiContentSavePlusOutline" :size="16" />
                   </button>
+                  <div class="w-px bg-border/60" />
                   <button
-                     class="btn btn-dark btn-sm"
+                     type="button"
+                     class="inline-flex h-8 w-8 items-center justify-center text-secondary-foreground transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
                      :title="t('application.openFile')"
                      @click="openFile()"
                   >
-                     <BaseIcon icon-name="mdiFolderOpenOutline" :size="24" />
+                     <BaseIcon icon-name="mdiFolderOpenOutline" :size="16" />
                   </button>
                </div>
-               <div class="btn-group">
+               <div class="inline-flex overflow-hidden rounded-md border border-border/60 bg-secondary">
                   <button
-                     class="btn btn-dark btn-sm mr-0"
+                     type="button"
+                     class="inline-flex h-8 w-8 items-center justify-center text-secondary-foreground transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
                      :disabled="isQuering || (isQuerySaved || query.length < 5)"
                      :title="t('application.saveAsNote')"
                      @click="saveQuery()"
                   >
-                     <BaseIcon icon-name="mdiHeartPlusOutline" :size="24" />
+                     <BaseIcon icon-name="mdiHeartPlusOutline" :size="16" />
                   </button>
+                  <div class="w-px bg-border/60" />
                   <button
-                     class="btn btn-dark btn-sm"
+                     type="button"
+                     class="inline-flex h-8 w-8 items-center justify-center text-secondary-foreground transition-colors hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
                      :disabled="isQuering"
                      :title="t('database.savedQueries')"
                      @click="openSavedModal()"
                   >
-                     <BaseIcon icon-name="mdiNotebookHeartOutline" :size="24" />
+                     <BaseIcon icon-name="mdiNotebookHeartOutline" :size="16" />
                   </button>
                </div>
-               <button
-                  class="btn btn-dark btn-sm"
+               <Button
+                  variant="secondary"
+                  size="icon"
+                  class="h-8 w-8"
                   :disabled="isQuering"
                   :title="t('general.history')"
                   @click="openHistoryModal()"
                >
-                  <BaseIcon icon-name="mdiHistory" :size="24" />
-               </button>
-               <div class="dropdown table-dropdown pr-2">
-                  <button
-                     :disabled="!hasResults || isQuering"
-                     class="btn btn-dark btn-sm dropdown-toggle mr-0 pr-0"
-                     tabindex="0"
-                  >
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiFileExport"
-                        :size="24"
-                     />
-                     <span>{{ t('database.export') }}</span>
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiMenuDown"
-                        :size="24"
-                     />
-                  </button>
-                  <ul class="menu text-left">
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('json')">JSON</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('csv')">CSV</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('php')">{{ t('application.phpArray') }}</a>
-                     </li>
-                     <li class="menu-item">
-                        <a class="c-hand" @click="downloadTable('sql')">SQL INSERT</a>
-                     </li>
-                  </ul>
-               </div>
-               <div class="input-group pr-2" :title="t('database.commitMode')">
+                  <BaseIcon icon-name="mdiHistory" :size="16" />
+               </Button>
+               <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        :disabled="!hasResults || isQuering"
+                        class="gap-1"
+                        tabindex="0"
+                     >
+                        <BaseIcon icon-name="mdiFileExport" :size="16" />
+                        <span>{{ t('database.export') }}</span>
+                        <BaseIcon icon-name="mdiMenuDown" :size="16" />
+                     </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                     <DropdownMenuItem @select="downloadTable('json')">
+                        JSON
+                     </DropdownMenuItem>
+                     <DropdownMenuItem @select="downloadTable('csv')">
+                        CSV
+                     </DropdownMenuItem>
+                     <DropdownMenuItem @select="downloadTable('php')">
+                        {{ t('application.phpArray') }}
+                     </DropdownMenuItem>
+                     <DropdownMenuItem @select="downloadTable('sql')">
+                        SQL INSERT
+                     </DropdownMenuItem>
+                  </DropdownMenuContent>
+               </DropdownMenu>
+               <div class="commit-mode-select" :title="t('database.commitMode')">
                   <BaseIcon
-                     class="input-group-addon addon-sm p-0"
                      icon-name="mdiSourceCommit"
-                     :size="28"
+                     :size="18"
+                     class="text-muted-foreground"
                   />
                   <BaseSelect
                      v-model="autocommit"
                      :options="[{value: true, label: t('database.autoCommit')}, {value: false, label: t('database.manualCommit')}]"
                      :option-label="(opt: any) => opt.label"
                      :option-track-by="(opt: any) => opt.value"
-                     class="form-select select-sm text-bold"
                   />
                </div>
             </div>
             <div class="workspace-query-info">
                <div
                   v-if="results.length"
-                  class="d-flex"
+                  class="flex items-center gap-1"
                   :title="t('database.queryDuration')"
                >
                   <BaseIcon
-                     class="mr-1 mt-1"
                      icon-name="mdiTimerSand"
                      :rotate="180"
-                     :size="16"
+                     :size="14"
+                     class="text-muted-foreground"
                   /> <b>{{ durationsCount / 1000 }}s</b>
                </div>
                <div
                   v-if="resultsCount"
-                  class="d-flex"
+                  class="flex items-center gap-1"
                   :title="t('general.results')"
                >
                   <BaseIcon
-                     class="mr-1 mt-1"
                      icon-name="mdiEqual"
-                     :size="16"
-                  /> <b>{{ resultsCount.toLocaleString() }}</b>
+                     :size="14"
+                     class="text-muted-foreground"
+                  />
+                  <b>{{ resultsCount.toLocaleString() }}</b>
                </div>
                <div
                   v-if="hasAffected"
-                  class="d-flex"
+                  class="flex items-center gap-1"
                   :title="t('database.affectedRows')"
                >
                   <BaseIcon
-                     class="mr-1 mt-1"
                      icon-name="mdiTarget"
-                     :size="16"
-                  />  <b>{{ affectedCount }}</b>
-               </div>
-               <div class="input-group" :title="t('database.schema')">
-                  <BaseIcon
-                     class="input-group-addon addon-sm p-0 px-1"
-                     icon-name="mdiDatabase"
-                     :size="28"
+                     :size="14"
+                     class="text-muted-foreground"
                   />
-
+                  <b>{{ affectedCount }}</b>
+               </div>
+               <div class="schema-select" :title="t('database.schema')">
+                  <BaseIcon
+                     icon-name="mdiDatabase"
+                     :size="18"
+                     class="text-muted-foreground"
+                  />
                   <BaseSelect
                      v-model="selectedSchema"
                      :options="[{value: null, label: t('database.noSchema')}, ...databaseSchemas.map(el => ({label: el, value: el}))]"
-                     class="form-select select-sm text-bold"
                   />
                </div>
             </div>
          </div>
       </div>
       <WorkspaceTabQueryEmptyState v-if="!results.length && !isQuering" :customizations="workspace.customizations" />
-      <div class="workspace-query-results p-relative column col-12">
+      <div class="workspace-query-results p-relative w-full">
          <BaseLoader v-if="isQuering" />
          <WorkspaceTabQueryTable
             v-if="results"
@@ -287,6 +285,8 @@ import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import ModalHistory from '@/components/ModalHistory.vue';
 import QueryEditor from '@/components/QueryEditor.vue';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceTabQueryEmptyState from '@/components/WorkspaceTabQueryEmptyState.vue';
 import WorkspaceTabQueryTable from '@/components/WorkspaceTabQueryTable.vue';
 import { useResultTables } from '@/composables/useResultTables';
@@ -409,7 +409,7 @@ watch(queryName, (val) => {
 
 watch(() => props.isSelected, (val) => {
    if (val) {
-      changeBreadcrumbs({ schema: selectedSchema.value, query: `Query #${props.tab.index}` });
+      changeBreadcrumbs({ schema: selectedSchema.value, query: t('database.queryTabLabel', { n: props.tab.index }) });
       setTimeout(() => {
          if (queryEditor.value)
             queryEditor.value.editor.focus();
@@ -418,7 +418,7 @@ watch(() => props.isSelected, (val) => {
 });
 
 watch(selectedSchema, () => {
-   changeBreadcrumbs({ schema: selectedSchema.value, query: `Query #${props.tab.index}` });
+   changeBreadcrumbs({ schema: selectedSchema.value, query: t('database.queryTabLabel', { n: props.tab.index }) });
 });
 
 watch(databaseSchemas, () => {
@@ -832,7 +832,7 @@ onBeforeUnmount(() => {
       transition: background 0.2s;
 
       &:hover {
-         background: var(--primary-color-dark);
+        background: var(--primary);
       }
     }
 
@@ -841,29 +841,58 @@ onBeforeUnmount(() => {
       flex-wrap: wrap;
       row-gap: 0.4rem;
       justify-content: space-between;
-      padding: 0.3rem 0.6rem 0.4rem;
+      padding: 6px 10px;
       align-items: center;
-      min-height: 42px;
+      min-height: 44px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      backdrop-filter: blur(4px);
 
-      .workspace-query-buttons,
+      .workspace-query-buttons {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
       .workspace-query-info {
         display: flex;
         align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--foreground);
 
-        .btn {
-          display: flex;
-          align-self: center;
-          margin-right: 0.4rem;
+        b {
+          font-weight: 600;
         }
       }
 
-      .workspace-query-info {
-        overflow: visible;
+      .commit-mode-select,
+      .schema-select {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 4px;
+        height: 32px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--secondary);
 
-        > div + div {
-          padding-left: 0.6rem;
+        :deep(.select-base) {
+          border: none;
+          background: transparent;
+          height: 28px;
+          min-width: 120px;
+          color: var(--foreground);
+          font-size: 12px;
+
+          &:focus {
+            box-shadow: none;
+          }
         }
       }
+
     }
   }
 
@@ -871,4 +900,4 @@ onBeforeUnmount(() => {
     min-height: 200px;
   }
 }
-</style>filePathsfilePathsfilePaths
+</style>

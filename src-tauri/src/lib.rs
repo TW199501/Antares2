@@ -24,7 +24,6 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![get_sidecar_port, get_sidecar_token])
         .setup(|app| {
             // Enable DevTools in all builds for debugging
@@ -46,5 +45,5 @@ pub fn run() {
             }
         })
         .run(tauri::generate_context!())
-        .expect("error running Antares SQL");
+        .expect("error running Antares2");
 }

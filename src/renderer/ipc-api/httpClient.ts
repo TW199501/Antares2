@@ -18,6 +18,12 @@ export function setNoConnectionHandler (handler: (uid: string) => void) {
 }
 
 async function getToken (): Promise<string> {
+   // Dev-only: when running in a plain browser (e.g. Playwright at
+   // http://localhost:5173/) there is no Tauri runtime. The dev sidecar
+   // (started via `vite.config.ts` with `--port 5555`) skips token
+   // validation entirely, so return an empty string.
+   if (typeof window !== 'undefined' && !('__TAURI_INTERNALS__' in window))
+      return '';
    if (!sidecarToken.value)
       sidecarToken.value = await invoke<string>('get_sidecar_token');
    return sidecarToken.value;

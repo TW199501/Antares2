@@ -1,10 +1,12 @@
 <template>
-   <div class="p-relative">
-      <div class="empty">
-         <div class="empty-icon">
-            <BaseIcon icon-name="mdiInformationOutline" :size="48" />
-         </div>
-         <p class="empty-title h5">
+   <div class="relative">
+      <div class="flex flex-col items-center justify-center gap-3 py-8">
+         <BaseIcon
+            icon-name="mdiInformationOutline"
+            :size="48"
+            class="text-muted-foreground"
+         />
+         <p class="text-[18px] font-semibold">
             v{{ appVersion }}
          </p>
       </div>

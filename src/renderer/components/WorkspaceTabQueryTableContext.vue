@@ -1,151 +1,85 @@
 <template>
-   <BaseContextMenu
-      :context-event="contextEvent"
-      @close-context="closeContext"
-   >
-      <div class="context-element">
-         <span class="d-flex">
-            <BaseIcon
-               icon-name="mdiContentCopy"
-               class="mr-1 mt-1"
-               :size="18"
-            /> {{ t('general.copy') }}</span>
-         <BaseIcon
-            icon-name="mdiChevronRight"
-            class="mt-1 text-light"
-            :size="18"
-         />
-         <div class="context-submenu">
-            <div
+   <ContextMenuContent class="min-w-[200px]">
+      <ContextMenuSub>
+         <ContextMenuSubTrigger>
+            <BaseIcon icon-name="mdiContentCopy" :size="16" />
+            <span>{{ t('general.copy') }}</span>
+         </ContextMenuSubTrigger>
+         <ContextMenuSubContent class="min-w-[220px]">
+            <ContextMenuItem
                v-if="selectedRows.length === 1"
-               class="context-element"
-               @click="copyCell"
+               @select="copyCell"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     icon-name="mdiNumeric0"
-                     class="mr-1 mt-1 text-light"
-                     :rotate="90"
-                     :size="18"
-                  /> {{ t('database.cell', 1) }}
-               </span>
-            </div>
-            <div class="context-element" @click="copyRow('html')">
-               <span class="d-flex">
-                  <BaseIcon
-                     icon-name="mdiTableRow"
-                     class="mr-1 mt-1 text-light"
-                     :size="18"
-                  /> {{ t('database.row', selectedRows.length) }} ({{ t('database.table') }})
-               </span>
-            </div>
-            <div class="context-element" @click="copyRow('json')">
-               <span class="d-flex">
-                  <BaseIcon
-                     icon-name="mdiTableRow"
-                     class="mr-1 mt-1 text-light"
-                     :size="18"
-                  /> {{ t('database.row', selectedRows.length) }} (JSON)
-               </span>
-            </div>
-            <div class="context-element" @click="copyRow('csv')">
-               <span class="d-flex">
-                  <BaseIcon
-                     icon-name="mdiTableRow"
-                     class="mr-1 mt-1 text-light"
-                     :size="18"
-                  /> {{ t('database.row', selectedRows.length) }} (CSV)
-               </span>
-            </div>
-            <div class="context-element" @click="copyRow('php')">
-               <span class="d-flex">
-                  <BaseIcon
-                     icon-name="mdiTableRow"
-                     class="mr-1 mt-1 text-light"
-                     :size="18"
-                  /> {{ t('database.row', selectedRows.length) }} (PHP)
-               </span>
-            </div>
-            <div class="context-element" @click="copyRow('sql')">
-               <span class="d-flex">
-                  <BaseIcon
-                     icon-name="mdiTableRow"
-                     class="mr-1 mt-1 text-light"
-                     :size="18"
-                  /> {{ t('database.row', selectedRows.length) }} (SQL INSERT)
-               </span>
-            </div>
-         </div>
-      </div>
-      <div
+               <BaseIcon
+                  icon-name="mdiNumeric0"
+                  :rotate="90"
+                  :size="16"
+               />
+               <span>{{ t('database.cell', 1) }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="copyRow('html')">
+               <BaseIcon icon-name="mdiTableRow" :size="16" />
+               <span>{{ t('database.row', selectedRows.length) }} ({{ t('database.table') }})</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="copyRow('json')">
+               <BaseIcon icon-name="mdiTableRow" :size="16" />
+               <span>{{ t('database.row', selectedRows.length) }} (JSON)</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="copyRow('csv')">
+               <BaseIcon icon-name="mdiTableRow" :size="16" />
+               <span>{{ t('database.row', selectedRows.length) }} (CSV)</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="copyRow('php')">
+               <BaseIcon icon-name="mdiTableRow" :size="16" />
+               <span>{{ t('database.row', selectedRows.length) }} (PHP)</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="copyRow('sql')">
+               <BaseIcon icon-name="mdiTableRow" :size="16" />
+               <span>{{ t('database.row', selectedRows.length) }} (SQL INSERT)</span>
+            </ContextMenuItem>
+         </ContextMenuSubContent>
+      </ContextMenuSub>
+      <ContextMenuItem
          v-if="selectedRows.length === 1 && selectedCell.isEditable && mode === 'table'"
-         class="context-element"
-         @click="duplicateRow"
+         @select="duplicateRow"
       >
-         <span class="d-flex">
-            <BaseIcon
-               icon-name="mdiContentDuplicate"
-               class="mr-1 mt-1 text-light"
-               :size="18"
-            /> {{ t('general.duplicate') }}
-         </span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiContentDuplicate" :size="16" />
+         <span>{{ t('general.duplicate') }}</span>
+      </ContextMenuItem>
+      <ContextMenuSub
          v-if="selectedRows.length === 1 && selectedCell.isEditable && mode === 'table' && fakerGroup"
-         class="context-element"
       >
-         <span class="d-flex">
-            <BaseIcon
-               icon-name="mdiAutoFix"
-               class="mr-1 mt-1 text-light"
-               :size="18"
-            /> {{ t('database.fillCell') }}
-         </span>
-         <BaseIcon
-            icon-name="mdiChevronRight"
-            class="mt-1 text-light"
-            :size="18"
-         />
-         <div class="context-submenu">
-            <div
+         <ContextMenuSubTrigger>
+            <BaseIcon icon-name="mdiAutoFix" :size="16" />
+            <span>{{ t('database.fillCell') }}</span>
+         </ContextMenuSubTrigger>
+         <ContextMenuSubContent class="min-w-[180px]">
+            <ContextMenuItem
                v-for="method in fakerMethods[fakerGroup]"
                :key="method.name"
-               class="context-element"
-               @click="fillCell(method)"
+               @select="fillCell(method)"
             >
-               <span class="d-flex">
-                  {{ t(`faker.${method.name}`) }}
-               </span>
-            </div>
-         </div>
-      </div>
-      <div
+               <span>{{ t(`faker.${method.name}`) }}</span>
+            </ContextMenuItem>
+         </ContextMenuSubContent>
+      </ContextMenuSub>
+      <ContextMenuItem
          v-if="selectedRows.length === 1 && selectedCell.isEditable"
-         class="context-element"
-         @click="setNull"
+         @select="setNull"
       >
-         <span class="d-flex">
-            <BaseIcon
-               icon-name="mdiNull"
-               class="mr-1 mt-1 text-light"
-               :size="18"
-            /> {{ t('database.setNull') }}
-         </span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiNull" :size="16" />
+         <span>{{ t('database.setNull') }}</span>
+      </ContextMenuItem>
+      <ContextMenuSeparator v-if="selectedCell.isEditable" />
+      <ContextMenuItem
          v-if="selectedCell.isEditable"
-         class="context-element"
-         @click="showConfirmModal"
+         class="text-destructive focus:text-destructive"
+         @select="showConfirmModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               icon-name="mdiDelete"
-               class="mr-1 mt-1 text-light"
-               :size="18"
-            /> {{ t('database.deleteRows', selectedRows.length) }}
-         </span>
-      </div>
-   </BaseContextMenu>
+         <BaseIcon icon-name="mdiDelete" :size="16" />
+         <span>{{ t('database.deleteRows', selectedRows.length) }}</span>
+      </ContextMenuItem>
+   </ContextMenuContent>
 </template>
 
 <script setup lang="ts">
@@ -153,13 +87,19 @@ import { DATE, DATETIME, FLOAT, LONG_TEXT, NUMBER, TEXT, TIME, UUID } from 'comm
 import { computed, Prop } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
+import {
+   ContextMenuContent,
+   ContextMenuItem,
+   ContextMenuSeparator,
+   ContextMenuSub,
+   ContextMenuSubContent,
+   ContextMenuSubTrigger
+} from '@/components/ui/context-menu';
 
 const { t } = useI18n();
 
 const props = defineProps({
-   contextEvent: MouseEvent,
    selectedRows: Array,
    selectedCell: Object,
    mode: String as Prop<'table' | 'query'>
@@ -167,7 +107,6 @@ const props = defineProps({
 
 const emit = defineEmits<{
    'show-delete-modal': [e?: any];
-   'close-context': [];
    'set-null': [];
    'copy-cell': [];
    'copy-row': [format: string];
@@ -231,32 +170,23 @@ const showConfirmModal = () => {
    emit('show-delete-modal');
 };
 
-const closeContext = () => {
-   emit('close-context');
-};
-
 const setNull = () => {
    emit('set-null');
-   closeContext();
 };
 
 const copyCell = () => {
    emit('copy-cell');
-   closeContext();
 };
 
 const copyRow = (format: string) => {
    emit('copy-row', format);
-   closeContext();
 };
 
 const duplicateRow = () => {
    emit('duplicate-row');
-   closeContext();
 };
 
 const fillCell = (method: {name: string; group: string}) => {
    emit('fill-cell', { ...method, type: fakerGroup.value });
-   closeContext();
 };
 </script>

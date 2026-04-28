@@ -1,12 +1,12 @@
 [package]
-name = "antares-sql"
-version = "0.8.0"
+name = "antares2"
+version = "0.8.1"
 description = "A modern, fast SQL client"
-authors = ["you"]
+authors = ["TW199501"]
 edition = "2021"
 
 [lib]
-name = "antares_sql_lib"
+name = "antares2_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
@@ -25,3 +25,9 @@ tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# sidecar.rs uses libc::kill on macOS/Linux to terminate the Node child process.
+# Windows uses taskkill (no crate needed). Scoping to cfg(unix) keeps Windows
+# builds from pulling libc.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

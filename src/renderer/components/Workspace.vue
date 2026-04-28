@@ -1,5 +1,5 @@
 <template>
-   <div v-show="isSelected" class="workspace column columns col-gapless">
+   <div v-show="isSelected" class="workspace flex flex-row w-full">
       <WorkspaceTabsContext
          v-if="isTabContext"
          :context-event="contextEvent"
@@ -15,437 +15,467 @@
          :connection="connection"
          :is-selected="isSelected"
       />
-      <div class="workspace-tabs column">
-         <div v-if="workspace?.connectionStatus === 'connected'" class="columns col-gapless">
-            <Draggable
-               ref="tabWrap"
-               v-model="draggableTabs"
-               tag="ul"
-               item-key="uid"
-               group="tabs"
-               class="tab tab-block column col-12"
-               draggable=".tab-draggable"
-               @mouseover="addWheelEvent"
-            >
-               <template #item="{element}">
-                  <li
-                     class="tab-item tab-draggable"
-                     :draggable="true"
-                     :class="{'active': selectedTab === element.uid}"
-                     @mousedown.left="selectTab({uid: workspace.uid, tab: element.uid})"
-                     @mouseup.middle="closeTab(element)"
-                     @contextmenu.prevent="contextMenu($event, element)"
-                  >
-                     <a
-                        v-if="element.type === 'query'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
+      <div class="workspace-tabs flex-1 min-w-0 flex flex-col">
+         <template v-if="workspace?.connectionStatus === 'connected'">
+            <div class="flex flex-row flex-shrink-0">
+               <Draggable
+                  ref="tabWrap"
+                  v-model="draggableTabs"
+                  tag="ul"
+                  item-key="uid"
+                  group="tabs"
+                  class="ws-tabs-row w-full"
+                  draggable=".tab-draggable"
+                  @mouseover="addWheelEvent"
+               >
+                  <template #item="{element}">
+                     <li
+                        class="ws-tab-cell tab-draggable"
+                        :draggable="true"
+                        :class="{'active': selectedTab === element.uid}"
+                        @mousedown.left="selectTab({uid: workspace.uid, tab: element.uid})"
+                        @mouseup.middle="closeTab(element)"
+                        @contextmenu.prevent="contextMenu($event, element)"
                      >
-                        <BaseIcon
-                           class="mt-1 mr-1"
-                           :icon-name="element.filePath ? 'mdiFileCodeOutline' : 'mdiCodeTags'"
-                           :size="18"
-                        />
-                        <span>
-                           <span>{{ cutText(element.elementName || element.content || 'Query', 20, true) }} #{{ element.index }}</span>
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'temp-data'"
-                        class="tab-link"
-                        @dblclick="openAsPermanentTab(element)"
-                     >
-                        <BaseIcon
-                           class="mt-1 mr-1"
-                           :icon-name="['view', 'materializedView'].includes(element.elementType) ? 'mdiTableEye' : 'mdiTable'"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
-                           <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a v-else-if="element.type === 'data'" class="tab-link">
-                        <BaseIcon
-                           class="mt-1 mr-1"
-                           :icon-name="['view', 'materializedView'].includes(element.elementType) ? 'mdiTableEye' : 'mdiTable'"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
-                           {{ cutText(element.elementName, 20, true) }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-table'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newTable') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'table-props'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiWrenchCog"
-                           :size="18"
-                        />
-                        <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ cutText(element.elementName, 20, true) }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'view-props'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiWrenchCog"
-                           :size="18"
-                        />
-                        <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.view`)}`">
-                           {{ cutText(element.elementName, 20, true) }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'materialized-view-props'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiWrenchCog"
-                           :size="18"
-                        />
-                        <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.view`)}`">
-                           {{ cutText(element.elementName, 20, true) }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-view'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newView') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-materialized-view'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newMaterializedView') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-trigger'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newTrigger') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-routine'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newRoutine') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-function'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newFunction') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-trigger-function'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newTriggerFunction') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type === 'new-scheduler'"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiShapeSquarePlus"
-                           :size="18"
-                        />
-                        <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ t('database.newScheduler') }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else-if="element.type.includes('temp-')"
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                        @dblclick="openAsPermanentTab(element)"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiWrenchCog"
-                           :size="18"
-                        />
-                        <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-
-                     <a
-                        v-else
-                        class="tab-link"
-                        :class="{'badge': element.isChanged}"
-                     >
-                        <BaseIcon
-                           class="mr-1"
-                           icon-name="mdiWrenchCog"
-                           :size="18"
-                        />
-                        <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
-                           {{ cutText(element.elementName, 20, true) }}
-                           <span
-                              class="btn btn-clear"
-                              :title="t('general.close')"
-                              @mousedown.left.stop
-                              @click.stop="closeTab(element)"
-                           />
-                        </span>
-                     </a>
-                  </li>
-               </template>
-               <template #header>
-                  <li
-                     v-if="workspace.customizations.processesList"
-                     class="tab-item dropdown tools-dropdown"
-                  >
-                     <a
-                        class="tab-link workspace-tools-link dropdown-toggle"
-                        tabindex="0"
-                        :title="t('general.tools')"
-                     >
-                        <BaseIcon icon-name="mdiTools" :size="24" />
-                     </a>
-                     <ul v-if="hasTools" class="menu text-left text-uppercase">
-                        <li class="menu-item">
-                           <a class="c-hand p-vcentered" @click="showProcessesModal">
-                              <BaseIcon
-                                 icon-name="mdiMemory"
-                                 :size="18"
-                                 class="mr-1 tool-icon"
-                              />
-                              <span>{{ t('database.processesList') }}</span>
-                           </a>
-                        </li>
-                        <li class="menu-item">
-                           <a class="c-hand p-vcentered" @click="toggleConsole">
-                              <BaseIcon
-                                 icon-name="mdiConsoleLine"
-                                 :size="18"
-                                 class="mr-1 tool-icon"
-                              />
-                              <span>{{ t('application.console') }}</span>
-                           </a>
-                        </li>
-                        <li
-                           v-if="workspace.customizations.variables"
-                           class="menu-item"
-                           title="Coming..."
+                        <a
+                           v-if="element.type === 'query'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
                         >
-                           <a class="c-hand p-vcentered disabled">
-                              <BaseIcon
-                                 icon-name="mdiShape"
-                                 :size="18"
-                                 class="mr-1 tool-icon"
-                              />
-                              <span>{{ t('database.variables') }}</span>
-                           </a>
-                        </li>
-                        <li
-                           v-if="workspace.customizations.usersManagement"
-                           class="menu-item"
-                           title="Coming..."
+                           <BaseIcon
+                              class="mt-1 mr-1"
+                              :icon-name="element.filePath ? 'mdiFileCodeOutline' : 'mdiCodeTags'"
+                              :size="18"
+                           />
+                           <span>
+                              <span>{{ cutText(element.elementName || element.content || 'Query', 20, true) }} #{{ element.index }}</span>
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'temp-data'"
+                           class="tab-link"
+                           @dblclick="openAsPermanentTab(element)"
                         >
-                           <a class="c-hand p-vcentered disabled">
-                              <BaseIcon
-                                 icon-name="mdiAccountGroup"
-                                 :size="18"
-                                 class="mr-1 tool-icon"
-                              />
-                              <span>{{ t('database.manageUsers') }}</span>
-                           </a>
-                        </li>
-                     </ul>
-                  </li>
-               </template>
-               <template #footer>
-                  <li class="tab-item">
-                     <a
-                        class="tab-add"
-                        :title="t('application.openNewTab')"
-                        @click="addQueryTab"
+                           <BaseIcon
+                              class="mt-1 mr-1"
+                              :icon-name="['view', 'materializedView'].includes(element.elementType) ? 'mdiTableEye' : 'mdiTable'"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
+                              <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a v-else-if="element.type === 'data'" class="tab-link">
+                           <BaseIcon
+                              class="mt-1 mr-1"
+                              :icon-name="['view', 'materializedView'].includes(element.elementType) ? 'mdiTableEye' : 'mdiTable'"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.data').toUpperCase()}: ${t('database.' + element.elementType)}`">
+                              {{ cutText(element.elementName, 20, true) }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-table'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newTable') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'table-props'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiWrenchCog"
+                              :size="18"
+                           />
+                           <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ cutText(element.elementName, 20, true) }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'view-props'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiWrenchCog"
+                              :size="18"
+                           />
+                           <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.view`)}`">
+                              {{ cutText(element.elementName, 20, true) }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'materialized-view-props'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiWrenchCog"
+                              :size="18"
+                           />
+                           <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.view`)}`">
+                              {{ cutText(element.elementName, 20, true) }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-view'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newView') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-materialized-view'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newMaterializedView') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-trigger'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newTrigger') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-routine'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newRoutine') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-function'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newFunction') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-trigger-function'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newTriggerFunction') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type === 'new-scheduler'"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiShapeSquarePlus"
+                              :size="18"
+                           />
+                           <span :title="`${t('general.new').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ t('database.newScheduler') }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else-if="element.type.includes('temp-')"
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                           @dblclick="openAsPermanentTab(element)"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiWrenchCog"
+                              :size="18"
+                           />
+                           <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              <span class=" text-italic">{{ cutText(element.elementName, 20, true) }}</span>
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+
+                        <a
+                           v-else
+                           class="tab-link"
+                           :class="{'badge': element.isChanged}"
+                        >
+                           <BaseIcon
+                              class="mr-1"
+                              icon-name="mdiWrenchCog"
+                              :size="18"
+                           />
+                           <span :title="`${t('application.settings').toUpperCase()}: ${t(`database.${element.elementType}`)}`">
+                              {{ cutText(element.elementName, 20, true) }}
+                              <span
+                                 class="tab-close inline-flex items-center justify-center w-4 h-4 ml-1 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                 :title="t('general.close')"
+                                 @mousedown.left.stop
+                                 @click.stop="closeTab(element)"
+                              >
+                                 <BaseIcon icon-name="mdiClose" :size="12" />
+                              </span>
+                           </span>
+                        </a>
+                     </li>
+                  </template>
+                  <template #header>
+                     <li
+                        v-if="workspace.customizations.processesList"
+                        class="ws-tab-cell ws-tab-tools"
                      >
-                        <BaseIcon icon-name="mdiPlus" :size="24" />
-                     </a>
-                  </li>
-               </template>
-            </Draggable>
+                        <DropdownMenu>
+                           <DropdownMenuTrigger as-child>
+                              <a
+                                 class="workspace-tools-link"
+                                 tabindex="0"
+                                 :title="t('general.tools')"
+                              >
+                                 <BaseIcon icon-name="mdiTools" :size="24" />
+                              </a>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent v-if="hasTools" align="start">
+                              <DropdownMenuItem @select="showProcessesModal">
+                                 <BaseIcon
+                                    icon-name="mdiMemory"
+                                    :size="18"
+                                    class="mr-1"
+                                 />
+                                 <span>{{ t('database.processesList') }}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem @select="toggleConsole">
+                                 <BaseIcon
+                                    icon-name="mdiConsoleLine"
+                                    :size="18"
+                                    class="mr-1"
+                                 />
+                                 <span>{{ t('application.console') }}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                 v-if="workspace.customizations.variables"
+                                 disabled
+                                 title="Coming..."
+                              >
+                                 <BaseIcon
+                                    icon-name="mdiShape"
+                                    :size="18"
+                                    class="mr-1"
+                                 />
+                                 <span>{{ t('database.variables') }}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                 v-if="workspace.customizations.usersManagement"
+                                 disabled
+                                 title="Coming..."
+                              >
+                                 <BaseIcon
+                                    icon-name="mdiAccountGroup"
+                                    :size="18"
+                                    class="mr-1"
+                                 />
+                                 <span>{{ t('database.manageUsers') }}</span>
+                              </DropdownMenuItem>
+                           </DropdownMenuContent>
+                        </DropdownMenu>
+                     </li>
+                  </template>
+                  <template #footer>
+                     <li class="ws-tab-cell">
+                        <a
+                           class="tab-add"
+                           :title="t('application.openNewTab')"
+                           @click="addQueryTab"
+                        >
+                           <BaseIcon icon-name="mdiPlus" :size="24" />
+                        </a>
+                     </li>
+                  </template>
+               </Draggable>
+            </div>
             <WorkspaceEmptyState v-if="!draggableTabs.length" @new-tab="addQueryTab" />
             <template v-for="tab of draggableTabs" :key="tab.uid">
                <WorkspaceTabQuery
@@ -598,9 +628,15 @@
                   :schema="tab.schema"
                />
             </template>
-         </div>
-         <div v-else class="connection-panel-wrapper p-relative">
-            <WorkspaceEditConnectionPanel :connection="connection" />
+         </template>
+         <div v-else class="connection-panel-wrapper relative">
+            <div
+               v-if="workspace?.connectionStatus === 'connecting'"
+               class="flex items-center justify-center w-full h-full"
+            >
+               <div class="loading loading-lg" />
+            </div>
+            <WorkspaceEditConnectionPanel v-else :connection="connection" />
          </div>
          <DebugConsole v-if="isConsoleOpen" :uid="workspace.uid" />
       </div>
@@ -629,6 +665,7 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import DebugConsole from '@/components/DebugConsole.vue';
 import ModalDiscardChanges from '@/components/ModalDiscardChanges.vue';
 import ModalProcessesList from '@/components/ModalProcessesList.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceEditConnectionPanel from '@/components/WorkspaceEditConnectionPanel.vue';
 import WorkspaceEmptyState from '@/components/WorkspaceEmptyState.vue';
 import WorkspaceExploreBar from '@/components/WorkspaceExploreBar.vue';
@@ -909,20 +946,23 @@ onUnmounted(() => {
     height: calc(100vh - #{$excluding-size});
     position: relative;
 
-    .tab-block {
+    .ws-tabs-row {
       margin-top: 0;
+      display: flex;
       flex-direction: row;
       align-items: flex-start;
       flex-wrap: nowrap;
       overflow: auto;
       margin-bottom: 0;
+      list-style: none;
+      padding: 0;
 
       &::-webkit-scrollbar {
         width: 2px;
         height: 2px;
       }
 
-      .tab-item {
+      .ws-tab-cell {
         width: fit-content;
         flex: initial;
 
@@ -940,8 +980,7 @@ onUnmounted(() => {
             top: 25px;
           }
 
-          .btn-clear {
-            margin-left: 0.5rem;
+          .tab-close {
             opacity: 0;
             transition: opacity 0.2s;
           }
@@ -949,7 +988,7 @@ onUnmounted(() => {
           &:hover {
             opacity: 1;
 
-            .btn-clear {
+            .tab-close {
               opacity: 1;
             }
           }
@@ -971,52 +1010,25 @@ onUnmounted(() => {
         &.active a {
           opacity: 1;
 
-          .btn-clear {
+          .tab-close {
             opacity: 1;
           }
         }
 
-        &.tools-dropdown {
+        &.ws-tab-tools {
           height: 34px;
 
-          .tab-link:focus {
-            opacity: 1;
-            outline: 0;
-            box-shadow: none;
-          }
-
-          .menu {
-            min-width: 100%;
-
-            .menu-item a {
-              border-radius: $border-radius;
-              color: inherit;
-              display: block;
-              margin: 0 -0.4rem;
-              padding: 0.2rem 0.4rem;
-              text-decoration: none;
-              white-space: nowrap;
-              border: 0;
-
-              .tool-icon {
-                line-height: 1;
-                display: inline-block;
-                font-size: 20px;
-              }
-            }
+          .workspace-tools-link {
+            padding-bottom: 0;
+            padding-top: 0.3rem;
           }
 
           z-index: 9;
           position: absolute;
         }
 
-        &.tools-dropdown + .tab-item {
+        &.ws-tab-tools + .ws-tab-cell {
           margin-left: 56px;
-        }
-
-        .workspace-tools-link {
-          padding-bottom: 0;
-          padding-top: 0.3rem;
         }
       }
     }

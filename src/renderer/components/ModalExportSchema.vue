@@ -1,281 +1,273 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <DialogContent
+         class="!max-w-[820px] max-h-[90vh] !p-0 !gap-0 flex flex-col [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent
+         @interact-outside.prevent
+      >
+         <DialogHeader class="flex flex-row items-center justify-between !space-y-0 px-5 py-3 border-b border-border/60 bg-muted/30">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1.5">
+               <BaseIcon icon-name="mdiDatabaseExport" :size="20" />
+               <span>{{ t('database.exportSchema') }}</span>
+            </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ t('database.exportSchema') }}
+            </DialogDescription>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
+
+         <div class="px-5 py-4 overflow-y-auto flex-1 min-h-0 space-y-4 text-[13px]">
+            <!--
+               Output directory picker. Path is readonly text + Change Button —
+               the user can't type a path manually because Tauri's FS dialog
+               needs a real navigation event for security gating.
+            -->
+            <div class="grid grid-cols-[120px_1fr] items-center gap-3">
+               <Label class="!text-[13px]">{{ t('general.directoryPath') }}</Label>
+               <div class="flex items-center gap-2">
+                  <code
+                     class="flex-1 truncate rounded-md border border-input bg-secondary px-3 py-2 text-xs text-muted-foreground"
+                     :title="basePath"
+                     @click.stop="openPathDialog"
+                  >{{ basePath || '—' }}</code>
+                  <Button
+                     variant="outline"
+                     size="sm"
+                     class="!h-[34px] !text-[13px]"
+                     @click.prevent="openPathDialog"
+                  >
                      <BaseIcon
-                        icon-name="mdiDatabaseExport"
+                        icon-name="mdiFolderOpenOutline"
                         class="mr-1"
-                        :size="24"
+                        :size="14"
                      />
-                     <span class="cut-text">{{ t('database.exportSchema') }}</span>
-                  </div>
+                     {{ t('general.change') }}
+                  </Button>
                </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
             </div>
-            <div class="modal-body pb-0">
-               <div class="container">
-                  <div class="columns">
-                     <div class="col-3">
-                        <label class="form-label">{{ t('general.directoryPath') }}</label>
+
+            <!-- Two-column body: tables grid (left, 2/3) + options (right, 1/3) -->
+            <div class="grid grid-cols-3 gap-4 min-h-0">
+               <!-- Tables column -->
+               <div class="col-span-2 flex flex-col min-h-0 gap-2">
+                  <!-- Filename + bulk action toolbar -->
+                  <div class="flex items-center gap-2">
+                     <div class="relative flex-1 min-w-0">
+                        <BaseIcon
+                           icon-name="mdiFileDocumentOutline"
+                           class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                           :size="16"
+                        />
+                        <Input
+                           v-model="chosenFilename"
+                           type="text"
+                           class="!pl-8 italic"
+                           :placeholder="filename"
+                           :title="t('application.fileName')"
+                        />
                      </div>
-                     <div class="col-9">
-                        <fieldset class="input-group">
-                           <input
-                              v-model="basePath"
-                              class="form-input"
-                              type="text"
-                              required
-                              readonly
-                              @click.prevent="openPathDialog"
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        class="!h-[34px] !w-[34px] !p-0"
+                        :title="t('general.refresh')"
+                        @click="refresh"
+                     >
+                        <BaseIcon icon-name="mdiRefresh" :size="15" />
+                     </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        class="!h-[34px] !w-[34px] !p-0"
+                        :title="t('database.uncheckAllTables')"
+                        :disabled="isRefreshing"
+                        @click="uncheckAllTables"
+                     >
+                        <BaseIcon icon-name="mdiCheckboxBlankOutline" :size="15" />
+                     </Button>
+                     <Button
+                        variant="outline"
+                        size="sm"
+                        class="!h-[34px] !w-[34px] !p-0"
+                        :title="t('database.checkAllTables')"
+                        :disabled="isRefreshing"
+                        @click="checkAllTables"
+                     >
+                        <BaseIcon icon-name="mdiCheckboxMarkedOutline" :size="15" />
+                     </Button>
+                  </div>
+
+                  <!--
+                     Tables × export-options matrix. We keep the per-cell
+                     Checkbox layout but switch from spectre's `.form-checkbox`
+                     to shadcn `<Checkbox>`. Header rows let the user toggle
+                     a whole column at once (with indeterminate state when
+                     mixed). Sticky header so headers stay visible while
+                     scrolling long table lists.
+                  -->
+                  <div class="flex-1 min-h-0 overflow-auto rounded-md border border-border/60">
+                     <table class="w-full text-xs">
+                        <thead class="sticky top-0 z-10 bg-muted/40 backdrop-blur-sm">
+                           <tr class="border-b border-border/60">
+                              <th class="text-left font-semibold px-3 py-2 w-[50%]">
+                                 {{ t('database.table') }}
+                              </th>
+                              <th class="text-center font-semibold px-2 py-2">
+                                 {{ t('database.structure') }}
+                              </th>
+                              <th class="text-center font-semibold px-2 py-2">
+                                 {{ t('general.content') }}
+                              </th>
+                              <th class="text-center font-semibold px-2 py-2">
+                                 {{ t('database.drop') }}
+                              </th>
+                           </tr>
+                           <tr class="border-b border-border/60 bg-background">
+                              <th />
+                              <th class="text-center px-2 py-1.5">
+                                 <Checkbox
+                                    :model-value="includeStructureStatus === 1
+                                       ? true
+                                       : (includeStructureStatus === 2 ? 'indeterminate' : false)"
+                                    @click.prevent="toggleAllTablesOption('includeStructure')"
+                                 />
+                              </th>
+                              <th class="text-center px-2 py-1.5">
+                                 <Checkbox
+                                    :model-value="includeContentStatus === 1
+                                       ? true
+                                       : (includeContentStatus === 2 ? 'indeterminate' : false)"
+                                    @click.prevent="toggleAllTablesOption('includeContent')"
+                                 />
+                              </th>
+                              <th class="text-center px-2 py-1.5">
+                                 <Checkbox
+                                    :model-value="includeDropStatementStatus === 1
+                                       ? true
+                                       : (includeDropStatementStatus === 2 ? 'indeterminate' : false)"
+                                    @click.prevent="toggleAllTablesOption('includeDropStatement')"
+                                 />
+                              </th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr
+                              v-for="item in tables"
+                              :key="item.table"
+                              class="border-b border-border/40 hover:bg-muted/30"
+                              :class="{ 'bg-accent/40': item.table === selectedTable }"
                            >
-                           <button
-                              type="button"
-                              class="btn btn-primary input-group-btn"
-                              @click.prevent="openPathDialog"
-                           >
-                              {{ t('general.change') }}
-                           </button>
-                        </fieldset>
-                     </div>
+                              <td class="px-3 py-1.5 truncate">
+                                 {{ item.table }}
+                              </td>
+                              <td class="text-center px-2 py-1.5">
+                                 <Checkbox v-model="item.includeStructure" />
+                              </td>
+                              <td class="text-center px-2 py-1.5">
+                                 <Checkbox v-model="item.includeContent" />
+                              </td>
+                              <td class="text-center px-2 py-1.5">
+                                 <Checkbox v-model="item.includeDropStatement" />
+                              </td>
+                           </tr>
+                        </tbody>
+                     </table>
                   </div>
                </div>
 
-               <div class="columns export-options">
-                  <div class="column col-8 left">
-                     <div class="columns mb-2 mt-1 p-vcentered">
-                        <div class="column col-auto input-group d-flex text-italic" :style="'flex-grow: 1'">
-                           <BaseIcon
-                              icon-name="mdiFileDocumentOutline"
-                              class="input-group-addon"
-                              :size="36"
-                           />
-                           <input
-                              v-model="chosenFilename"
-                              class="form-input"
-                              type="text"
-                              :placeholder="filename"
-                              :title="t('application.fileName')"
-                           >
-                        </div>
+               <!-- Options column -->
+               <div class="col-span-1 space-y-3">
+                  <h5 class="text-sm font-semibold m-0">
+                     {{ t('general.options') }}
+                  </h5>
 
-                        <div class="column col-auto col-ml-auto ">
-                           <button
-                              class="btn btn-dark btn-sm pt-1"
-                              :title="t('general.refresh')"
-                              @click="refresh"
-                           >
-                              <BaseIcon icon-name="mdiRefresh" :size="15" />
-                           </button>
-                           <button
-                              class="btn btn-dark btn-sm mx-1 pt-1"
-                              :title="t('database.uncheckAllTables')"
-                              :disabled="isRefreshing"
-                              @click="uncheckAllTables"
-                           >
-                              <BaseIcon icon-name="mdiCheckboxBlankOutline" :size="15" />
-                           </button>
-                           <button
-                              class="btn btn-dark btn-sm pt-1"
-                              :title="t('database.checkAllTables')"
-                              :disabled="isRefreshing"
-                              @click="checkAllTables"
-                           >
-                              <BaseIcon icon-name="mdiCheckboxMarkedOutline" :size="15" />
-                           </button>
-                        </div>
+                  <div>
+                     <div class="text-xs font-medium mb-1.5">
+                        {{ t('general.includes') }}:
                      </div>
-                     <div class="workspace-query-results">
-                        <div ref="table" class="table table-hover">
-                           <div class="thead">
-                              <div class="tr text-center">
-                                 <div class="th no-border" :style="'width: 50%;'" />
-                                 <div class="th no-border">
-                                    <label
-                                       class="form-checkbox m-0 px-2 form-inline"
-                                       @click.prevent="toggleAllTablesOption('includeStructure')"
-                                    >
-                                       <input
-                                          type="checkbox"
-                                          :indeterminate="includeStructureStatus === 2"
-                                          :checked="!!includeStructureStatus"
-                                       >
-                                       <i class="form-icon" />
-                                    </label>
-                                 </div>
-                                 <div class="th no-border">
-                                    <label
-                                       class="form-checkbox m-0 px-2 form-inline"
-                                       @click.prevent="toggleAllTablesOption('includeContent')"
-                                    >
-                                       <input
-                                          type="checkbox"
-                                          :indeterminate="includeContentStatus === 2"
-                                          :checked="!!includeContentStatus"
-                                       >
-                                       <i class="form-icon" />
-                                    </label>
-                                 </div>
-                                 <div class="th no-border">
-                                    <label
-                                       class="form-checkbox m-0 px-2 form-inline"
-                                       @click.prevent="toggleAllTablesOption('includeDropStatement')"
-                                    >
-                                       <input
-                                          type="checkbox"
-                                          :indeterminate="includeDropStatementStatus === 2"
-                                          :checked="!!includeDropStatementStatus"
-                                       >
-                                       <i class="form-icon" />
-                                    </label>
-                                 </div>
-                              </div>
-                              <div class="tr">
-                                 <div class="th" :style="'width: 50%;'">
-                                    <div class="table-column-title">
-                                       <span>{{ t('database.table') }}</span>
-                                    </div>
-                                 </div>
-                                 <div class="th text-center">
-                                    <div class="table-column-title">
-                                       <span>{{ t('database.structure') }}</span>
-                                    </div>
-                                 </div>
-                                 <div class="th text-center">
-                                    <div class="table-column-title">
-                                       <span>{{ t('general.content') }}</span>
-                                    </div>
-                                 </div>
-                                 <div class="th text-center">
-                                    <div class="table-column-title">
-                                       <span>{{ t('database.drop') }}</span>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
-
-                           <div class="tbody">
-                              <div
-                                 v-for="item in tables"
-                                 :key="item.table"
-                                 class="tr"
-                                 :class="{'selected': item.table === selectedTable}"
-                              >
-                                 <div class="td">
-                                    {{ item.table }}
-                                 </div>
-                                 <div class="td text-center">
-                                    <label class="form-checkbox m-0 px-2 form-inline">
-                                       <input
-                                          v-model="item.includeStructure"
-                                          type="checkbox"
-                                       ><i class="form-icon" />
-                                    </label>
-                                 </div>
-                                 <div class="td text-center">
-                                    <label class="form-checkbox m-0 px-2 form-inline">
-                                       <input
-                                          v-model="item.includeContent"
-                                          type="checkbox"
-                                       ><i class="form-icon" />
-                                    </label>
-                                 </div>
-                                 <div class="td text-center">
-                                    <label class="form-checkbox m-0 px-2 form-inline">
-                                       <input
-                                          v-model="item.includeDropStatement"
-                                          type="checkbox"
-                                       ><i class="form-icon" />
-                                    </label>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
+                     <div class="space-y-1.5">
+                        <label
+                           v-for="(_, key) in options.includes"
+                           :key="key"
+                           class="flex items-center gap-2 text-xs cursor-pointer"
+                        >
+                           <Checkbox v-model="options.includes[key]" />
+                           {{ t(`database.${String(key).slice(0, -1)}`, 2) }}
+                        </label>
                      </div>
                   </div>
-                  <div class="column col-4">
-                     <h5 class="h5">
-                        {{ t('general.options') }}
-                     </h5>
-                     <span class="h6">{{ t('general.includes') }}:</span>
-                     <label
-                        v-for="(_, key) in options.includes"
-                        :key="key"
-                        class="form-checkbox"
-                     >
-                        <input v-model="options.includes[key]" type="checkbox"><i class="form-icon" /> {{ t(`database.${String(key).slice(0, -1)}`, 2) }}
-                     </label>
-                     <div v-if="clientCustoms.exportByChunks">
-                        <div class="h6 mt-4 mb-2">
-                           {{ t('database.newInsertStmtEvery') }}:
-                        </div>
-                        <div class="columns">
-                           <div class="column col-6">
-                              <input
-                                 v-model.number="options.sqlInsertAfter"
-                                 type="number"
-                                 class="form-input"
-                              >
-                           </div>
-                           <div class="column col-6">
-                              <BaseSelect
-                                 v-model="options.sqlInsertDivider"
-                                 class="form-select"
-                                 :options="[{value: 'bytes', label: 'KiB'}, {value: 'rows', label: t('database.row', 2)}]"
-                              />
-                           </div>
-                        </div>
-                     </div>
 
-                     <div class="h6 mb-2 mt-4">
+                  <div v-if="clientCustoms.exportByChunks">
+                     <div class="text-xs font-medium mb-1.5">
+                        {{ t('database.newInsertStmtEvery') }}:
+                     </div>
+                     <div class="grid grid-cols-2 gap-2">
+                        <Input
+                           v-model.number="options.sqlInsertAfter"
+                           type="number"
+                        />
+                        <BaseSelect
+                           v-model="options.sqlInsertDivider"
+                           :options="[{value: 'bytes', label: 'KiB'}, {value: 'rows', label: t('database.row', 2)}]"
+                        />
+                     </div>
+                  </div>
+
+                  <div>
+                     <div class="text-xs font-medium mb-1.5">
                         {{ t('general.outputFormat') }}:
                      </div>
-                     <div class="columns">
-                        <div class="column h5 mb-4">
-                           <BaseSelect
-                              v-model="options.outputFormat"
-                              class="form-select"
-                              :options="[{value: 'sql', label: t('general.singleFile', {ext: '.sql'})}, {value: 'sql.zip', label: t('general.zipCompressedFile', {ext: '.sql'})}]"
-                           />
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-            <div class="modal-footer columns">
-               <div class="column col modal-progress-wrapper text-left">
-                  <div v-if="progressPercentage > 0" class="export-progress">
-                     <span class="progress-status">
-                        {{ progressPercentage }}% - {{ progressStatus }}
-                     </span>
-                     <progress
-                        class="progress d-block"
-                        :value="progressPercentage"
-                        max="100"
+                     <BaseSelect
+                        v-model="options.outputFormat"
+                        :options="[{value: 'sql', label: t('general.singleFile', {ext: '.sql'})}, {value: 'sql.zip', label: t('general.zipCompressedFile', {ext: '.sql'})}]"
                      />
                   </div>
-               </div>
-               <div class="column col-auto px-0">
-                  <button class="btn btn-link mr-2" @click.stop="closeModal">
-                     {{ t('general.close') }}
-                  </button>
-                  <button
-                     class="btn btn-primary mr-2"
-                     :class="{'loading': isExporting}"
-                     :disabled="isExporting || isRefreshing"
-                     autofocus
-                     @click.prevent="startExport"
-                  >
-                     {{ t('database.export') }}
-                  </button>
                </div>
             </div>
          </div>
-      </div>
-   </Teleport>
+
+         <DialogFooter class="!flex !flex-row !items-center !gap-2 px-5 py-3 border-t border-border/60 bg-muted/30">
+            <div class="flex-1 min-w-0 text-left">
+               <div v-if="progressPercentage > 0">
+                  <div class="text-[11px] italic text-muted-foreground truncate">
+                     {{ progressPercentage }}% - {{ progressStatus }}
+                  </div>
+                  <progress
+                     class="block w-full h-1.5 mt-1 rounded overflow-hidden [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary"
+                     :value="progressPercentage"
+                     max="100"
+                  />
+               </div>
+            </div>
+            <Button
+               variant="outline"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="closeModal"
+            >
+               {{ t('general.close') }}
+            </Button>
+            <Button
+               variant="default"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               :disabled="isExporting || isRefreshing"
+               autofocus
+               @click.prevent="startExport"
+            >
+               {{ t('database.export') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -289,7 +281,11 @@ import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Application from '@/ipc-api/Application';
 import { createWebSocket } from '@/ipc-api/httpClient';
 import { useNotificationsStore } from '@/stores/notifications';
@@ -306,8 +302,6 @@ const workspacesStore = useWorkspacesStore();
 const schemaExportStore = useSchemaExportStore();
 
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
-
-const { trapRef } = useFocusTrap();
 
 const {
    getWorkspace,
@@ -466,13 +460,13 @@ const uncheckAllTables = () => {
 };
 
 const toggleAllTablesOption = (option: 'includeStructure' | 'includeContent' |'includeDropStatement') => {
-   const options = {
+   const optsStatus = {
       includeStructure: includeStructureStatus.value,
       includeContent: includeContentStatus.value,
       includeDropStatement: includeDropStatementStatus.value
    };
 
-   if (options[option] !== 1)
+   if (optsStatus[option] !== 1)
       tables.value = tables.value.map(item => ({ ...item, [option]: true }));
    else
       tables.value = tables.value.map(item => ({ ...item, [option]: false }));
@@ -495,25 +489,6 @@ const openPathDialog = async () => {
 
    window.addEventListener('keydown', onKey);
 
-   if (selectedTable.value) {
-      setTimeout(() => {
-         const element = document.querySelector<HTMLElement>('.modal.active .selected');
-
-         if (element) {
-            const rect = element.getBoundingClientRect();
-            const elemTop = rect.top;
-            const elemBottom = rect.bottom;
-            const isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
-
-            if (!isVisible) {
-               element.setAttribute('tabindex', '-1');
-               element.focus();
-               element.removeAttribute('tabindex');
-            }
-         }
-      }, 100);
-   }
-
    basePath.value = await Application.getDownloadPathDirectory();
    tables.value = schemaItems.value.map(item => ({
       table: item.name,
@@ -530,6 +505,7 @@ const openPathDialog = async () => {
          options.value.includes[feat] = !selectedTable.value;
    });
 })();
+
 onBeforeUnmount(() => {
    window.removeEventListener('keydown', onKey);
    if (wsExport.value) {
@@ -537,57 +513,4 @@ onBeforeUnmount(() => {
       wsExport.value = null;
    }
 });
-
 </script>
-
-<style lang="scss" scoped>
-.export-options {
-  flex: 1;
-  overflow: hidden;
-
-  .left {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-}
-
-.workspace-query-results {
-  flex: 1 0 1px;
-
-  .table {
-    width: 100% !important;
-  }
-
-  .form-checkbox {
-    min-height: 0.8rem;
-    padding: 0;
-
-    .form-icon {
-      top: 0.1rem;
-    }
-  }
-}
-
-.modal {
-  .modal-container {
-    max-width: 800px;
-  }
-
-  .modal-body {
-    max-height: 60vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .modal-footer {
-    display: flex;
-  }
-}
-
-.progress-status {
-  font-style: italic;
-  font-size: 80%;
-}
-
-</style>

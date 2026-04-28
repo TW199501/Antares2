@@ -1,3 +1,4 @@
+import { getVersion } from '@tauri-apps/api/app';
 import { Ace } from 'ace-builds';
 import { defineStore, storeToRefs } from 'pinia';
 
@@ -11,15 +12,14 @@ export type UpdateStatus = 'noupdate' | 'available' | 'checking' | 'nocheck' | '
 export const useApplicationStore = defineStore('application', {
    state: () => ({
       appName: 'Antares - SQL Client',
-      // TODO: Replace with Tauri app version API when Tauri is set up
-      // appVersion: process.env.PACKAGE_VERSION || '0',
-      appVersion: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_VERSION) || '0',
+      appVersion: '0',
       cachedVersion: '0' as string,
       // Non-persisted state (UI/runtime only)
       isLoading: false,
       isNewModal: false,
       isSettingModal: false,
       isScratchpad: false,
+      isSpecsnap: false,
       selectedSettingTab: 'general',
       updateStatus: 'noupdate' as UpdateStatus,
       downloadProgress: 0,
@@ -31,6 +31,7 @@ export const useApplicationStore = defineStore('application', {
    },
    actions: {
       async init () {
+         this.appVersion = await getVersion();
          // Only persist cachedVersion — all other state is runtime/UI only
          const data = await loadStore('settings', {}) as Record<string, any>;
          if (data.cached_version !== undefined) this.cachedVersion = data.cached_version;
@@ -75,6 +76,12 @@ export const useApplicationStore = defineStore('application', {
       },
       hideScratchpad () {
          this.isScratchpad = false;
+      },
+      showSpecsnap () {
+         this.isSpecsnap = true;
+      },
+      hideSpecsnap () {
+         this.isSpecsnap = false;
       },
       async checkForUpdates () {
          const { allowPrerelease } = useSettingsStore();

@@ -1,7 +1,10 @@
 /* Colors */
 $body-bg: #f3f3f3;
 $body-bg-dark: #1d1d1d;
+$body-font-color: #3b4351;
 $body-font-color-dark: #fff;
+$bg-color: #f7f8f9;
+$bg-color-light: #fff;
 $bg-color-dark: #1d1d1d;
 $bg-color-light-dark: #3f3f3f;
 $bg-color-gray: #272727;
@@ -23,9 +26,12 @@ $unknown-color: gray;
 
 /* Sizes */
 $border-radius: 0.3rem;
-$titlebar-height: 1.5rem;
-$settingbar-width: 3.5rem;
-$explorebar-width: 14rem;
+$border-width: 0.05rem;
+$border-color: #dadee4;
+$border-color-dark: #c0c5cd;
+$titlebar-height: 0;
+$settingbar-width: 52px;
+$explorebar-width: 387px;
 $footer-height: 1.5rem;
 
 @function get-excluding-size() {

@@ -1,109 +1,81 @@
 <template>
-   <BaseContextMenu
-      :context-event="contextEvent"
-      @close-context="closeContext"
-   >
-      <div
+   <ContextMenuContent class="min-w-[180px]">
+      <ContextMenuItem
          v-if="['procedure', 'routine', 'function'].includes(selectedMisc.type)"
-         class="context-element"
-         @click="runElementCheck"
+         @select="runElementCheck"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiPlay"
-               :size="18"
-            /> {{ t('general.run') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiPlay" :size="16" />
+         <span>{{ t('general.run') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedMisc.type === 'trigger' && customizations.triggerEnableDisable && !connection.readonly"
-         class="context-element"
-         @click="toggleTrigger"
+         @select="toggleTrigger"
       >
-         <span v-if="!selectedMisc.enabled" class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiPlay"
-               :size="18"
-            /> {{ t('general.enable') }}
-         </span>
-         <span v-else class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiPause"
-               :size="18"
-            /> {{ t('general.disable') }}
-         </span>
-      </div>
-      <div
+         <template v-if="!selectedMisc.enabled">
+            <BaseIcon icon-name="mdiPlay" :size="16" />
+            <span>{{ t('general.enable') }}</span>
+         </template>
+         <template v-else>
+            <BaseIcon icon-name="mdiPause" :size="16" />
+            <span>{{ t('general.disable') }}</span>
+         </template>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedMisc.type === 'scheduler' && !connection.readonly"
-         class="context-element"
-         @click="toggleScheduler"
+         @select="toggleScheduler"
       >
-         <span v-if="!selectedMisc.enabled" class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiPlay"
-               :size="18"
-            /> {{ t('general.enable') }}
-         </span>
-         <span v-else class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiPause"
-               :size="18"
-            /> {{ t('general.disable') }}
-         </span>
-      </div>
-      <div class="context-element" @click="copyName(selectedMisc.name)">
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiContentCopy"
-               :size="18"
-            /> {{ t('general.copyName') }}</span>
-      </div>
-      <div
+         <template v-if="!selectedMisc.enabled">
+            <BaseIcon icon-name="mdiPlay" :size="16" />
+            <span>{{ t('general.enable') }}</span>
+         </template>
+         <template v-else>
+            <BaseIcon icon-name="mdiPause" :size="16" />
+            <span>{{ t('general.disable') }}</span>
+         </template>
+      </ContextMenuItem>
+      <ContextMenuItem @select="copyName(selectedMisc.name)">
+         <BaseIcon icon-name="mdiContentCopy" :size="16" />
+         <span>{{ t('general.copyName') }}</span>
+      </ContextMenuItem>
+      <ContextMenuSeparator v-if="!connection.readonly" />
+      <ContextMenuItem
          v-if="!connection.readonly"
-         class="context-element"
-         @click="showDeleteModal"
+         class="text-destructive focus:text-destructive"
+         @select="showDeleteModal"
       >
-         <span class="d-flex">
+         <BaseIcon icon-name="mdiTableRemove" :size="16" />
+         <span>{{ t('general.delete') }}</span>
+      </ContextMenuItem>
+   </ContextMenuContent>
+
+   <ConfirmModal
+      v-if="isDeleteModal"
+      @confirm="deleteMisc"
+      @hide="hideDeleteModal"
+   >
+      <template #header>
+         <div class="flex">
             <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiTableRemove"
-               :size="18"
-            /> {{ t('general.delete') }}</span>
-      </div>
-      <ConfirmModal
-         v-if="isDeleteModal"
-         @confirm="deleteMisc"
-         @hide="hideDeleteModal"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  class="text-light mr-1"
-                  icon-name="mdiDelete"
-                  :size="24"
-               />
-               <span class="cut-text">{{ deleteMessage }}</span>
-            </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               {{ t('general.deleteConfirm') }} "<b>{{ selectedMisc.name }}</b>"?
-            </div>
-         </template>
-      </ConfirmModal>
-      <ModalAskParameters
-         v-if="isAskingParameters"
-         :local-routine="(localElement as any)"
-         :client="workspace.client"
-         @confirm="runElement"
-         @close="hideAskParamsModal"
-      />
-   </BaseContextMenu>
+               class="text-light mr-1"
+               icon-name="mdiDelete"
+               :size="24"
+            />
+            <span class="cut-text">{{ deleteMessage }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="mb-2">
+            {{ t('general.deleteConfirm') }} "<b>{{ selectedMisc.name }}</b>"?
+         </div>
+      </template>
+   </ConfirmModal>
+   <ModalAskParameters
+      v-if="isAskingParameters"
+      :local-routine="(localElement as any)"
+      :client="workspace.client"
+      @confirm="runElement"
+      @close="hideAskParamsModal"
+   />
 </template>
 
 <script setup lang="ts">
@@ -113,9 +85,9 @@ import { computed, Prop, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import ModalAskParameters from '@/components/ModalAskParameters.vue';
+import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
 import Functions from '@/ipc-api/Functions';
 import Routines from '@/ipc-api/Routines';
 import Schedulers from '@/ipc-api/Schedulers';
@@ -128,13 +100,11 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 const { t } = useI18n();
 
 const props = defineProps({
-   contextEvent: MouseEvent,
    selectedMisc: Object as Prop<{ name:string; type:string; enabled?: boolean }>,
    selectedSchema: String
 });
 
 const emit = defineEmits<{
-   'close-context': [];
    'reload': [];
 }>();
 
@@ -184,7 +154,6 @@ const deleteMessage = computed(() => {
 
 const copyName = (name: string) => {
    copyText(name);
-   closeContext();
 };
 
 const showDeleteModal = () => {
@@ -201,11 +170,6 @@ const showAskParamsModal = () => {
 
 const hideAskParamsModal = () => {
    isAskingParameters.value = false;
-   closeContext();
-};
-
-const closeContext = () => {
-   emit('close-context');
 };
 
 const deleteMisc = async () => {
@@ -255,7 +219,7 @@ const deleteMisc = async () => {
             schema: props.selectedSchema
          });
 
-         closeContext();
+         hideDeleteModal();
          emit('reload');
       }
       else
@@ -332,7 +296,6 @@ const runRoutine = (params?: string[]) => {
       schema: props.selectedSchema,
       autorun: true
    });
-   closeContext();
 };
 
 const runFunctionCheck = async () => {
@@ -385,7 +348,6 @@ const runFunction = (params?: string[]) => {
       schema: props.selectedSchema,
       autorun: true
    });
-   closeContext();
 };
 
 const toggleTrigger = async () => {
@@ -416,7 +378,6 @@ const toggleTrigger = async () => {
       type: 'trigger'
    });
 
-   closeContext();
    emit('reload');
 };
 
@@ -448,7 +409,6 @@ const toggleScheduler = async () => {
       type: 'scheduler'
    });
 
-   closeContext();
    emit('reload');
 };
 </script>

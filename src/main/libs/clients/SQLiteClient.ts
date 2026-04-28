@@ -1,4 +1,4 @@
-import * as sqlite from 'better-sqlite3';
+import sqlite from 'better-sqlite3';
 import dataTypes from 'common/data-types/sqlite';
 import { DATETIME, FLOAT, NUMBER, TIME } from 'common/fieldTypes';
 import * as antares from 'common/interfaces/antares';
@@ -10,7 +10,7 @@ export class SQLiteClient extends BaseClient {
    private _schema?: string;
    private _connectionsToCommit: Map<string, sqlite.Database>;
    protected _connection?: sqlite.Database;
-   _params: { databasePath: string; readonly: boolean};
+   declare _params: { databasePath: string; readonly: boolean};
 
    constructor (args: antares.ClientParams) {
       super(args);

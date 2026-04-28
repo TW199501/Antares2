@@ -1,83 +1,55 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiDatabasePlus"
-                        class="mr-1"
-                        :size="24"
-                     />
-                     <span class="cut-text">{{ t('database.createNewSchema') }}</span>
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               <div class="content">
-                  <form class="form-horizontal" @submit.prevent="createSchema">
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('general.name') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <input
-                              ref="firstInput"
-                              v-model="database.name"
-                              class="form-input"
-                              type="text"
-                              required
-                              :placeholder="t('database.schemaName')"
-                           >
-                        </div>
-                     </div>
-                     <div v-if="customizations.collations" class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('database.collation') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <BaseSelect
-                              v-model="database.collation"
-                              class="form-select"
-                              :options="collations"
-                              :max-visible-options="1000"
-                              option-label="collation"
-                              option-track-by="collation"
-                           />
-                           <small>{{ t('database.serverDefault') }}: {{ defaultCollation }}</small>
-                        </div>
-                     </div>
-                  </form>
-               </div>
-            </div>
-            <div class="modal-footer">
-               <button
-                  class="btn btn-primary mr-2"
-                  :class="{'loading': isLoading}"
-                  @click.stop="createSchema"
-               >
-                  {{ t('general.add') }}
-               </button>
-               <button class="btn btn-link" @click.stop="closeModal">
-                  {{ t('general.close') }}
-               </button>
-            </div>
+   <ConfirmModal
+      size="medium"
+      :confirm-text="t('general.add')"
+      :cancel-text="t('general.close')"
+      @confirm="createSchema"
+      @hide="closeModal"
+   >
+      <template #header>
+         <div class="flex items-center gap-1.5">
+            <BaseIcon icon-name="mdiDatabasePlus" :size="20" />
+            <span class="cut-text">{{ t('database.createNewSchema') }}</span>
          </div>
-      </div>
-   </Teleport>
+      </template>
+      <template #body>
+         <form class="space-y-3" @submit.prevent="createSchema">
+            <FormField :label="t('general.name')">
+               <Input
+                  ref="firstInput"
+                  v-model="database.name"
+                  type="text"
+                  required
+                  :placeholder="t('database.schemaName')"
+               />
+            </FormField>
+            <FormField v-if="customizations.collations" :label="t('database.collation')">
+               <BaseSelect
+                  v-model="database.collation"
+                  :options="collations"
+                  :max-visible-options="1000"
+                  option-label="collation"
+                  option-track-by="collation"
+               />
+               <p class="text-xs text-muted-foreground mt-1">
+                  {{ t('database.serverDefault') }}: {{ defaultCollation }}
+               </p>
+            </FormField>
+         </form>
+      </template>
+   </ConfirmModal>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { computed, onBeforeUnmount, Ref, ref } from 'vue';
+import { computed, onMounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import Schema from '@/ipc-api/Schema';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';
@@ -91,15 +63,14 @@ const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 
 const { getWorkspace, getDatabaseVariable } = workspacesStore;
 
-const { trapRef } = useFocusTrap();
-
 const emit = defineEmits<{
    'reload': [];
    'close': [];
 }>();
 
-const firstInput: Ref<HTMLInputElement> = ref(null);
-const isLoading = ref(false);
+// firstInput holds a ref to the shadcn Input wrapper component; the real
+// <input> is its $el. Used by onMounted to pull initial focus.
+const firstInput: Ref<{ $el: HTMLInputElement } | HTMLInputElement | null> = ref(null);
 const database = ref({
    name: '',
    collation: ''
@@ -112,7 +83,6 @@ const defaultCollation = computed(() => getDatabaseVariable(selectedWorkspace.va
 database.value = { ...database.value, collation: defaultCollation.value };
 
 const createSchema = async () => {
-   isLoading.value = true;
    try {
       const { status, response } = await Schema.createSchema({
          uid: selectedWorkspace.value,
@@ -129,31 +99,18 @@ const createSchema = async () => {
    catch (err) {
       addNotification({ status: 'error', message: err.stack });
    }
-   isLoading.value = false;
 };
 
 const closeModal = () => {
    emit('close');
 };
 
-const onKey = (e: KeyboardEvent) => {
-   e.stopPropagation();
-   if (e.key === 'Escape')
-      closeModal();
-};
-
-window.addEventListener('keydown', onKey);
-setTimeout(() => {
-   firstInput.value.focus();
-}, 20);
-
-onBeforeUnmount(() => {
-   window.removeEventListener('keydown', onKey);
+onMounted(() => {
+   setTimeout(() => {
+      const r = firstInput.value as { $el?: HTMLInputElement } | HTMLInputElement | null;
+      if (!r) return;
+      const el = (r as { $el?: HTMLInputElement }).$el ?? (r as HTMLInputElement);
+      el?.focus?.();
+   }, 20);
 });
 </script>
-
-<style scoped lang="scss">
-  .modal-container {
-    max-width: 360px;
-  }
-</style>

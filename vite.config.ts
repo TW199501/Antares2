@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import { ChildProcess, spawn } from 'child_process';
 import { readFileSync } from 'fs';
@@ -51,7 +52,7 @@ const parsedContributors = contributorsRc.contributors
    .join(',');
 
 export default defineConfig({
-   plugins: [vue(), sidecarPlugin()],
+   plugins: [vue(), tailwindcss(), sidecarPlugin()],
    resolve: {
       alias: {
          '@': path.resolve(__dirname, 'src/renderer'),

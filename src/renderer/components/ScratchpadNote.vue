@@ -1,17 +1,17 @@
 <template>
    <div
-      class="tile my-2"
+      class="group my-2 flex relative rounded-md focus:outline-none focus:bg-accent/30 hover:bg-accent/30 cursor-pointer"
       tabindex="0"
       @click="$emit('select-note', note.uid)"
    >
       <BaseIcon
          v-if="isBig"
-         class="tile-compress c-hand"
+         class="absolute right-0.5 top-0 opacity-70 z-[2] cursor-pointer"
          :icon-name="isSelected ? 'mdiChevronUp' : 'mdiChevronDown'"
          :size="36"
          @click.stop="$emit('toggle-note', note.uid)"
       />
-      <div class="tile-icon">
+      <div class="flex flex-col items-center justify-center mx-1.5 mt-2 w-10 opacity-80">
          <BaseIcon
             :icon-name="note.type === 'query'
                ? 'mdiHeartOutline'
@@ -22,76 +22,124 @@
                   : 'mdiNoteEditOutline'"
             :size="36"
          />
-         <div class="tile-icon-type">
+         <div class="text-[8px] uppercase">
             {{ note.type }}
          </div>
       </div>
-      <div class="tile-content">
-         <div class="tile-content-message" :class="[{'opened': isSelected}]">
+      <div class="flex flex-col justify-between p-1 pl-0.5 min-h-[75px] flex-1 min-w-0">
+         <div class="relative" :class="isSelected ? '' : 'max-h-9 overflow-hidden'">
             <code
                v-if="note.type === 'query'"
                ref="noteParagraph"
-               class="tile-paragraph sql"
+               class="note-md-content sql block w-full max-w-full text-[100%] opacity-80 font-semibold whitespace-pre-wrap"
                v-html="highlight(note.note, {html: true})"
             />
             <div
                v-else
                ref="noteParagraph"
-               class="tile-paragraph"
+               class="note-md-content"
                v-html="parseMarkdown(highlightWord(note.note))"
             />
-            <div v-if="isBig && !isSelected" class="tile-paragraph-overlay" />
+            <div
+               v-if="isBig && !isSelected"
+               class="absolute top-0 h-9 w-full pointer-events-none bg-gradient-to-b from-background/0 from-70% to-background"
+            />
          </div>
-         <div class="tile-bottom-content">
-            <small class="tile-subtitle">{{ getConnectionName(note.cUid) || t('general.all') }} · {{ formatDate(note.date) }}</small>
-            <div class="tile-history-buttons">
-               <button
-                  v-if="note.type === 'todo' && !note.isArchived"
-                  class="btn btn-dark tooltip tooltip-left"
-                  :data-tooltip="t('general.archive')"
-                  @click.stop="$emit('archive-note', note.uid)"
-               >
-                  <BaseIcon icon-name="mdiCheck" :size="22" />
-               </button>
-               <button
-                  v-if="note.type === 'todo' && note.isArchived"
-                  class="btn btn-dark tooltip tooltip-left"
-                  :data-tooltip="t('general.undo')"
-                  @click.stop="$emit('restore-note', note.uid)"
-               >
-                  <BaseIcon icon-name="mdiRestore" :size="22" />
-               </button>
-               <button
-                  v-if="note.type === 'query'"
-                  class="btn btn-dark tooltip tooltip-left"
-                  :data-tooltip="t('general.select')"
-                  @click.stop="$emit('select-query', note.note)"
-               >
-                  <BaseIcon icon-name="mdiOpenInApp" :size="22" />
-               </button>
-               <button
-                  v-if="note.type === 'query'"
-                  class="btn btn-dark tooltip tooltip-left"
-                  :data-tooltip="t('general.copy')"
-                  @click.stop="copyText(note.note)"
-               >
-                  <BaseIcon icon-name="mdiContentCopy" :size="18" />
-               </button>
-               <button
-                  v-if=" !note.isArchived"
-                  class="btn btn-dark tooltip tooltip-left"
-                  :data-tooltip="t('general.edit')"
-                  @click.stop="$emit('edit-note')"
-               >
-                  <BaseIcon icon-name="mdiPencil" :size="22" />
-               </button>
-               <button
-                  class="btn btn-dark tooltip tooltip-left"
-                  :data-tooltip="t('general.delete')"
-                  @click.stop="$emit('delete-note', note.uid)"
-               >
-                  <BaseIcon icon-name="mdiDeleteForever" :size="22" />
-               </button>
+         <div class="flex justify-between items-center">
+            <small class="opacity-80 text-xs truncate">
+               {{ getConnectionName(note.cUid) || t('general.all') }} · {{ formatDate(note.date) }}
+            </small>
+            <div class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center gap-1 shrink-0">
+               <Tooltip v-if="note.type === 'todo' && !note.isArchived">
+                  <TooltipTrigger as-child>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        class="!h-6 !w-6"
+                        @click.stop="$emit('archive-note', note.uid)"
+                     >
+                        <BaseIcon icon-name="mdiCheck" :size="16" />
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ t('general.archive') }}
+                  </TooltipContent>
+               </Tooltip>
+               <Tooltip v-if="note.type === 'todo' && note.isArchived">
+                  <TooltipTrigger as-child>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        class="!h-6 !w-6"
+                        @click.stop="$emit('restore-note', note.uid)"
+                     >
+                        <BaseIcon icon-name="mdiRestore" :size="16" />
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ t('general.undo') }}
+                  </TooltipContent>
+               </Tooltip>
+               <Tooltip v-if="note.type === 'query'">
+                  <TooltipTrigger as-child>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        class="!h-6 !w-6"
+                        @click.stop="$emit('select-query', note.note)"
+                     >
+                        <BaseIcon icon-name="mdiOpenInApp" :size="16" />
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ t('general.select') }}
+                  </TooltipContent>
+               </Tooltip>
+               <Tooltip v-if="note.type === 'query'">
+                  <TooltipTrigger as-child>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        class="!h-6 !w-6"
+                        @click.stop="copyText(note.note)"
+                     >
+                        <BaseIcon icon-name="mdiContentCopy" :size="14" />
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ t('general.copy') }}
+                  </TooltipContent>
+               </Tooltip>
+               <Tooltip v-if="!note.isArchived">
+                  <TooltipTrigger as-child>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        class="!h-6 !w-6"
+                        @click.stop="$emit('edit-note')"
+                     >
+                        <BaseIcon icon-name="mdiPencil" :size="16" />
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ t('general.edit') }}
+                  </TooltipContent>
+               </Tooltip>
+               <Tooltip>
+                  <TooltipTrigger as-child>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        class="!h-6 !w-6 text-destructive hover:text-destructive"
+                        @click.stop="$emit('delete-note', note.uid)"
+                     >
+                        <BaseIcon icon-name="mdiDeleteForever" :size="16" />
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ t('general.delete') }}
+                  </TooltipContent>
+               </Tooltip>
             </div>
          </div>
       </div>
@@ -105,6 +153,8 @@ import { computed, PropType, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFilters } from '@/composables/useFilters';
 import { copyText } from '@/libs/copyText';
 import { useConnectionsStore } from '@/stores/connections';
@@ -171,170 +221,23 @@ const highlightWord = (string: string) => {
       return string;
 };
 </script>
-<style scoped lang="scss">
-.tile {
-   border-radius: $border-radius;
-   display: flex;
-   position: relative;
-   transition: none;
-
-   &:hover,
-   &:focus {
-     .tile-content {
-       .tile-bottom-content {
-         .tile-history-buttons {
-           opacity: 1;
-         }
-       }
-     }
-   }
-
-   .tile-compress {
-      position: absolute;
-      right: 2px;
-      top: 0px;
-      opacity: .7;
-      z-index: 2;
-   }
-
-   .tile-icon {
-     font-size: 1.2rem;
-     margin-left: 0.3rem;
-     margin-right: 0.3rem;
-     margin-top: 0.6rem;
-     width: 40px;
-     display: flex;
-     align-items: center;
-     flex-direction: column;
-     justify-content: center;
-     opacity: .8;
-
-     .tile-icon-type {
-       text-transform: uppercase;
-       font-size: .5rem;
-     }
-   }
-
-   .tile-content {
-     padding: 0.3rem;
-     padding-left: 0.1rem;
-     min-height: 75px;
-     display: flex;
-     flex-direction: column;
-     justify-content: space-between;
-
-     .tile-content-message{
-         position: relative;
-
-         &:not(.opened) {
-            max-height: 36px;
-            overflow: hidden;
-         }
-
-         .tile-paragraph-overlay {
-            height: 36px;
-            width: 100%;
-            position: absolute;
-            top: 0;
-         }
-     }
-
-     code, pre {
-       max-width: 100%;
-       width: 100%;
-       display: inline-block;
-       font-size: 100%;
-       opacity: 0.8;
-       font-weight: 600;
-       white-space: break-spaces;
-     }
-
-     .tile-subtitle {
-       opacity: 0.8;
-     }
-
-     .tile-bottom-content {
-       display: flex;
-       justify-content: space-between;
-
-       .tile-history-buttons {
-          opacity: 0;
-          transition: opacity 0.2s;
-
-          button {
-             font-size: 0.7rem;
-             line-height: 1rem;
-             display: inline-flex;
-             align-items: center;
-             justify-content: center;
-             margin: 0 5px;
-             padding: 0;
-             height: 24px;
-             width: 24px;
-          }
-       }
-     }
-   }
- }
-
- .theme-dark {
-   .tile {
-      .tile-paragraph-overlay {
-         background-image: linear-gradient(
-            to bottom,
-            rgba(255,0,0,0) 70%,
-            $body-bg-dark);
-      }
-
-      &:focus {
-         .tile-paragraph-overlay {
-            background-image: linear-gradient(
-               to bottom,
-               rgba(255,0,0,0)70%,
-               #323232);
-         }
-      }
-
-      &:hover{
-         .tile-paragraph-overlay {
-            background-image: linear-gradient(
-               to bottom,
-               rgba(255,0,0,0) 70%,
-               $bg-color-light-dark);
-         }
-      }
-   }
- }
-
- .theme-light {
-   .tile {
-      .tile-paragraph-overlay {
-         background-image: linear-gradient(
-            to bottom,
-            rgba(255,0,0,0) 70%,
-            #FFFF);
-      }
-
-      &:hover,
-      &:focus {
-         .tile-paragraph-overlay {
-            background-image: linear-gradient(
-               to bottom,
-               rgba(255,0,0,0) 70%,
-               $bg-color-light-gray);
-         }
-      }
-   }
- }
- </style>
- <style lang="scss">
- .tile-paragraph {
+<style>
+/* Reset margins inside markdown-rendered note content. Not scoped because
+   the inner HTML is injected via v-html and Vue's scoped CSS won't apply. */
+.note-md-content {
    white-space: initial;
    word-break: break-word;
    user-select: text;
+}
 
-    h1, h2, h3, h4, h5, h6, p, li {
-       margin: 0;
-    }
- }
- </style>
+.note-md-content h1,
+.note-md-content h2,
+.note-md-content h3,
+.note-md-content h4,
+.note-md-content h5,
+.note-md-content h6,
+.note-md-content p,
+.note-md-content li {
+   margin: 0;
+}
+</style>

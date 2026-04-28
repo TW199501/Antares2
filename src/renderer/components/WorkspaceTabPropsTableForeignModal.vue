@@ -7,7 +7,7 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
+         <div class="flex items-center">
             <BaseIcon
                class="mr-1"
                icon-name="mdiKeyLink"
@@ -17,60 +17,61 @@
          </div>
       </template>
       <template #body>
-         <div class="columns col-gapless">
-            <div class="column col-5">
-               <div class="panel" :style="{ height: modalInnerHeight + 'px'}">
-                  <div class="panel-header pt-0 pl-0">
-                     <div class="d-flex">
-                        <button class="btn btn-dark btn-sm d-flex" @click="addForeign">
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiLinkPlus"
-                              :size="24"
-                           />
-                           <span>{{ t('general.add') }}</span>
-                        </button>
-                        <button
-                           class="btn btn-dark btn-sm d-flex ml-2 mr-0"
-                           :title="t('database.clearChanges')"
-                           :disabled="!isChanged"
-                           @click.prevent="clearChanges"
-                        >
-                           <BaseIcon
-                              class="mr-1"
-                              icon-name="mdiDeleteSweep"
-                              :size="24"
-                           />
-                           <span>{{ t('general.clear') }}</span>
-                        </button>
-                     </div>
+         <div class="grid grid-cols-12 gap-0">
+            <div class="col-span-5">
+               <div class="flex flex-col" :style="{ height: modalInnerHeight + 'px'}">
+                  <div class="flex items-center gap-2 mb-2">
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        @click="addForeign"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiLinkPlus"
+                           :size="18"
+                        />
+                        <span>{{ t('general.add') }}</span>
+                     </Button>
+                     <Button
+                        variant="secondary"
+                        size="sm"
+                        class="!h-[28px]"
+                        :title="t('database.clearChanges')"
+                        :disabled="!isChanged"
+                        @click.prevent="clearChanges"
+                     >
+                        <BaseIcon
+                           class="mr-1"
+                           icon-name="mdiDeleteSweep"
+                           :size="18"
+                        />
+                        <span>{{ t('general.clear') }}</span>
+                     </Button>
                   </div>
-                  <div ref="indexesPanel" class="panel-body p-0 pr-1">
+                  <div ref="indexesPanel" class="flex-1 overflow-auto pr-1">
                      <div
                         v-for="foreign in foreignProxy"
                         :key="foreign._antares_id"
-                        class="tile tile-centered c-hand mb-1 p-1"
+                        class="flex items-center gap-2 px-2 py-1 mb-1 rounded-md cursor-pointer"
                         :class="{'selected-element': selectedForeignID === foreign._antares_id}"
                         @click="selectForeign($event, foreign._antares_id)"
                      >
-                        <div class="tile-icon">
-                           <div>
-                              <BaseIcon
-                                 class="mr-1 mt-1"
-                                 icon-name="mdiKeyLink"
-                                 :size="24"
-                              />
-                           </div>
-                        </div>
-                        <div class="tile-content">
-                           <div class="tile-title">
+                        <BaseIcon
+                           class="shrink-0"
+                           icon-name="mdiKeyLink"
+                           :size="22"
+                        />
+                        <div class="flex-1 min-w-0">
+                           <div class="text-sm truncate">
                               {{ foreign.constraintName }}
                            </div>
-                           <small class="tile-subtitle text-gray d-flex">
+                           <small class="text-xs text-muted-foreground flex items-center">
                               <BaseIcon
-                                 class="mt-1 mr-1"
+                                 class="mr-1"
                                  icon-name="mdiLinkVariant"
-                                 :size="18"
+                                 :size="14"
                               />
                               <div class="fk-details-wrapper">
                                  <span v-if="foreign.table !== ''" class="fk-details">
@@ -94,131 +95,121 @@
                               </div>
                            </small>
                         </div>
-                        <div class="tile-action">
-                           <button
-                              class="btn btn-link remove-field p-0 mr-2"
-                              :title="t('general.delete')"
-                              @click.prevent="removeIndex(foreign._antares_id)"
-                           >
-                              <BaseIcon
-                                 icon-name="mdiClose"
-                                 :size="18"
-                                 class="mt-2"
-                              />
-                           </button>
-                        </div>
+                        <Button
+                           variant="ghost"
+                           size="icon"
+                           class="tile-action !h-[24px] !w-[24px] remove-field"
+                           :title="t('general.delete')"
+                           @click.prevent="removeIndex(foreign._antares_id)"
+                        >
+                           <BaseIcon
+                              icon-name="mdiClose"
+                              :size="16"
+                           />
+                        </Button>
                      </div>
                   </div>
                </div>
             </div>
 
-            <div class="column col-7 pl-2 editor-col">
+            <div class="col-span-7 pl-2">
                <form
                   v-if="selectedForeignObj"
                   :style="{ height: modalInnerHeight + 'px'}"
-                  class="form-horizontal"
+                  class="flex flex-col gap-3"
                >
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('general.name') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="selectedForeignObj.constraintName"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
+                     </Label>
+                     <Input
+                        v-model="selectedForeignObj.constraintName"
+                        type="text"
+                        class="!h-[32px] !text-sm"
+                     />
                   </div>
-                  <div class="form-group mb-4">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-start gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.field', 1) }}
-                     </label>
-                     <div class="fields-list column pt-1">
+                     </Label>
+                     <div class="fields-list flex flex-col gap-1 pt-1">
                         <label
                            v-for="(field, i) in fields"
                            :key="`${field.name}-${i}`"
-                           class="form-checkbox m-0"
-                           @click.prevent="toggleField(field.name)"
+                           class="flex items-center gap-2 cursor-pointer text-sm"
                         >
-                           <input type="checkbox" :checked="selectedForeignObj.field === field.name">
-                           <i class="form-icon" /> {{ field.name }}
+                           <Checkbox
+                              :model-value="selectedForeignObj.field === field.name"
+                              @update:model-value="toggleField(field.name)"
+                           />
+                           <span>{{ field.name }}</span>
                         </label>
                      </div>
                   </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.referenceTable') }}
-                     </label>
-                     <div class="column">
-                        <BaseSelect
-                           v-model="selectedForeignObj.refTable"
-                           :options="schemaTables"
-                           option-label="name"
-                           option-track-by="name"
-                           class="form-select"
-                           @change="reloadRefFields"
-                        />
-                     </div>
+                     </Label>
+                     <BaseSelect
+                        v-model="selectedForeignObj.refTable"
+                        :options="schemaTables"
+                        option-label="name"
+                        option-track-by="name"
+                        class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-sm"
+                        @change="reloadRefFields"
+                     />
                   </div>
-                  <div class="form-group mb-4">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-start gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0 mt-1.5">
                         {{ t('database.referenceField') }}
-                     </label>
-                     <div class="fields-list column pt-1">
+                     </Label>
+                     <div class="fields-list flex flex-col gap-1 pt-1">
                         <label
                            v-for="(field, i) in refFields[selectedForeignID]"
                            :key="`${field.name}-${i}`"
-                           class="form-checkbox m-0"
-                           @click.prevent="toggleRefField(field.name)"
+                           class="flex items-center gap-2 cursor-pointer text-sm"
                         >
-                           <input type="checkbox" :checked="selectedForeignObj.refField === field.name && selectedForeignObj.refTable === field.table">
-                           <i class="form-icon" /> {{ field.name }}
+                           <Checkbox
+                              :model-value="selectedForeignObj.refField === field.name && selectedForeignObj.refTable === field.table"
+                              @update:model-value="toggleRefField(field.name)"
+                           />
+                           <span>{{ field.name }}</span>
                         </label>
                      </div>
                   </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.onUpdate') }}
-                     </label>
-                     <div class="column">
-                        <BaseSelect
-                           v-model="selectedForeignObj.onUpdate"
-                           :options="foreignActions"
-                           class="form-select"
-                        />
-                     </div>
+                     </Label>
+                     <BaseSelect
+                        v-model="selectedForeignObj.onUpdate"
+                        :options="foreignActions"
+                        class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-sm"
+                     />
                   </div>
-                  <div class="form-group">
-                     <label class="form-label col-3">
+                  <div class="grid grid-cols-[100px_1fr] items-center gap-2">
+                     <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                         {{ t('database.onDelete') }}
-                     </label>
-                     <div class="column">
-                        <BaseSelect
-                           v-model="selectedForeignObj.onDelete"
-                           :options="foreignActions"
-                           class="form-select"
-                        />
-                     </div>
+                     </Label>
+                     <BaseSelect
+                        v-model="selectedForeignObj.onDelete"
+                        :options="foreignActions"
+                        class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-sm"
+                     />
                   </div>
                </form>
 
-               <div v-if="!foreignProxy.length" class="empty">
-                  <div class="empty-icon">
-                     <BaseIcon
-                        class="mr-1"
-                        icon-name="mdiKeyLink"
-                        :size="48"
-                     />
-                  </div>
-                  <p class="empty-title h5">
+               <div v-if="!foreignProxy.length" class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                  <BaseIcon
+                     icon-name="mdiKeyLink"
+                     :size="48"
+                  />
+                  <p class="text-base">
                      {{ t('database.thereAreNoForeign') }}
                   </p>
-                  <div class="empty-action">
-                     <button class="btn btn-primary" @click="addForeign">
-                        {{ t('database.createNewForeign') }}
-                     </button>
-                  </div>
+                  <Button @click="addForeign">
+                     {{ t('database.createNewForeign') }}
+                  </Button>
                </div>
             </div>
          </div>
@@ -235,6 +226,10 @@ import { useI18n } from 'vue-i18n';
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 
@@ -286,7 +281,7 @@ const selectForeign = (event: MouseEvent, id: string) => {
 };
 
 const getModalInnerHeight = () => {
-   const modalBody = document.querySelector('.modal-body');
+   const modalBody = document.querySelector('[data-modal-body]');
    if (modalBody)
       modalInnerHeight.value = modalBody.clientHeight - (parseFloat(getComputedStyle(modalBody).paddingTop) + parseFloat(getComputedStyle(modalBody).paddingBottom));
 };
@@ -399,7 +394,6 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .tile {
-  border-radius: $border-radius;
   opacity: 0.5;
   transition: background 0.2s;
   transition: opacity 0.2s;
@@ -417,6 +411,7 @@ onUnmounted(() => {
 
   &.selected-element {
     opacity: 1;
+    background: var(--accent);
   }
 }
 

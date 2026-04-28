@@ -1,7 +1,7 @@
 <template>
-   <div class="container">
-      <div class="columns">
-         <div class="column col-16 text-right">
+   <div class="container pt-[15vh] opacity-60">
+      <div class="grid grid-cols-2 gap-x-6">
+         <div class="text-right">
             <div
                v-for="(shortcut, i) in tabShortcuts"
                :key="i"
@@ -10,7 +10,7 @@
                {{ t(shortcutEvents[shortcut.event].i18n, {param: shortcutEvents[shortcut.event].i18nParam}) }}
             </div>
          </div>
-         <div class="column col-16">
+         <div>
             <div
                v-for="(shortcut, i) in tabShortcuts"
                :key="i"

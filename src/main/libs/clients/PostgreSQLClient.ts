@@ -86,7 +86,7 @@ export class PostgreSQLClient extends BaseClient {
    private _schema?: string;
    private _runningConnections: Map<string, number>;
    private _connectionsToCommit: Map<string, pg.Client | pg.PoolClient>;
-   private _keepaliveTimer: NodeJS.Timer;
+   private _keepaliveTimer: NodeJS.Timeout;
    private _keepaliveMs: number;
    protected _connection?: pg.Client | pg.Pool;
    private types: Record<string, string> = {};
@@ -100,7 +100,7 @@ export class PostgreSQLClient extends BaseClient {
       _varchar: 'CHARACTER VARYING'
    };
 
-   _params: pg.ClientConfig & {schema: string; ssl?: ConnectionOptions; ssh?: SSHConfig; readonly: boolean};
+   declare _params: pg.ClientConfig & {schema: string; ssl?: ConnectionOptions; ssh?: SSHConfig; readonly: boolean};
 
    constructor (args: antares.ClientParams) {
       super(args);
@@ -150,7 +150,7 @@ export class PostgreSQLClient extends BaseClient {
    }
 
    async getDbConfig () {
-      this._params.application_name = 'Antares SQL';
+      this._params.application_name = 'Antares2';
 
       const dbConfig = {
          host: this._params.host,
@@ -676,6 +676,7 @@ export class PostgreSQLClient extends BaseClient {
       let createSql = '';
       const sequences = [];
       const columnsSql = [];
+      const columnDefs: { name: string; ddl: string }[] = [];
       const arrayTypes: Record<string, string> = {
          _int2: 'smallint',
          _int4: 'integer',
@@ -749,7 +750,9 @@ export class PostgreSQLClient extends BaseClient {
          }
          if (column.is_nullable === 'NO') columnArr.push('NOT NULL');
 
-         columnsSql.push(columnArr.join(' '));
+         const colDdl = columnArr.join(' ');
+         columnsSql.push(colDdl);
+         columnDefs.push({ name: column.column_name, ddl: colDdl });
       }
 
       if (primaryKey)
@@ -766,7 +769,7 @@ export class PostgreSQLClient extends BaseClient {
             .run<SequenceRecord>();
 
          if (rows.length) {
-            createSql += `CREATE SEQUENCE "${schema}"."${sequence}"
+            createSql += `CREATE SEQUENCE IF NOT EXISTS "${schema}"."${sequence}"
    START WITH ${rows[0].start_value}
    INCREMENT BY ${rows[0].increment}
    MINVALUE ${rows[0].minimum_value}
@@ -775,17 +778,25 @@ export class PostgreSQLClient extends BaseClient {
          }
       }
 
-      // Table create
-      createSql += `CREATE TABLE "${schema}"."${table}"(
+      // Idempotent table create: skip when the table already exists.
+      createSql += `CREATE TABLE IF NOT EXISTS "${schema}"."${table}"(
    ${columnsSql.join(',\n   ')}
 );\n`;
+
+      // Backfill columns on tables that exist but are missing some columns.
+      // ALTER TABLE ... ADD COLUMN IF NOT EXISTS is supported on PostgreSQL 9.6+.
+      if (columnDefs.length) {
+         createSql += '\n';
+         for (const col of columnDefs)
+            createSql += `ALTER TABLE "${schema}"."${table}" ADD COLUMN IF NOT EXISTS ${col.ddl};\n`;
+      }
 
       // Table indexes
       createSql += '\n';
 
       for (const index of remappedIndexes) {
          if (index.type !== 'PRIMARY')
-            createSql += `CREATE ${index.type}${index.type === 'UNIQUE' ? ' INDEX' : ''} "${index.name}" ON "${schema}"."${table}" (${index.column});\n`;
+            createSql += `CREATE ${index.type}${index.type === 'UNIQUE' ? ' INDEX' : ''} IF NOT EXISTS "${index.name}" ON "${schema}"."${table}" (${index.column});\n`;
       }
 
       return createSql;

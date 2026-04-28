@@ -19,6 +19,16 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Download Node.js binary for Windows x64
+        shell: pwsh
+        run: |
+          $NODE_VERSION = "20.19.0"
+          $url = "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-win-x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile node.zip
+          Expand-Archive -Path node.zip -DestinationPath node-extracted -Force
+          Copy-Item "node-extracted/node-v$NODE_VERSION-win-x64/node.exe" -Destination "sidecar/node.exe" -Force
+          Remove-Item -Recurse -Force node.zip, node-extracted
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:

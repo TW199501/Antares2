@@ -1,7 +1,7 @@
 {
-   "productName": "Antares SQL",
-   "version": "0.8.0",
-   "identifier": "com.fabio286.antares",
+   "productName": "Antares2",
+   "version": "0.8.1",
+   "identifier": "com.tw199501.antares2",
    "build": {
       "beforeDevCommand": "npm run vite:dev",
       "devUrl": "http://localhost:5173",
@@ -12,29 +12,15 @@
       "active": true,
       "targets": ["nsis", "msi"],
       "resources": {
-         "../sidecar/node.exe": "sidecar/node.exe",
-         "../sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
-         "../workers/**/*": "workers/",
-         "../node_modules/better-sqlite3/**/*": "node_modules/better-sqlite3/",
-         "../node_modules/ssh2/**/*": "node_modules/ssh2/",
-         "../node_modules/cpu-features/**/*": "node_modules/cpu-features/",
-         "../node_modules/@heroku/socksv5/**/*": "node_modules/@heroku/socksv5/",
-         "../node_modules/@fabio286/ssh2-promise/**/*": "node_modules/@fabio286/ssh2-promise/",
-         "../node_modules/bindings/**/*": "node_modules/bindings/",
-         "../node_modules/file-uri-to-path/**/*": "node_modules/file-uri-to-path/",
-         "../node_modules/node-firebird/**/*": "node_modules/node-firebird/"
+         "resources/sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
+         "resources/workers": "workers",
+         "resources/node_modules": "node_modules"
       },
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico", "icons/icon.icns"]
    },
-   "plugins": {
-      "updater": {
-         "pubkey": "",
-         "endpoints": ["TODO: https://your-update-server/{{target}}/{{arch}}/{{current_version}}"]
-      }
-   },
    "app": {
       "windows": [{
-         "title": "Antares SQL",
+         "title": "Antares2",
          "width": 1024,
          "height": 800,
          "minWidth": 900,

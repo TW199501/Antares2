@@ -1,51 +1,15 @@
 <template>
    <div class="tr" @contextmenu.prevent="!editingField ? emit('contextmenu', $event, localRow._antares_id) : null">
-      <div class="td p-0" tabindex="0">
-         <div :class="customizations.sortableFields ? 'row-draggable' : 'text-center'">
-            <BaseIcon
-               v-if="customizations.sortableFields"
-               icon-name="mdiDragHorizontal"
-               :size="22"
-               class="row-draggable-icon"
-            />
-            {{ localRow.order }}
-         </div>
+      <!-- 序號 (column ordinal position) -->
+      <div class="td p-0 text-center" tabindex="0">
+         <span class="cell-content text-center text-sm">{{ localRow.order }}</span>
       </div>
-      <div class="td p-0" tabindex="0">
-         <div class="text-center" :style="'display: flex; justify-content: center; align-items: center'">
-            <div
-               v-for="(index, i) in indexes"
-               :key="`${index.name}-${i}`"
-               :title="index.type"
-               class="p-vcentered"
-            >
-               <BaseIcon
-                  icon-name="mdiKey"
-                  :rotate="45"
-                  :size="14"
-                  class="d-inline-block column-key c-help"
-                  :class="`key-${index.type}`"
-               />
-            </div>
-            <div
-               v-for="foreign in foreigns"
-               :key="foreign"
-               :title="foreign"
-               class="p-vcentered"
-            >
-               <BaseIcon
-                  class="d-inline-block c-help"
-                  icon-name="mdiKeyLink"
-                  :size="16"
-               />
-            </div>
-         </div>
-      </div>
+      <!-- 字段名 -->
       <div class="td p-0" tabindex="0">
          <span
             v-if="!isInlineEditor.name"
-            class="cell-content"
-            @dblclick="editON($event, localRow.name , 'name')"
+            class="cell-content text-sm"
+            @dblclick="editON($event, localRow.name, 'name')"
          >
             {{ localRow.name }}
          </span>
@@ -55,17 +19,15 @@
             v-model="editingContent"
             type="text"
             autofocus
-            class="editable-field form-input input-sm px-1"
+            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @blur="editOFF"
          >
       </div>
-      <div
-         class="td p-0 text-uppercase"
-         tabindex="0"
-      >
+      <!-- 数据类型 -->
+      <div class="td p-0 text-uppercase" tabindex="0">
          <span
             v-if="!isInlineEditor.type"
-            class="cell-content text-left"
+            class="cell-content text-left text-sm"
             :class="typeClass(localRow.type)"
             @dblclick="editON($event, localRow.type.toUpperCase(), 'type')"
          >
@@ -80,54 +42,63 @@
             group-values="types"
             option-label="name"
             option-track-by="name"
-            class="form-select editable-field pl-1 pr-4 small-select text-uppercase"
+            class="editable-field pl-1 pr-4 text-uppercase !h-[28px] !text-sm"
             @blur="editOFF"
          />
       </div>
+      <!-- 主键 PK (read-only chip) -->
+      <div class="td p-0 text-center" tabindex="0">
+         <span
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium"
+            :class="isPrimaryKey ? 'bg-blue-100 text-blue-700' : 'bg-orange-50 text-orange-600'"
+         >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
+      </div>
+      <!-- 自增 AI (toggle chip, conditional) -->
       <div
-         v-if="customizations.tableArray"
-         class="td p-0"
+         v-if="customizations.autoIncrement"
+         class="td p-0 text-center"
          tabindex="0"
       >
-         <label class="form-checkbox">
-            <input v-model="localRow.isArray" type="checkbox">
-            <i class="form-icon" />
-         </label>
+         <span
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium select-none transition-colors"
+            :class="[
+               localRow.autoIncrement ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600',
+               !canAutoincrement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            ]"
+            @click="canAutoincrement && toggleAutoIncrement()"
+         >{{ localRow.autoIncrement ? t('general.yes') : t('general.no') }}</span>
       </div>
-      <div class="td p-0 type-int" tabindex="0">
-         <template v-if="fieldType?.length">
-            <span
-               v-if="!isInlineEditor.length"
-               class="cell-content"
-               @dblclick="editON($event, localLength, 'length')"
-            >
-               <span v-if="localRow.enumValues">
-                  {{ localRow.enumValues }}
-               </span>
-               <span v-else-if="localRow.numScale">
-                  {{ localLength }}, {{ localRow.numScale }}
-               </span>
-               <span v-else>
-                  {{ localLength }}
-               </span>
-            </span>
+      <!-- 可空 NULL (toggle chip, conditional) -->
+      <div
+         v-if="customizations.nullable"
+         class="td p-0 text-center"
+         tabindex="0"
+      >
+         <span
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium select-none transition-colors"
+            :class="[
+               localRow.nullable ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600',
+               !isNullable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            ]"
+            @click="isNullable && (localRow.nullable = !localRow.nullable)"
+         >{{ localRow.nullable ? t('general.yes') : t('general.no') }}</span>
+      </div>
+      <!-- 长度 -->
+      <div class="td p-0 type-int text-center" tabindex="0">
+         <span
+            v-if="!isInlineEditor.length"
+            class="cell-content text-center text-sm"
+            :class="!fieldType?.length ? 'cell-readonly text-muted-foreground cursor-not-allowed' : ''"
+            @dblclick="fieldType?.length ? editON($event, localLength, 'length') : null"
+         >{{ localRow.enumValues || localLength || '-' }}</span>
+         <template v-if="fieldType?.length && isInlineEditor.length">
             <input
-               v-else-if="localRow.enumValues"
+               v-if="localRow.enumValues"
                ref="editField"
                v-model="editingContent"
                type="text"
                autofocus
-               class="editable-field form-input input-sm px-1"
-               @blur="editOFF"
-            >
-            <input
-               v-else-if="fieldType.scale"
-               ref="editField"
-               v-model="editingContent"
-               type="text"
-               autofocus
-               class="editable-field form-input input-sm px-1"
-               @keypress="checkLengthScale"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
             <input
@@ -136,58 +107,54 @@
                v-model="editingContent"
                type="number"
                autofocus
-               class="editable-field form-input input-sm px-1"
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                @blur="editOFF"
             >
          </template>
       </div>
-      <div
-         v-if="customizations.unsigned"
-         class="td p-0"
-         tabindex="0"
-      >
-         <label class="form-checkbox">
+      <!-- 精度 (scale) -->
+      <div class="td p-0 type-int text-center" tabindex="0">
+         <template v-if="fieldType?.scale">
+            <span
+               v-if="!isInlineEditor.numScale"
+               class="cell-content text-center text-sm"
+               @dblclick="editON($event, localRow.numScale, 'numScale')"
+            >{{ localRow.numScale }}</span>
             <input
-               v-model="localRow.unsigned"
-               type="checkbox"
-               :disabled="!fieldType?.unsigned"
+               v-else
+               ref="editField"
+               v-model="editingContent"
+               type="number"
+               autofocus
+               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+               @blur="editOFF"
             >
-            <i class="form-icon" />
-         </label>
+         </template>
       </div>
-      <div
-         v-if="customizations.nullable"
-         class="td p-0"
-         tabindex="0"
-      >
-         <label class="form-checkbox">
-            <input
-               v-model="localRow.nullable"
-               type="checkbox"
-               :disabled="!isNullable"
-            >
-            <i class="form-icon" />
-         </label>
+      <!-- FK / UQ (read-only chips) -->
+      <div class="td p-0 text-center" tabindex="0">
+         <div class="flex flex-wrap gap-[2px] justify-center px-[0.2rem] py-[2px]">
+            <span
+               v-for="(idx, i) in uqIndexes"
+               :key="`uq-${i}`"
+               :title="idx.type"
+               class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-700"
+            >UQ</span>
+            <span
+               v-for="foreign in foreigns"
+               :key="foreign"
+               :title="foreign"
+               class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium bg-orange-100 text-orange-700"
+            >FK</span>
+         </div>
       </div>
-      <div
-         v-if="customizations.zerofill"
-         class="td p-0"
-         tabindex="0"
-      >
-         <label class="form-checkbox">
-            <input
-               v-model="localRow.zerofill"
-               type="checkbox"
-               :disabled="!fieldType.zerofill"
-            >
-            <i class="form-icon" />
-         </label>
-      </div>
+      <!-- 默认值 -->
       <div class="td p-0" tabindex="0">
-         <span class="cell-content" @dblclick="editON($event, localRow.default, 'default')">
+         <span class="cell-content text-sm" @dblclick="editON($event, localRow.default, 'default')">
             {{ fieldDefault }}
          </span>
       </div>
+      <!-- 描述 (conditional) -->
       <div
          v-if="customizations.comment"
          class="td p-0 type-varchar"
@@ -195,8 +162,8 @@
       >
          <span
             v-if="!isInlineEditor.comment"
-            class="cell-content"
-            @dblclick="editON($event, localRow.comment , 'comment')"
+            class="cell-content text-sm"
+            @dblclick="editON($event, localRow.comment, 'comment')"
          >
             {{ localRow.comment }}
          </span>
@@ -206,35 +173,50 @@
             v-model="editingContent"
             type="text"
             autofocus
-            class="editable-field form-input input-sm px-1"
+            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @blur="editOFF"
          >
       </div>
-      <div
-         v-if="customizations.collation"
-         class="td p-0"
-         tabindex="0"
-      >
-         <template v-if="fieldType.collation">
-            <span
-               v-if="!isInlineEditor.collation"
-               class="cell-content"
-               @dblclick="editON($event, localRow.collation, 'collation')"
+      <!-- 操作 -->
+      <div class="td p-0 td-ops" tabindex="0">
+         <div class="ops-btns">
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100"
+               :title="t('general.moveUp')"
+               @click.stop="emit('move-up', localRow._antares_id)"
             >
-               {{ localRow.collation }}
-            </span>
-            <BaseSelect
-               v-else
-               ref="editField"
-               v-model="editingContent"
-               :options="collations"
-               option-label="collation"
-               option-track-by="collation"
-               :max-visible-options="1000"
-               class="form-select small-select pl-1 pr-4 editable-field"
-               @blur="editOFF"
-            />
-         </template>
+               <BaseIcon icon-name="mdiArrowUp" :size="14" />
+            </Button>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100"
+               :title="t('general.moveDown')"
+               @click.stop="emit('move-down', localRow._antares_id)"
+            >
+               <BaseIcon icon-name="mdiArrowDown" :size="14" />
+            </Button>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100 hover:!text-[#4a9eff]"
+               :title="t('database.editField')"
+               @click.stop="emit('edit-field', localRow._antares_id)"
+            >
+               <BaseIcon icon-name="mdiPencilOutline" :size="14" />
+            </Button>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100 hover:!text-[#e85600]"
+               :title="t('general.delete')"
+               @click.stop="emit('remove-field-row', localRow._antares_id)"
+            >
+               <BaseIcon icon-name="mdiDeleteOutline" :size="14" />
+            </Button>
+         </div>
       </div>
       <ConfirmModal
          v-if="isDefaultModal"
@@ -244,101 +226,103 @@
          @hide="hideDefaultModal"
       >
          <template #header>
-            <div class="d-flex">
+            <div class="flex items-center">
                <BaseIcon
                   class="mr-1"
                   icon-name="mdiPlaylistEdit"
-                  :size="24"
+                  :size="22"
                />
                <span class="cut-text">{{ t('database.default') }} "{{ row.name }}"</span>
             </div>
          </template>
          <template #body>
-            <form class="form-horizontal">
-               <div class="mb-2">
-                  <label class="form-radio form-inline">
+            <form class="flex flex-col gap-2">
+               <!-- noval -->
+               <label class="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                     v-model="defaultValue.type"
+                     type="radio"
+                     name="default"
+                     value="noval"
+                     class="accent-primary"
+                  >
+                  <span>No value</span>
+               </label>
+               <!-- custom value -->
+               <div class="grid grid-cols-[140px_1fr] items-center gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
                      <input
                         v-model="defaultValue.type"
                         type="radio"
                         name="default"
-                        value="noval"
-                     ><i class="form-icon" /> No value
+                        value="custom"
+                        class="accent-primary"
+                     >
+                     <span>{{ t('database.customValue') }}</span>
                   </label>
+                  <Input
+                     v-model="defaultValue.custom"
+                     :disabled="defaultValue.type !== 'custom'"
+                     type="text"
+                     class="!h-[32px] !text-sm"
+                  />
                </div>
-               <div class="mb-2">
-                  <div class="form-group">
-                     <label class="form-radio form-inline col-4">
-                        <input
-                           v-model="defaultValue.type"
-                           value="custom"
-                           type="radio"
-                           name="default"
-                        ><i class="form-icon" /> {{ t('database.customValue') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="defaultValue.custom"
-                           :disabled="defaultValue.type !== 'custom'"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
-                  </div>
-               </div>
-               <div v-if="customizations.nullable" class="mb-2">
-                  <label class="form-radio form-inline">
+               <!-- NULL -->
+               <label v-if="customizations.nullable" class="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                     v-model="defaultValue.type"
+                     type="radio"
+                     name="default"
+                     value="null"
+                     class="accent-primary"
+                  >
+                  <span>NULL</span>
+               </label>
+               <!-- AUTO_INCREMENT -->
+               <label
+                  v-if="customizations.autoIncrement"
+                  class="flex items-center gap-2 cursor-pointer text-sm"
+                  :class="{ 'opacity-50 cursor-not-allowed': !canAutoincrement }"
+               >
+                  <input
+                     v-model="defaultValue.type"
+                     :disabled="!canAutoincrement"
+                     type="radio"
+                     name="default"
+                     value="autoincrement"
+                     class="accent-primary"
+                  >
+                  <span>AUTO_INCREMENT</span>
+               </label>
+               <!-- expression -->
+               <div class="grid grid-cols-[140px_1fr] items-center gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
                      <input
                         v-model="defaultValue.type"
                         type="radio"
                         name="default"
-                        value="null"
-                     ><i class="form-icon" /> NULL
+                        value="expression"
+                        class="accent-primary"
+                     >
+                     <span>{{ t('database.expression') }}</span>
                   </label>
+                  <Input
+                     v-model="defaultValue.expression"
+                     :disabled="defaultValue.type !== 'expression'"
+                     type="text"
+                     class="!h-[32px] !text-sm"
+                  />
                </div>
-               <div v-if="customizations.autoIncrement" class="mb-2">
-                  <label class="form-radio form-inline">
-                     <input
-                        v-model="defaultValue.type"
-                        :disabled="!canAutoincrement"
-                        type="radio"
-                        name="default"
-                        value="autoincrement"
-                     ><i class="form-icon" /> AUTO_INCREMENT
-                  </label>
-               </div>
-               <div class="mb-2">
-                  <div class="form-group">
-                     <label class="form-radio form-inline col-4">
-                        <input
-                           v-model="defaultValue.type"
-                           type="radio"
-                           name="default"
-                           value="expression"
-                        ><i class="form-icon" /> {{ t('database.expression') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="defaultValue.expression"
-                           :disabled="defaultValue.type !== 'expression'"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
-                  </div>
-               </div>
-               <div v-if="customizations.onUpdate">
-                  <div class="form-group">
-                     <label class="form-label col-4">
-                        {{ t('database.onUpdate') }}
-                     </label>
-                     <div class="column">
-                        <input
-                           v-model="defaultValue.onUpdate"
-                           class="form-input"
-                           type="text"
-                        >
-                     </div>
-                  </div>
+               <!-- ON UPDATE -->
+               <div v-if="customizations.onUpdate" class="grid grid-cols-[140px_1fr] items-center gap-2">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
+                     {{ t('database.onUpdate') }}
+                  </Label>
+                  <Input
+                     v-model="defaultValue.onUpdate"
+                     type="text"
+                     class="!h-[32px] !text-sm"
+                  />
                </div>
             </form>
          </template>
@@ -348,14 +332,15 @@
 
 <script setup lang="ts">
 import { TableField, TableIndex, TypesGroup } from 'common/interfaces/antares';
-import { storeToRefs } from 'pinia';
 import { computed, nextTick, onMounted, Prop, PropType, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
-import { useWorkspacesStore } from '@/stores/workspaces';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const { t } = useI18n();
 
@@ -373,13 +358,11 @@ const props = defineProps({
 const emit = defineEmits<{
    'contextmenu': [event: MouseEvent, id: string];
    'rename-field': [payload: { old: string; new: string | number }];
+   'move-up': [id: string];
+   'move-down': [id: string];
+   'remove-field-row': [id: string];
+   'edit-field': [id: string];
 }>();
-
-const workspacesStore = useWorkspacesStore();
-
-const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
-
-const { getWorkspace } = workspacesStore;
 
 const localRow: Ref<TableField> = ref({} as TableField);
 const isInlineEditor: Ref<TableField> = ref({} as TableField);
@@ -395,7 +378,7 @@ const originalContent = ref(null);
 const editingField: Ref<keyof TableField> = ref(null);
 
 const localLength = computed(() => {
-   const localLength = localRow.value.numLength || localRow.value.charLength || localRow.value.datePrecision || localRow.value.numPrecision || 0 as number | true;
+   const localLength = localRow.value.numLength || localRow.value.charLength || localRow.value.numPrecision || localRow.value.datePrecision || 0 as number | true;
    return localLength === true ? null : localLength;
 });
 
@@ -416,9 +399,10 @@ const fieldDefault = computed(() => {
    return localRow.value.default;
 });
 
-const collations = computed(() => getWorkspace(selectedWorkspace.value).collations);
 const canAutoincrement = computed(() => props.indexes.some(index => ['PRIMARY', 'UNIQUE'].includes(index.type)));
 const isNullable = computed(() => props.customizations.nullablePrimary || !props.indexes.some(index => ['PRIMARY'].includes(index.type)));
+const isPrimaryKey = computed(() => props.indexes.some(index => index.type === 'PRIMARY'));
+const uqIndexes = computed(() => props.indexes.filter(index => index.type === 'UNIQUE'));
 
 const isInDataTypes = computed(() => {
    let typeNames: string[] = [];
@@ -471,6 +455,14 @@ const initLocalRow = () => {
    }
 };
 
+const toggleAutoIncrement = () => {
+   localRow.value.autoIncrement = !localRow.value.autoIncrement;
+   if (localRow.value.autoIncrement) {
+      localRow.value.default = null;
+      localRow.value.nullable = false;
+   }
+};
+
 const editON = async (event: MouseEvent, content: string | number, field: keyof TableField) => {
    if (field === 'length') {
       if (['integer', 'float', 'binary', 'spatial'].includes(fieldType.value.group)) editingField.value = 'numLength';
@@ -484,11 +476,6 @@ const editON = async (event: MouseEvent, content: string | number, field: keyof 
    if (localRow.value.enumValues && field === 'length') {
       editingContent.value = localRow.value.enumValues;
       originalContent.value = localRow.value.enumValues;
-   }
-   else if (fieldType.value.scale && field === 'length') {
-      const scale = localRow.value.numScale !== null ? localRow.value.numScale : 0;
-      editingContent.value = `${content}, ${scale}`;
-      originalContent.value = `${content}, ${scale}`;
    }
    else {
       editingContent.value = content;
@@ -512,14 +499,8 @@ const editOFF = () => {
    if (editingField.value === 'name')
       emit('rename-field', { old: localRow.value[editingField.value], new: editingContent.value });
 
-   if (editingField.value === 'numLength' && fieldType.value.scale) {
-      const [length, scale] = (editingContent.value as string).split(',');
-      localRow.value.numLength = +length;
-      localRow.value.numScale = scale ? +scale : null;
-   }
-   else
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (localRow.value as any)[editingField.value] = editingContent.value;
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   (localRow.value as any)[editingField.value] = editingContent.value;
 
    if (editingField.value === 'type' && editingContent.value !== originalContent.value) {
       localRow.value.numLength = null;
@@ -582,16 +563,6 @@ const editOFF = () => {
    editingField.value = null;
 };
 
-const checkLengthScale = (e: KeyboardEvent & { target: HTMLInputElement }) => {
-   e = (e) || window.event as KeyboardEvent & { target: HTMLInputElement };
-   const charCode = (e.which) ? e.which : Number(e.code);
-
-   if (((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 44) || (charCode === 44 && e.target.value.includes(',')))
-      e.preventDefault();
-   else
-      return true;
-};
-
 const hideDefaultModal = () => {
    isDefaultModal.value = false;
 };
@@ -620,17 +591,40 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// Inline-edit input overlays the cell while editing.
+// Visual styling (height/font/border/radius) now lives on the element via Tailwind utilities.
 .editable-field {
-  margin: 0;
-  border: none;
-  line-height: 1;
-  width: 100%;
   position: absolute;
   left: 0;
   right: 0;
-  max-height: 21px;
-  border-radius: 3px;
-  font-size: 0.7rem;
+  margin: 0;
+  width: 100%;
+}
+
+.td-ops {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--background);
+}
+
+.tr:hover .td-ops {
+  background: var(--accent);
+}
+
+.ops-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.cell-readonly {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .row-draggable {
@@ -644,23 +638,6 @@ onMounted(() => {
     position: absolute;
     left: 0;
     font-size: 22px;
-  }
-}
-
-.table-column-title {
-  display: flex;
-  align-items: center;
-}
-
-.form-checkbox {
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-  min-height: auto;
-
-  .form-icon {
-    top: -0.65rem;
-    left: calc(50% - 8px);
   }
 }
 

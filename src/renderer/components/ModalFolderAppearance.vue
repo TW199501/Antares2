@@ -1,74 +1,95 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <!--
+         Folder appearance editor: edit a sidebar folder's name + accent color.
+         Color palette is the legacy spectre-era 17 colors hardcoded below; the
+         picker is rendered as a CSS grid of 24px swatches with mdiCheck overlay
+         on the active selection. Modal width matches the original spectre 360px
+         so legacy users see the same affordance footprint.
+      -->
+      <DialogContent
+         class="!max-w-[360px] !p-0 !gap-0 [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent="closeModal"
+      >
+         <DialogHeader class="px-5 pt-4 pb-3 border-b border-border/60 flex flex-row items-center justify-between !space-y-0">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1">
+               <BaseIcon icon-name="mdiFolderEdit" :size="20" />
+               <span>{{ t('application.editFolder') }}</span>
+            </DialogTitle>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
+
+         <div class="px-5 py-4 space-y-4">
+            <div class="grid grid-cols-[80px_1fr] items-center gap-3">
+               <Label for="folder-name" class="!text-[13px] font-medium">{{ t('general.name') }}</Label>
+               <Input
+                  id="folder-name"
+                  ref="firstInput"
+                  v-model="localFolder.name"
+                  type="text"
+                  required
+                  :placeholder="t('application.folderName')"
+               />
+            </div>
+            <div class="grid grid-cols-[80px_1fr] items-start gap-3">
+               <Label class="!text-[13px] font-medium pt-1">{{ t('application.color') }}</Label>
+               <!--
+                  17-swatch grid. Each swatch is a Button variant="ghost"
+                  with no padding so the colored background fills the
+                  6×6 (24px) box. Selected swatch gets ring-2 + ring-ring
+                  for high-contrast affordance against any palette color.
+               -->
+               <div class="grid grid-cols-[repeat(auto-fill,24px)] gap-1.5">
+                  <Button
+                     v-for="color in colorPalette"
+                     :key="color.name"
+                     type="button"
+                     variant="ghost"
+                     size="icon"
+                     class="!h-6 !w-6 !p-0 !rounded-md hover:!opacity-90"
+                     :class="localFolder.color === color.hex ? 'ring-2 ring-ring ring-offset-2 ring-offset-background' : ''"
+                     :style="`background-color: ${color.hex}`"
+                     :title="color.name"
+                     @click="localFolder.color = color.hex"
+                  >
                      <BaseIcon
-                        icon-name="mdiFolderEdit"
-                        class="mr-1"
-                        :size="24"
+                        v-if="localFolder.color === color.hex"
+                        icon-name="mdiCheck"
+                        :size="14"
+                        class="text-white drop-shadow"
                      />
-                     <span class="cut-text">{{ t('application.editFolder') }}</span>
-                  </div>
+                  </Button>
                </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               <div class="content">
-                  <form class="form-horizontal">
-                     <div class="form-group mb-4">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('general.name') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <input
-                              ref="firstInput"
-                              v-model="localFolder.name"
-                              class="form-input"
-                              type="text"
-                              required
-                              :placeholder="t('application.folderName')"
-                           >
-                        </div>
-                     </div>
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('application.color') }}</label>
-                        </div>
-                        <div class="col-9 color-wrapper">
-                           <div
-                              v-for="color in colorPalette"
-                              :key="color.name"
-                              class="color-box"
-                              :title="color.name"
-                              :style="`background-color: ${color.hex}`"
-                              @click="localFolder.color = color.hex"
-                           >
-                              <BaseIcon
-                                 v-if="localFolder.color === color.hex"
-                                 icon-name="mdiCheck"
-                                 :size="16"
-                              />
-                           </div>
-                        </div>
-                     </div>
-                  </form>
-               </div>
-            </div>
-            <div class="modal-footer">
-               <button class="btn btn-primary mr-2" @click.stop="editFolderAppearance">
-                  {{ t('application.update') }}
-               </button>
-               <button class="btn btn-link" @click.stop="closeModal">
-                  {{ t('general.close') }}
-               </button>
             </div>
          </div>
-      </div>
-   </Teleport>
+
+         <DialogFooter class="!flex !flex-row !justify-end !gap-2 !px-5 !py-3 border-t border-border/60 bg-muted/30">
+            <Button
+               variant="ghost"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="closeModal"
+            >
+               {{ t('general.close') }}
+            </Button>
+            <Button
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="editFolderAppearance"
+            >
+               {{ t('application.update') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -76,7 +97,10 @@ import { onBeforeUnmount, PropType, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { unproxify } from '@/libs/unproxify';
 import { SidebarElement, useConnectionsStore } from '@/stores/connections';
 
@@ -117,8 +141,6 @@ const colorPalette = [
    { name: 'slate', hex: '#757C88' }
 ];
 
-const { trapRef } = useFocusTrap();
-
 const firstInput: Ref<HTMLInputElement> = ref(null);
 const localFolder: Ref<SidebarElement> = ref(unproxify(props.folder));
 
@@ -135,30 +157,9 @@ const onKey =(e: KeyboardEvent) => {
       closeModal();
 };
 
+window.addEventListener('keydown', onKey);
+
 onBeforeUnmount(() => {
    window.removeEventListener('keydown', onKey);
 });
-
 </script>
-
-<style scoped lang="scss">
-  .modal-container {
-    max-width: 360px;
-  }
-
-  .color-wrapper{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, 20px);
-      gap: 5px;
-
-     .color-box {
-         height: 20px;
-         width: 20px;
-         border-radius: 4px;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         cursor: pointer;
-     }
-  }
-</style>
