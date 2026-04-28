@@ -15,7 +15,7 @@
             :placeholder="placeholderOrCurrent"
             :display-value="(v: any) => currentOptionLabel"
             :disabled="disabled"
-            class="select-base__input"
+            class="select-base__input !h-8 !text-[13px]"
          />
       </ComboboxAnchor>
       <ComboboxList :class="['select-base__list', dropdownClass]">
