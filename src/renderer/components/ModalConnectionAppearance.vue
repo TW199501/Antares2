@@ -70,21 +70,35 @@
             <div class="grid grid-cols-[80px_1fr] items-start gap-3">
                <Label class="!text-[13px] font-medium pt-1">{{ t('application.customIcon') }}</Label>
                <div class="grid grid-cols-[repeat(auto-fill,40px)] gap-1.5">
-                  <button
+                  <ContextMenu
                      v-for="icon in customIcons"
                      :key="icon.uid"
-                     type="button"
-                     class="flex h-10 w-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus:outline-none"
-                     :class="localConnection.icon === icon.uid ? 'ring-2 ring-ring' : ''"
-                     @click="setIcon(icon.uid, 'custom')"
-                     @contextmenu.prevent="contextMenu($event, icon.uid)"
                   >
-                     <BaseIcon
-                        :icon-name="icon.uid"
-                        type="custom"
-                        :size="28"
-                     />
-                  </button>
+                     <ContextMenuTrigger as-child>
+                        <button
+                           type="button"
+                           class="flex h-10 w-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus:outline-none"
+                           :class="localConnection.icon === icon.uid ? 'ring-2 ring-ring' : ''"
+                           @click="setIcon(icon.uid, 'custom')"
+                           @contextmenu="setContextIcon(icon.uid)"
+                        >
+                           <BaseIcon
+                              :icon-name="icon.uid"
+                              type="custom"
+                              :size="28"
+                           />
+                        </button>
+                     </ContextMenuTrigger>
+                     <ContextMenuContent class="min-w-[140px]">
+                        <ContextMenuItem
+                           class="text-destructive focus:text-destructive"
+                           @select="removeIconHandler"
+                        >
+                           <BaseIcon icon-name="mdiDelete" :size="16" />
+                           <span>{{ t('general.delete') }}</span>
+                        </ContextMenuItem>
+                     </ContextMenuContent>
+                  </ContextMenu>
                   <!-- Add new SVG tile -->
                   <button
                      type="button"
@@ -117,21 +131,6 @@
          </DialogFooter>
       </DialogContent>
    </Dialog>
-
-   <BaseContextMenu
-      v-if="isContext"
-      :context-event="contextEvent"
-      @close-context="isContext = false"
-   >
-      <div class="context-element" @click="removeIconHandler">
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiDelete"
-               :size="18"
-            /> {{ t('general.delete') }}</span>
-      </div>
-   </BaseContextMenu>
 </template>
 
 <script setup lang="ts">
@@ -139,7 +138,6 @@ import { storeToRefs } from 'pinia';
 import { onBeforeUnmount, PropType, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -157,9 +155,9 @@ const { addNotification } = useNotificationsStore();
 const { addIcon, removeIcon, updateConnectionOrder, getConnectionName } = connectionsStore;
 const { customIcons } = storeToRefs(connectionsStore);
 
-const isContext = ref(false);
+// Records which custom icon was right-clicked, so removeIconHandler
+// (called from the ContextMenu's "Delete" item) knows what to remove.
 const contextContent: Ref<string> = ref(null);
-const contextEvent: Ref<MouseEvent> = ref(null);
 
 const { t } = useI18n();
 
@@ -242,7 +240,6 @@ const removeIconHandler = () => {
       updateConnectionOrder(localConnection.value);
    }
    removeIcon(contextContent.value);
-   isContext.value = false;
 };
 
 const adjustSVGContent = (svgContent: string) => {
@@ -298,10 +295,12 @@ const openFile = async () => {
    }
 };
 
-const contextMenu = (event: MouseEvent, iconUid: string) => {
-   contextEvent.value = event;
+// Records the right-clicked icon's UID into reactive state so the
+// ContextMenu's "Delete" action can target it. The shadcn ContextMenu
+// handles position + open/close internally; we only need to track which
+// icon was clicked.
+const setContextIcon = (iconUid: string) => {
    contextContent.value = iconUid;
-   isContext.value = true;
 };
 
 const closeModal = () => emit('close');

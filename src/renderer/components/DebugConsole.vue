@@ -72,47 +72,55 @@
             </div>
             <TabsContent value="query" class="flex-1 min-h-0 !mt-0">
                <div ref="queryConsoleBody" class="console-body">
-                  <div
+                  <ContextMenu
                      v-for="(wLog, i) in workspaceQueryLogs"
                      :key="i"
-                     class="console-log"
-                     tabindex="0"
-                     @contextmenu.prevent="contextMenu($event, wLog)"
                   >
-                     <span class="console-log-datetime">{{ moment(wLog.date).format('HH:mm:ss') }}</span>: <code class="console-log-sql" v-html="highlight(wLog.sql, {html: true})" />
-                  </div>
+                     <ContextMenuTrigger as-child>
+                        <div
+                           class="console-log"
+                           tabindex="0"
+                           @contextmenu="setContext(wLog)"
+                        >
+                           <span class="console-log-datetime">{{ moment(wLog.date).format('HH:mm:ss') }}</span>: <code class="console-log-sql" v-html="highlight(wLog.sql, {html: true})" />
+                        </div>
+                     </ContextMenuTrigger>
+                     <ContextMenuContent class="min-w-[160px]">
+                        <ContextMenuItem @select="copyLog">
+                           <BaseIcon icon-name="mdiContentCopy" :size="16" />
+                           <span>{{ t('general.copy') }}</span>
+                        </ContextMenuItem>
+                     </ContextMenuContent>
+                  </ContextMenu>
                </div>
             </TabsContent>
             <TabsContent value="debug" class="flex-1 min-h-0 !mt-0">
                <div ref="logConsoleBody" class="console-body">
-                  <div
+                  <ContextMenu
                      v-for="(log, i) in debugLogs"
                      :key="i"
-                     class="console-log"
-                     tabindex="0"
-                     @contextmenu.prevent="contextMenu($event, log)"
                   >
-                     <span class="console-log-datetime">{{ moment(log.date).format('HH:mm:ss') }}</span> <small>[{{ log.process.substring(0, 1).toUpperCase() }}]</small>: <span class="console-log-message" :class="`console-log-level-${log.level}`">{{ log.message }}</span>
-                  </div>
+                     <ContextMenuTrigger as-child>
+                        <div
+                           class="console-log"
+                           tabindex="0"
+                           @contextmenu="setContext(log)"
+                        >
+                           <span class="console-log-datetime">{{ moment(log.date).format('HH:mm:ss') }}</span> <small>[{{ log.process.substring(0, 1).toUpperCase() }}]</small>: <span class="console-log-message" :class="`console-log-level-${log.level}`">{{ log.message }}</span>
+                        </div>
+                     </ContextMenuTrigger>
+                     <ContextMenuContent class="min-w-[160px]">
+                        <ContextMenuItem @select="copyLog">
+                           <BaseIcon icon-name="mdiContentCopy" :size="16" />
+                           <span>{{ t('general.copy') }}</span>
+                        </ContextMenuItem>
+                     </ContextMenuContent>
+                  </ContextMenu>
                </div>
             </TabsContent>
          </Tabs>
       </div>
    </div>
-   <BaseContextMenu
-      v-if="isContext"
-      :context-event="contextEvent"
-      @close-context="isContext = false"
-   >
-      <div class="context-element" @click="copyLog">
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiContentCopy"
-               :size="18"
-            /> {{ t('general.copy') }}</span>
-      </div>
-   </BaseContextMenu>
 </template>
 
 <script setup lang="ts">
@@ -122,9 +130,9 @@ import { highlight } from 'sql-highlight';
 import { computed, nextTick, onMounted, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import { Button } from '@/components/ui/button';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { copyText } from '@/libs/copyText';
 import { type LogType, useConsoleStore } from '@/stores/console';
@@ -167,9 +175,7 @@ const logConsoleBody: Ref<HTMLInputElement> = ref(null);
 const resizer: Ref<HTMLInputElement> = ref(null);
 const localHeight = ref(consoleHeight.value);
 const isHover = ref(false);
-const isContext = ref(false);
 const contextContent: Ref<string> = ref(null);
-const contextEvent: Ref<MouseEvent> = ref(null);
 // TODO: Replace with import.meta.env.DEV when Vite is configured
 const isDevelopment = ref(typeof import.meta !== 'undefined' ? import.meta.env?.MODE === 'development' : false);
 
@@ -191,15 +197,12 @@ const stopResize = () => {
    window.removeEventListener('mouseup', stopResize);
 };
 
-const contextMenu = (event: MouseEvent, wLog: {date: Date; sql?: string; message?: string}) => {
-   contextEvent.value = event;
+const setContext = (wLog: {date: Date; sql?: string; message?: string}) => {
    contextContent.value = wLog.sql || wLog.message;
-   isContext.value = true;
 };
 
 const copyLog = () => {
    copyText(contextContent.value);
-   isContext.value = false;
 };
 
 const openDevTools = () => {

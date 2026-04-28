@@ -1,148 +1,112 @@
 <template>
-   <BaseContextMenu
-      :context-event="contextEvent"
-      @close-context="closeContext"
-   >
-      <div
+   <ContextMenuContent class="min-w-[180px]">
+      <ContextMenuItem
          v-if="selectedTable && selectedTable.type === 'table' && customizations.tableSettings"
-         class="context-element"
-         @click="openTableSettingTab"
+         @select="openTableSettingTab"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiWrenchCog"
-               :size="18"
-            /> {{ t('application.settings') }}</span>
-      </div>
-      <div class="context-element" @click="copyName(selectedTable.name)">
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiContentCopy"
-               :size="18"
-            /> {{ t('general.copyName') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiWrenchCog" :size="16" />
+         <span>{{ t('application.settings') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem @select="copyName(selectedTable.name)">
+         <BaseIcon icon-name="mdiContentCopy" :size="16" />
+         <span>{{ t('general.copyName') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedTable && selectedTable.type === 'table' && customizations.schemaExport"
-         class="context-element"
-         @click="showTableExportModal"
+         @select="showTableExportModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiTableArrowRight"
-               :size="18"
-            /> {{ t('database.exportTable') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiTableArrowRight" :size="16" />
+         <span>{{ t('database.exportTable') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedTable && selectedTable.type === 'view' && customizations.viewSettings"
-         class="context-element"
-         @click="openViewSettingTab"
+         @select="openViewSettingTab"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiWrenchCog"
-               :size="18"
-            /> {{ t('application.settings') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiWrenchCog" :size="16" />
+         <span>{{ t('application.settings') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedTable && selectedTable.type === 'materializedView' && customizations.materializedViewSettings"
-         class="context-element"
-         @click="openMaterializedViewSettingTab"
+         @select="openMaterializedViewSettingTab"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiWrenchCog"
-               :size="18"
-            /> {{ t('application.settings') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiWrenchCog" :size="16" />
+         <span>{{ t('application.settings') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedTable && selectedTable.type === 'table' && customizations.tableDuplicate && !connection.readonly"
-         class="context-element"
-         @click="duplicateTable"
+         @select="duplicateTable"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiTableMultiple"
-               :size="18"
-            /> {{ t('database.duplicateTable') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiTableMultiple" :size="16" />
+         <span>{{ t('database.duplicateTable') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="selectedTable && selectedTable.type === 'table' && !connection.readonly"
-         class="context-element"
-         @click="showEmptyModal"
+         @select="showEmptyModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiTableOff"
-               :size="18"
-            /> {{ t('database.emptyTable') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiTableOff" :size="16" />
+         <span>{{ t('database.emptyTable') }}</span>
+      </ContextMenuItem>
+      <ContextMenuSeparator v-if="!connection.readonly" />
+      <ContextMenuItem
          v-if="!connection.readonly"
-         class="context-element"
-         @click="showDeleteModal"
+         class="text-destructive focus:text-destructive"
+         @select="showDeleteModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiTableRemove"
-               :size="18"
-            /> {{ t('database.deleteTable') }}</span>
-      </div>
+         <BaseIcon icon-name="mdiTableRemove" :size="16" />
+         <span>{{ t('database.deleteTable') }}</span>
+      </ContextMenuItem>
+   </ContextMenuContent>
 
-      <ConfirmModal
-         v-if="isEmptyModal"
-         @confirm="emptyTable"
-         @hide="hideEmptyModal"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  class="text-light mr-1"
-                  icon-name="mdiTableOff"
-                  :size="24"
-               /> <span class="cut-text">{{ t('database.emptyTable') }}</span>
-            </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               {{ t('database.emptyConfirm') }} "<b>{{ selectedTable.name }}</b>"?
-            </div>
-            <div v-if="customizations.tableTruncateDisableFKCheck">
-               <label class="form-checkbox form-inline">
-                  <input v-model="forceTruncate" type="checkbox"><i class="form-icon" /> {{ t('database.disableFKChecks') }}
-               </label>
-            </div>
-         </template>
-      </ConfirmModal>
-      <ConfirmModal
-         v-if="isDeleteModal"
-         @confirm="deleteTable"
-         @hide="hideDeleteModal"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  class="text-light mr-1"
-                  icon-name="mdiTableRemove"
-                  :size="24"
-               />
-               <span class="cut-text">{{ selectedTable.type === 'table' ? t('database.deleteTable') : t('database.deleteView') }}</span>
-            </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               {{ t('general.deleteConfirm') }} "<b>{{ selectedTable.name }}</b>"?
-            </div>
-         </template>
-      </ConfirmModal>
-   </BaseContextMenu>
+   <ConfirmModal
+      v-if="isEmptyModal"
+      @confirm="emptyTable"
+      @hide="hideEmptyModal"
+   >
+      <template #header>
+         <div class="d-flex">
+            <BaseIcon
+               class="text-light mr-1"
+               icon-name="mdiTableOff"
+               :size="24"
+            /> <span class="cut-text">{{ t('database.emptyTable') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="mb-2">
+            {{ t('database.emptyConfirm') }} "<b>{{ selectedTable.name }}</b>"?
+         </div>
+         <div v-if="customizations.tableTruncateDisableFKCheck">
+            <label class="flex items-center gap-2 text-[13px]">
+               <input
+                  v-model="forceTruncate"
+                  type="checkbox"
+                  class="text-foreground"
+               > {{ t('database.disableFKChecks') }}
+            </label>
+         </div>
+      </template>
+   </ConfirmModal>
+   <ConfirmModal
+      v-if="isDeleteModal"
+      @confirm="deleteTable"
+      @hide="hideDeleteModal"
+   >
+      <template #header>
+         <div class="d-flex">
+            <BaseIcon
+               class="text-light mr-1"
+               icon-name="mdiTableRemove"
+               :size="24"
+            />
+            <span class="cut-text">{{ selectedTable.type === 'table' ? t('database.deleteTable') : t('database.deleteView') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="mb-2">
+            {{ t('general.deleteConfirm') }} "<b>{{ selectedTable.name }}</b>"?
+         </div>
+      </template>
+   </ConfirmModal>
 </template>
 
 <script setup lang="ts">
@@ -151,8 +115,8 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
+import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
 import Tables from '@/ipc-api/Tables';
 import { copyText } from '@/libs/copyText';
 import { useConnectionsStore } from '@/stores/connections';
@@ -163,13 +127,11 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 const { t } = useI18n();
 
 const props = defineProps({
-   contextEvent: MouseEvent,
    selectedTable: Object,
    selectedSchema: String
 });
 
 const emit = defineEmits<{
-   'close-context': [];
    'duplicate-table': [payload: { schema: string; table: any }];
    'reload': [];
    'delete-table': [payload: { schema: string; table: any }];
@@ -200,12 +162,10 @@ const connection = computed(() => getConnectionByUid(selectedWorkspace.value));
 
 const showTableExportModal = () => {
    showExportModal(props.selectedSchema, props.selectedTable.name);
-   closeContext();
 };
 
 const copyName = (name: string) => {
    copyText(name);
-   closeContext();
 };
 
 const showDeleteModal = () => {
@@ -224,10 +184,6 @@ const hideEmptyModal = () => {
    isEmptyModal.value = false;
 };
 
-const closeContext = () => {
-   emit('close-context');
-};
-
 const openTableSettingTab = () => {
    newTab({
       uid: selectedWorkspace.value,
@@ -241,8 +197,6 @@ const openTableSettingTab = () => {
       schema: props.selectedSchema,
       table: props.selectedTable.name
    });
-
-   closeContext();
 };
 
 const openViewSettingTab = () => {
@@ -258,8 +212,6 @@ const openViewSettingTab = () => {
       schema: props.selectedSchema,
       view: props.selectedTable.name
    });
-
-   closeContext();
 };
 
 const openMaterializedViewSettingTab = () => {
@@ -275,8 +227,6 @@ const openMaterializedViewSettingTab = () => {
       schema: props.selectedSchema,
       view: props.selectedTable.name
    });
-
-   closeContext();
 };
 
 const duplicateTable = () => {
@@ -284,7 +234,7 @@ const duplicateTable = () => {
 };
 
 const emptyTable = async () => {
-   closeContext();
+   hideEmptyModal();
 
    addLoadingElement({
       name: props.selectedTable.name,

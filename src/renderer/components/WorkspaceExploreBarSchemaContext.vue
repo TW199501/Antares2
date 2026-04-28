@@ -1,209 +1,137 @@
 <template>
-   <BaseContextMenu
-      :context-event="contextEvent"
-      @close-context="closeContext"
-   >
-      <div v-if="!connection.readonly" class="context-element">
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiPlus"
-               :size="18"
-            /> {{ t('general.add') }}</span>
-         <BaseIcon
-            class="text-light ml-1"
-            icon-name="mdiChevronRight"
-            :size="18"
-         />
-         <div class="context-submenu">
-            <div
+   <ContextMenuContent class="min-w-[200px]">
+      <ContextMenuSub v-if="!connection.readonly">
+         <ContextMenuSubTrigger>
+            <BaseIcon icon-name="mdiPlus" :size="16" />
+            <span>{{ t('general.add') }}</span>
+         </ContextMenuSubTrigger>
+         <ContextMenuSubContent class="min-w-[200px]">
+            <ContextMenuItem
                v-if="workspace.customizations.tableAdd"
-               class="context-element"
-               @click="openCreateTableTab"
+               @select="emit('open-create-table-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiTable"
-                     :size="18"
-                  /> {{ t('database.table') }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiTable" :size="16" />
+               <span>{{ t('database.table') }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.viewAdd"
-               class="context-element"
-               @click="openCreateViewTab"
+               @select="emit('open-create-view-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiTableEye"
-                     :size="18"
-                  /> {{ t('database.view') }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiTableEye" :size="16" />
+               <span>{{ t('database.view') }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.materializedViewAdd"
-               class="context-element"
-               @click="openCreateMaterializedViewTab"
+               @select="emit('open-create-materialized-view-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiTableEye"
-                     :size="18"
-                  /> {{ t('database.materializedView') }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiTableEye" :size="16" />
+               <span>{{ t('database.materializedView') }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.triggerAdd"
-               class="context-element"
-               @click="openCreateTriggerTab"
+               @select="emit('open-create-trigger-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiTableCog"
-                     :size="18"
-                  /> {{ t('database.trigger', 1) }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiTableCog" :size="16" />
+               <span>{{ t('database.trigger', 1) }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.routineAdd"
-               class="context-element"
-               @click="openCreateRoutineTab"
+               @select="emit('open-create-routine-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiSyncCircle"
-                     :size="18"
-                  /> {{ t('database.storedRoutine', 1) }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiSyncCircle" :size="16" />
+               <span>{{ t('database.storedRoutine', 1) }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.functionAdd"
-               class="context-element"
-               @click="openCreateFunctionTab"
+               @select="emit('open-create-function-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiArrowRightBoldBox"
-                     :size="18"
-                  /> {{ t('database.function', 1) }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiArrowRightBoldBox" :size="16" />
+               <span>{{ t('database.function', 1) }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.triggerFunctionAdd"
-               class="context-element"
-               @click="openCreateTriggerFunctionTab"
+               @select="emit('open-create-trigger-function-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiCogClockwise"
-                     :size="18"
-                  /> {{ t('database.triggerFunction', 1) }}</span>
-            </div>
-            <div
+               <BaseIcon icon-name="mdiCogClockwise" :size="16" />
+               <span>{{ t('database.triggerFunction', 1) }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
                v-if="workspace.customizations.schedulerAdd"
-               class="context-element"
-               @click="openCreateSchedulerTab"
+               @select="emit('open-create-scheduler-tab')"
             >
-               <span class="d-flex">
-                  <BaseIcon
-                     class="text-light mt-1 mr-1"
-                     icon-name="mdiCalendarClock"
-                     :size="18"
-                  /> {{ t('database.scheduler', 1) }}</span>
-            </div>
-         </div>
-      </div>
-      <div class="context-element" @click="copyName(selectedSchema)">
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiContentCopy"
-               :size="18"
-            /> {{ t('general.copyName') }}</span>
-      </div>
-      <div
+               <BaseIcon icon-name="mdiCalendarClock" :size="16" />
+               <span>{{ t('database.scheduler', 1) }}</span>
+            </ContextMenuItem>
+         </ContextMenuSubContent>
+      </ContextMenuSub>
+      <ContextMenuItem @select="copyName(selectedSchema)">
+         <BaseIcon icon-name="mdiContentCopy" :size="16" />
+         <span>{{ t('general.copyName') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="workspace.customizations.schemaExport"
-         class="context-element"
-         @click="showExportSchemaModal"
+         @select="showExportSchemaModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiDatabaseExport"
-               :size="18"
-            /> {{ t('database.export') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiDatabaseExport" :size="16" />
+         <span>{{ t('database.export') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="workspace.customizations.schemaImport && !connection.readonly"
-         class="context-element"
-         @click="initImport"
+         @select="initImport"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiDatabaseImport"
-               :size="18"
-            /> {{ t('database.import') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiDatabaseImport" :size="16" />
+         <span>{{ t('database.import') }}</span>
+      </ContextMenuItem>
+      <ContextMenuItem
          v-if="workspace.customizations.schemaEdit && !connection.readonly"
-         class="context-element"
-         @click="showEditModal"
+         @select="showEditModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiDatabaseEdit"
-               :size="18"
-            /> {{ t('database.editSchema') }}</span>
-      </div>
-      <div
+         <BaseIcon icon-name="mdiDatabaseEdit" :size="16" />
+         <span>{{ t('database.editSchema') }}</span>
+      </ContextMenuItem>
+      <ContextMenuSeparator v-if="workspace.customizations.schemaDrop && !connection.readonly" />
+      <ContextMenuItem
          v-if="workspace.customizations.schemaDrop && !connection.readonly"
-         class="context-element"
-         @click="showDeleteModal"
+         class="text-destructive focus:text-destructive"
+         @select="showDeleteModal"
       >
-         <span class="d-flex">
-            <BaseIcon
-               class="text-light mt-1 mr-1"
-               icon-name="mdiDatabaseRemove"
-               :size="18"
-            /> {{ t('database.deleteSchema') }}</span>
-      </div>
+         <BaseIcon icon-name="mdiDatabaseRemove" :size="16" />
+         <span>{{ t('database.deleteSchema') }}</span>
+      </ContextMenuItem>
+   </ContextMenuContent>
 
-      <ConfirmModal
-         v-if="isDeleteModal"
-         @confirm="deleteSchema"
-         @hide="hideDeleteModal"
-      >
-         <template #header>
-            <div class="d-flex">
-               <BaseIcon
-                  class="text-light mr-1"
-                  icon-name="mdiDatabaseRemove"
-                  :size="24"
-               />
-               <span class="cut-text">{{ t('database.deleteSchema') }}</span>
-            </div>
-         </template>
-         <template #body>
-            <div class="mb-2">
-               {{ t('general.deleteConfirm') }} "<b>{{ selectedSchema }}</b>"?
-            </div>
-         </template>
-      </ConfirmModal>
-      <ModalEditSchema
-         v-if="isEditModal"
-         :selected-schema="selectedSchema"
-         @close="hideEditModal"
-      />
-      <ModalImportSchema
-         v-if="isImportSchemaModal"
-         ref="importModalRef"
-         :selected-schema="selectedSchema"
-         @close="hideImportSchemaModal"
-      />
-   </BaseContextMenu>
+   <ConfirmModal
+      v-if="isDeleteModal"
+      @confirm="deleteSchema"
+      @hide="hideDeleteModal"
+   >
+      <template #header>
+         <div class="d-flex">
+            <BaseIcon
+               class="text-light mr-1"
+               icon-name="mdiDatabaseRemove"
+               :size="24"
+            />
+            <span class="cut-text">{{ t('database.deleteSchema') }}</span>
+         </div>
+      </template>
+      <template #body>
+         <div class="mb-2">
+            {{ t('general.deleteConfirm') }} "<b>{{ selectedSchema }}</b>"?
+         </div>
+      </template>
+   </ConfirmModal>
+   <ModalEditSchema
+      v-if="isEditModal"
+      :selected-schema="selectedSchema"
+      @close="hideEditModal"
+   />
+   <ModalImportSchema
+      v-if="isImportSchemaModal"
+      ref="importModalRef"
+      :selected-schema="selectedSchema"
+      @close="hideImportSchemaModal"
+   />
 </template>
 
 <script setup lang="ts">
@@ -212,10 +140,17 @@ import { Component, computed, nextTick, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
-import BaseContextMenu from '@/components/BaseContextMenu.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import ModalEditSchema from '@/components/ModalEditSchema.vue';
 import ModalImportSchema from '@/components/ModalImportSchema.vue';
+import {
+   ContextMenuContent,
+   ContextMenuItem,
+   ContextMenuSeparator,
+   ContextMenuSub,
+   ContextMenuSubContent,
+   ContextMenuSubTrigger
+} from '@/components/ui/context-menu';
 import Application from '@/ipc-api/Application';
 import Schema from '@/ipc-api/Schema';
 import { copyText } from '@/libs/copyText';
@@ -227,7 +162,6 @@ import { useWorkspacesStore } from '@/stores/workspaces';
 const { t } = useI18n();
 
 const props = defineProps({
-   contextEvent: MouseEvent,
    selectedSchema: String
 });
 
@@ -240,7 +174,6 @@ const emit = defineEmits<{
    'open-create-function-tab': [];
    'open-create-trigger-function-tab': [];
    'open-create-scheduler-tab': [];
-   'close-context': [];
    'reload': [];
 }>();
 
@@ -266,41 +199,8 @@ const isImportSchemaModal = ref(false);
 const workspace = computed(() => getWorkspace(selectedWorkspace.value));
 const connection = computed(() => getConnectionByUid(selectedWorkspace.value));
 
-const openCreateTableTab = () => {
-   emit('open-create-table-tab');
-};
-
-const openCreateViewTab = () => {
-   emit('open-create-view-tab');
-};
-
-const openCreateMaterializedViewTab = () => {
-   emit('open-create-materialized-view-tab');
-};
-
-const openCreateTriggerTab = () => {
-   emit('open-create-trigger-tab');
-};
-
-const openCreateRoutineTab = () => {
-   emit('open-create-routine-tab');
-};
-
-const openCreateFunctionTab = () => {
-   emit('open-create-function-tab');
-};
-
-const openCreateTriggerFunctionTab = () => {
-   emit('open-create-trigger-function-tab');
-};
-
-const openCreateSchedulerTab = () => {
-   emit('open-create-scheduler-tab');
-};
-
 const copyName = (name: string) => {
    copyText(name);
-   closeContext();
 };
 
 const showDeleteModal = () => {
@@ -317,12 +217,10 @@ const showEditModal = () => {
 
 const hideEditModal = () => {
    isEditModal.value = false;
-   closeContext();
 };
 
 const showExportSchemaModal = () => {
    showExportModal(props.selectedSchema);
-   closeContext();
 };
 
 const showImportSchemaModal = () => {
@@ -331,7 +229,6 @@ const showImportSchemaModal = () => {
 
 const hideImportSchemaModal = () => {
    isImportSchemaModal.value = false;
-   closeContext();
 };
 
 const initImport = async () => {
@@ -342,10 +239,6 @@ const initImport = async () => {
       await nextTick();
       importModalRef.value.startImport(file);
    }
-};
-
-const closeContext = () => {
-   emit('close-context');
 };
 
 const deleteSchema = async () => {
@@ -359,7 +252,7 @@ const deleteSchema = async () => {
          if (props.selectedSchema === workspace.value.breadcrumbs.schema)
             changeBreadcrumbs({ schema: null });
 
-         closeContext();
+         hideDeleteModal();
          emit('reload');
       }
       else
@@ -370,9 +263,3 @@ const deleteSchema = async () => {
    }
 };
 </script>
-
-<style lang="scss" scoped>
-.context-submenu {
-  min-width: 150px !important;
-}
-</style>
