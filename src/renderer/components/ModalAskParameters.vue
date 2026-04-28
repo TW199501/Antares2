@@ -7,46 +7,43 @@
       @hide="closeModal"
    >
       <template #header>
-         <div class="d-flex">
-            <BaseIcon
-               icon-name="mdiPlay"
-               class="mr-1"
-               :size="24"
-            />
+         <div class="flex items-center gap-1.5">
+            <BaseIcon icon-name="mdiPlay" :size="20" />
             <span class="cut-text">{{ t('database.parameters') }}: {{ localRoutine.name }}</span>
          </div>
       </template>
       <template #body>
-         <div class="content">
-            <form class="form-horizontal">
-               <div
-                  v-for="(parameter, i) in inParameters"
-                  :key="parameter._antares_id"
-                  class="form-group"
+         <form class="space-y-3" @submit.prevent="runRoutine">
+            <div
+               v-for="(parameter, i) in inParameters"
+               :key="parameter._antares_id"
+               class="grid grid-cols-[110px_1fr] items-center gap-3"
+            >
+               <Label
+                  :for="`param-${i}`"
+                  class="!text-[13px] truncate"
+                  :title="parameter.name"
                >
-                  <div class="col-4">
-                     <label class="form-label">{{ parameter.name }}</label>
-                  </div>
-                  <div class="col-8">
-                     <div class="input-group">
-                        <input
-                           :ref="i === 0 ? 'firstInput' : ''"
-                           v-model="values[`${i}-${parameter.name}`]"
-                           class="form-input"
-                           type="text"
-                        >
-                        <span
-                           :title="`${parameter.type} ${parameter.length}`"
-                           class="input-group-addon field-type cut-text"
-                           :class="typeClass(parameter.type)"
-                        >
-                           {{ parameter.type }} {{ wrapNumber(parameter.length) }}
-                        </span>
-                     </div>
-                  </div>
+                  {{ parameter.name }}
+               </Label>
+               <div class="relative w-full">
+                  <input
+                     :id="`param-${i}`"
+                     :ref="el => { if (i === 0) firstInput = el as HTMLInputElement; }"
+                     v-model="values[`${i}-${parameter.name}`]"
+                     type="text"
+                     :class="paramInputClass"
+                  >
+                  <span
+                     class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] truncate max-w-[100px]"
+                     :class="typeClass(parameter.type)"
+                     :title="`${parameter.type} ${parameter.length}`"
+                  >
+                     {{ parameter.type }} {{ wrapNumber(parameter.length) }}
+                  </span>
                </div>
-            </form>
-         </div>
+            </div>
+         </form>
       </template>
    </ConfirmModal>
 </template>
@@ -54,15 +51,15 @@
 <script setup lang="ts">
 import { FLOAT, NUMBER } from 'common/fieldTypes';
 import { FunctionInfos, RoutineInfos } from 'common/interfaces/antares';
-import { computed, PropType, Ref, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, PropType, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Label } from '@/components/ui/label';
 import { useFilters } from '@/composables/useFilters';
 
 const { t } = useI18n();
-
 const { wrapNumber } = useFilters();
 
 const props = defineProps({
@@ -75,12 +72,20 @@ const emit = defineEmits<{
    'close': [];
 }>();
 
-const firstInput: Ref<HTMLInputElement[]> = ref(null);
+const firstInput: Ref<HTMLInputElement | null> = ref(null);
 const values: Ref<Record<string, string>> = ref({});
 
 const inParameters = computed(() => {
    return props.localRoutine.parameters.filter(param => param.context === 'IN');
 });
+
+// Shared input class for the parameter inputs. Avoids spectre's `.form-input`
+// (1.8rem=36px height, padding 5/8) so we keep a clean 32px height with the
+// 88px right padding reserved for the absolute-positioned type tag, matching
+// the same pattern used in ModalFakerRows.
+const paramInputClass =
+   'box-border h-[32px] w-full rounded-md border border-input bg-background pl-2 pr-[100px] text-[13px] text-foreground ' +
+   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 const typeClass = (type: string) => {
    if (type)
@@ -123,17 +128,13 @@ const onKey = (e: KeyboardEvent) => {
 
 window.addEventListener('keydown', onKey);
 
-setTimeout(() => {
-   firstInput.value[0].focus();
-}, 20);
+onMounted(() => {
+   setTimeout(() => {
+      firstInput.value?.focus();
+   }, 20);
+});
+
+onBeforeUnmount(() => {
+   window.removeEventListener('keydown', onKey);
+});
 </script>
-
-<style scoped>
-  .field-type {
-    font-size: 0.6rem;
-  }
-
-  .input-group-addon {
-    max-width: 100px;
-  }
-</style>

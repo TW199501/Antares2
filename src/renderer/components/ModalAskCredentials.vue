@@ -1,80 +1,59 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active modal-sm">
-         <a class="modal-overlay" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiKeyVariant"
-                        class="mr-1"
-                        :size="24"
-                     /> {{ t('connection.credentials') }}
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               <div class="content">
-                  <form class="form-horizontal">
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('connection.user') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <input
-                              ref="firstInput"
-                              v-model="credentials.user"
-                              class="form-input"
-                              type="text"
-                           >
-                        </div>
-                     </div>
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('connection.password') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <input
-                              v-model="credentials.password"
-                              class="form-input"
-                              type="password"
-                           >
-                        </div>
-                     </div>
-                  </form>
-               </div>
-            </div>
-            <div class="modal-footer">
-               <button class="btn btn-primary mr-2" @click.stop="sendCredentials">
-                  {{ t('general.send') }}
-               </button>
-               <button class="btn btn-link" @click.stop="closeModal">
-                  {{ t('general.close') }}
-               </button>
-            </div>
+   <ConfirmModal
+      size="small"
+      :confirm-text="t('general.send')"
+      :cancel-text="t('general.close')"
+      @confirm="sendCredentials"
+      @hide="closeModal"
+   >
+      <template #header>
+         <div class="flex items-center gap-1.5">
+            <BaseIcon icon-name="mdiKeyVariant" :size="20" />
+            <span>{{ t('connection.credentials') }}</span>
          </div>
-      </div>
-   </Teleport>
+      </template>
+      <template #body>
+         <form class="space-y-3" @submit.prevent="sendCredentials">
+            <FormField :label="t('connection.user')">
+               <Input
+                  ref="firstInput"
+                  v-model="credentials.user"
+                  type="text"
+                  autocomplete="username"
+               />
+            </FormField>
+            <FormField :label="t('connection.password')">
+               <Input
+                  v-model="credentials.password"
+                  type="password"
+                  autocomplete="current-password"
+               />
+            </FormField>
+         </form>
+      </template>
+   </ConfirmModal>
 </template>
 
 <script setup lang="ts">
-import { Ref, ref } from 'vue';
+import { onMounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 
 const { t } = useI18n();
-
-const { trapRef } = useFocusTrap();
 
 const credentials = ref({
    user: '',
    password: ''
 });
-const firstInput: Ref<HTMLInputElement> = ref(null);
+// firstInput holds a ref to the shadcn Input wrapper component; the actual
+// <input> element is its $el. We focus it after mount so the user can start
+// typing the username immediately.
+const firstInput: Ref<{ $el: HTMLInputElement } | HTMLInputElement | null> = ref(null);
+
 const emit = defineEmits<{
    'close-asking': [];
    'credentials': [credentials: { user: string; password: string }];
@@ -88,7 +67,16 @@ const sendCredentials = () => {
    emit('credentials', credentials.value);
 };
 
-setTimeout(() => {
-   firstInput.value.focus();
-}, 20);
+onMounted(() => {
+   // BaseConfirmModal's DialogContent has its own focus-trap auto-focus. We
+   // additionally pull focus into the username input on the next tick so
+   // the user can type immediately, regardless of which child the trap
+   // would have picked first.
+   setTimeout(() => {
+      const ref = firstInput.value as { $el?: HTMLInputElement } | HTMLInputElement | null;
+      if (!ref) return;
+      const el = (ref as { $el?: HTMLInputElement }).$el ?? (ref as HTMLInputElement);
+      el?.focus?.();
+   }, 20);
+});
 </script>

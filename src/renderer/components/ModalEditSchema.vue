@@ -1,80 +1,55 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div ref="trapRef" class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiDatabaseEdit"
-                        class="mr-1"
-                        :size="24"
-                     />
-                     <span class="cut-text">{{ t('database.editSchema') }}</span>
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               <div class="content">
-                  <form class="form-horizontal">
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('general.name') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <input
-                              ref="firstInput"
-                              v-model="database.name"
-                              class="form-input"
-                              type="text"
-                              required
-                              :placeholder="t('database.schemaName')"
-                              readonly
-                           >
-                        </div>
-                     </div>
-                     <div class="form-group">
-                        <div class="col-3">
-                           <label class="form-label">{{ t('database.collation') }}</label>
-                        </div>
-                        <div class="col-9">
-                           <BaseSelect
-                              v-model="database.collation"
-                              class="form-select"
-                              :options="collations"
-                              :max-visible-options="1000"
-                              option-label="collation"
-                              option-track-by="collation"
-                           />
-                           <small>{{ t('database.serverDefault') }}: {{ defaultCollation }}</small>
-                        </div>
-                     </div>
-                  </form>
-               </div>
-            </div>
-            <div class="modal-footer">
-               <button class="btn btn-primary mr-2" @click.stop="updateSchema">
-                  {{ t('application.update') }}
-               </button>
-               <button class="btn btn-link" @click.stop="closeModal">
-                  {{ t('general.close') }}
-               </button>
-            </div>
+   <ConfirmModal
+      size="medium"
+      :confirm-text="t('application.update')"
+      :cancel-text="t('general.close')"
+      @confirm="updateSchema"
+      @hide="closeModal"
+   >
+      <template #header>
+         <div class="flex items-center gap-1.5">
+            <BaseIcon icon-name="mdiDatabaseEdit" :size="20" />
+            <span class="cut-text">{{ t('database.editSchema') }}</span>
          </div>
-      </div>
-   </Teleport>
+      </template>
+      <template #body>
+         <form class="space-y-3" @submit.prevent="updateSchema">
+            <FormField :label="t('general.name')">
+               <Input
+                  v-model="database.name"
+                  type="text"
+                  :placeholder="t('database.schemaName')"
+                  readonly
+                  class="cursor-not-allowed bg-muted/50 text-muted-foreground"
+               />
+            </FormField>
+            <FormField :label="t('database.collation')">
+               <BaseSelect
+                  v-model="database.collation"
+                  :options="collations"
+                  :max-visible-options="1000"
+                  option-label="collation"
+                  option-track-by="collation"
+               />
+               <p class="text-[12px] text-muted-foreground mt-1">
+                  {{ t('database.serverDefault') }}: {{ defaultCollation }}
+               </p>
+            </FormField>
+         </form>
+      </template>
+   </ConfirmModal>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { computed, onBeforeUnmount, Ref, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
-import { useFocusTrap } from '@/composables/useFocusTrap';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import Schema from '@/ipc-api/Schema';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';
@@ -96,9 +71,6 @@ const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 
 const { getWorkspace, getDatabaseVariable } = workspacesStore;
 
-const { trapRef } = useFocusTrap();
-
-const firstInput: Ref<HTMLInputElement> = ref(null);
 const database = ref({
    name: '',
    prevName: '',
@@ -131,12 +103,6 @@ const updateSchema = async () => {
 
 const closeModal = () => emit('close');
 
-const onKey =(e: KeyboardEvent) => {
-   e.stopPropagation();
-   if (e.key === 'Escape')
-      closeModal();
-};
-
 (async () => {
    let actualCollation;
    try {
@@ -144,7 +110,6 @@ const onKey =(e: KeyboardEvent) => {
 
       if (status === 'success')
          actualCollation = response;
-
       else
          addNotification({ status: 'error', message: response });
    }
@@ -158,22 +123,5 @@ const onKey =(e: KeyboardEvent) => {
       collation: actualCollation || defaultCollation.value,
       prevCollation: actualCollation || defaultCollation.value
    };
-
-   window.addEventListener('keydown', onKey);
-
-   setTimeout(() => {
-      firstInput.value.focus();
-   }, 20);
 })();
-
-onBeforeUnmount(() => {
-   window.removeEventListener('keydown', onKey);
-});
-
 </script>
-
-<style scoped lang="scss">
-  .modal-container {
-    max-width: 360px;
-  }
-</style>

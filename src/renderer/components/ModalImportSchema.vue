@@ -1,56 +1,92 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="closeModal" />
-         <div class="modal-container p-0">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
+   <Dialog :open="true" @update:open="(v) => { if (!v) closeModal(); }">
+      <DialogContent
+         class="!max-w-[800px] max-h-[85vh] !p-0 !gap-0 flex flex-col [&>button.absolute]:!hidden"
+         @escape-key-down.prevent="closeModal"
+         @pointer-down-outside.prevent
+         @interact-outside.prevent
+      >
+         <DialogHeader class="flex flex-row items-center justify-between !space-y-0 px-5 py-3 border-b border-border/60 bg-muted/30">
+            <DialogTitle class="!text-[15px] !font-semibold flex items-center gap-1.5">
+               <BaseIcon icon-name="mdiDatabaseImport" :size="20" />
+               <span>{{ t('database.importSchema') }}</span>
+            </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ t('database.importSchema') }}
+            </DialogDescription>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="closeModal"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
+
+         <div class="px-5 py-4 overflow-y-auto flex-1 min-h-0 space-y-3">
+            <!-- Source SQL file path -->
+            <div v-if="sqlFile" class="flex items-center gap-2 text-[13px]">
+               <BaseIcon
+                  icon-name="mdiFileOutline"
+                  class="text-muted-foreground"
+                  :size="16"
+               />
+               <code class="flex-1 truncate text-[12px] text-muted-foreground" :title="sqlFile">{{ sqlFile }}</code>
+            </div>
+
+            <!--
+               Query errors collected during import. Surfaced via a readonly
+               Textarea so the user can scroll through them and copy/paste
+               into a bug report. Wrapped in a Card to visually group with
+               the contextual label.
+            -->
+            <Card v-if="queryErrors.length > 0" class="overflow-hidden">
+               <CardHeader class="!p-3 !pb-2">
+                  <CardTitle class="!text-[13px] !font-semibold flex items-center gap-1.5">
                      <BaseIcon
-                        icon-name="mdiDatabaseImport"
-                        class="mr-1"
-                        :size="24"
+                        icon-name="mdiAlertCircleOutline"
+                        class="text-destructive"
+                        :size="16"
                      />
-                     <span class="cut-text">{{ t('database.importSchema') }}</span>
-                  </div>
-               </div>
-               <a class="btn btn-clear c-hand" @click.stop="closeModal" />
-            </div>
-            <div class="modal-body pb-0">
-               {{ sqlFile }}
-               <div v-if="queryErrors.length > 0" class="mt-2">
-                  <label>{{ t('database.importQueryErrors', queryErrors.length) }}</label>
-                  <textarea
+                     {{ t('database.importQueryErrors', queryErrors.length) }}
+                  </CardTitle>
+               </CardHeader>
+               <CardContent class="!p-3 !pt-0">
+                  <Textarea
                      v-model="formattedQueryErrors"
-                     class="form-input"
-                     rows="5"
+                     rows="6"
                      readonly
+                     class="font-mono text-[12px]"
                   />
-               </div>
-            </div>
-            <div class="modal-footer columns">
-               <div class="column col modal-progress-wrapper text-left">
-                  <div class="import-progress">
-                     <span class="progress-status">
-                        {{ progressPercentage }}% - {{ progressStatus }} - {{ t('database.executedQueries', queryCount) }}
-                     </span>
-                     <progress
-                        class="progress d-block"
-                        :value="progressPercentage"
-                        max="100"
-                     />
-                  </div>
-               </div>
-               <div class="column col-auto px-0">
-                  <button class="btn btn-link" @click.stop="closeModal">
-                     {{ completed ? t('general.close') : t('general.cancel') }}
-                  </button>
-               </div>
-            </div>
+               </CardContent>
+            </Card>
          </div>
-      </div>
-      <Teleport to="#window-content" />
-   </teleport>
+
+         <DialogFooter class="!flex !flex-row !items-center !gap-2 px-5 py-3 border-t border-border/60 bg-muted/30">
+            <!-- Inline progress meter (left-justified, fills available width) -->
+            <div class="flex-1 min-w-0 text-left">
+               <div class="text-[11px] italic text-muted-foreground truncate">
+                  {{ progressPercentage }}% - {{ progressStatus }} - {{ t('database.executedQueries', queryCount) }}
+               </div>
+               <progress
+                  class="block w-full h-1.5 mt-1 rounded overflow-hidden [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary"
+                  :value="progressPercentage"
+                  max="100"
+               />
+            </div>
+
+            <Button
+               variant="outline"
+               size="sm"
+               class="!h-[32px] !px-4 !text-[13px]"
+               @click.stop="closeModal"
+            >
+               {{ completed ? t('general.close') : t('general.cancel') }}
+            </Button>
+         </DialogFooter>
+      </DialogContent>
+   </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -61,6 +97,10 @@ import { computed, onBeforeUnmount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { createWebSocket } from '@/ipc-api/httpClient';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useWorkspacesStore } from '@/stores/workspaces';
@@ -202,26 +242,3 @@ onBeforeUnmount(() => {
 
 defineExpose({ startImport });
 </script>
-
-<style lang="scss" scoped>
-.modal {
-  .modal-container {
-    max-width: 800px;
-  }
-
-  .modal-body {
-    max-height: 60vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .modal-footer {
-    display: flex;
-  }
-}
-
-.progress-status {
-  font-style: italic;
-  font-size: 80%;
-}
-</style>
