@@ -8,33 +8,28 @@
       @hide="$emit('hide')"
    >
       <template #header>
-         <div class="d-flex">
-            <BaseIcon
-               icon-name="mdiNoteEditOutline"
-               class="mr-1"
-               :size="24"
-            /> {{ t('application.editNote') }}
+         <div class="flex items-center gap-1">
+            <BaseIcon icon-name="mdiNoteEditOutline" :size="20" />
+            <span>{{ t('application.editNote') }}</span>
          </div>
       </template>
       <template #body>
-         <form class="form">
-            <div class="form-group columns">
-               <div class="column col-8">
-                  <label class="form-label">{{ t('connection.connection') }}</label>
+         <div class="space-y-3">
+            <div class="grid grid-cols-3 gap-3">
+               <div class="col-span-2 space-y-1.5">
+                  <Label>{{ t('connection.connection') }}</Label>
                   <BaseSelect
                      v-model="localNote.cUid"
-                     class="form-select"
                      :options="connectionOptions"
                      option-track-by="code"
                      option-label="name"
                      @change="null"
                   />
                </div>
-               <div class="column col-4">
-                  <label class="form-label">{{ t('application.tag') }}</label>
+               <div class="col-span-1 space-y-1.5">
+                  <Label>{{ t('application.tag') }}</Label>
                   <BaseSelect
                      v-model="localNote.type"
-                     class="form-select"
                      :options="noteTags"
                      option-track-by="code"
                      option-label="name"
@@ -42,12 +37,14 @@
                   />
                </div>
             </div>
-            <div class="form-group">
-               <label class="form-label">{{ t('general.content') }} <small
-                  v-if="localNote.type !== 'query'"
-                  style="line-height: 1;"
-                  class="text-gray"
-               >({{ t('application.markdownSupported') }})</small></label>
+            <div class="space-y-1.5">
+               <Label class="flex items-center gap-1.5">
+                  {{ t('general.content') }}
+                  <small
+                     v-if="localNote.type !== 'query'"
+                     class="text-[12px] font-normal text-muted-foreground leading-none"
+                  >({{ t('application.markdownSupported') }})</small>
+               </Label>
                <BaseTextEditor
                   v-model="localNote.note"
                   :mode="editorMode"
@@ -58,7 +55,7 @@
                   :resizable="true"
                />
             </div>
-         </form>
+         </div>
       </template>
    </ConfirmModal>
 </template>
@@ -71,6 +68,7 @@ import ConfirmModal from '@/components/BaseConfirmModal.vue';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import BaseTextEditor from '@/components/BaseTextEditor.vue';
+import { Label } from '@/components/ui/label';
 import { ConnectionNote, TagCode, useScratchpadStore } from '@/stores/scratchpad';
 
 const { t } = useI18n();

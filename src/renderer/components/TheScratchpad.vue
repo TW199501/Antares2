@@ -1,146 +1,160 @@
 <template>
-   <Teleport to="#window-content">
-      <div class="modal active">
-         <a class="modal-overlay" @click.stop="hideScratchpad" />
-         <div ref="trapRef" class="modal-container p-0 pb-4">
-            <div class="modal-header pl-2">
-               <div class="modal-title h6">
-                  <div class="d-flex">
-                     <BaseIcon
-                        icon-name="mdiNotebookOutline"
-                        class="mr-1"
-                        :size="24"
-                     />
-                     <span>{{ t('application.note', 2) }}</span>
-                  </div>
+   <Dialog :open="true" @update:open="(v) => { if (!v) hideScratchpad(); }">
+      <DialogContent
+         class="max-w-[640px] !p-0 !gap-0 [&>button.absolute]:!hidden flex flex-col max-h-[85vh]"
+         @escape-key-down.prevent="hideScratchpad"
+         @pointer-down-outside.prevent="hideScratchpad"
+      >
+         <DialogHeader class="flex flex-row items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/30">
+            <DialogTitle class="!text-[14px] !font-semibold flex items-center gap-1.5">
+               <BaseIcon icon-name="mdiNotebookOutline" :size="20" />
+               <span>{{ t('application.note', 2) }}</span>
+            </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ t('application.note', 2) }}
+            </DialogDescription>
+            <Button
+               variant="ghost"
+               size="icon"
+               class="!h-7 !w-7"
+               @click.stop="hideScratchpad"
+            >
+               <BaseIcon icon-name="mdiClose" :size="16" />
+            </Button>
+         </DialogHeader>
+
+         <div class="flex flex-col min-h-0 flex-1 relative">
+            <div ref="noteFilters" class="flex items-center gap-2.5 p-2 border-b border-border/60">
+               <div class="flex-1 min-w-0">
+                  <BaseSelect
+                     v-model="localConnection"
+                     :options="connectionOptions"
+                     option-track-by="code"
+                     option-label="name"
+                     @change="null"
+                  />
                </div>
-               <a class="btn btn-clear c-hand" @click.stop="hideScratchpad" />
-            </div>
-            <div class="modal-body p-0 workspace-query-results">
-               <div
-                  ref="noteFilters"
-                  class="d-flex p-vcentered p-2"
-                  style="gap: 0 10px"
-               >
-                  <div style="flex: 1;">
-                     <BaseSelect
-                        v-model="localConnection"
-                        class="form-select"
-                        :options="connectionOptions"
-                        option-track-by="code"
-                        option-label="name"
-                        @change="null"
-                     />
-                  </div>
-                  <div class="btn-group btn-group-block text-uppercase">
-                     <div
-                        v-for="tag in [{ code: 'all', name: t('general.all') }, ...noteTags]"
-                        :key="tag.code"
-                        class="btn"
-                        :class="[selectedTag === tag.code ? 'btn-primary': 'btn-dark']"
-                        @click="setTag(tag.code)"
-                     >
-                        {{ tag.name }}
-                     </div>
-                  </div>
-                  <div class="">
-                     <div
-                        class="btn px-1 tooltip tooltip-left s-rounded archived-button"
-                        :class="[showArchived ? 'btn-primary' : 'btn-link']"
-                        :data-tooltip="showArchived ? t('application.hideArchivedNotes') : t('application.showArchivedNotes')"
+               <div class="flex items-stretch gap-px rounded-md overflow-hidden border border-border">
+                  <button
+                     v-for="tag in [{ code: 'all', name: t('general.all') }, ...noteTags]"
+                     :key="tag.code"
+                     type="button"
+                     class="px-3 text-[12px] uppercase font-medium transition-colors"
+                     :class="selectedTag === tag.code
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card text-card-foreground hover:bg-accent/50'"
+                     @click="setTag(tag.code)"
+                  >
+                     {{ tag.name }}
+                  </button>
+               </div>
+               <Tooltip>
+                  <TooltipTrigger as-child>
+                     <Button
+                        :variant="showArchived ? 'default' : 'ghost'"
+                        size="icon"
+                        class="!h-9 !w-9 rounded-full shrink-0"
                         @click="showArchived = !showArchived"
                      >
                         <BaseIcon
                            :icon-name="!showArchived ? 'mdiArchiveEyeOutline' : 'mdiArchiveCancelOutline'"
-                           class=""
-                           :size="24"
+                           :size="18"
                         />
-                     </div>
-                  </div>
-               </div>
-               <div>
-                  <div
-                     v-show="filteredNotes.length || searchTerm.length"
-                     ref="searchForm"
-                     class="form-group has-icon-right m-0 p-2"
-                  >
-                     <input
-                        v-model="searchTerm"
-                        class="form-input"
-                        type="text"
-                        :placeholder="t('general.search')"
-                     >
-                     <BaseIcon
-                        v-if="!searchTerm"
-                        icon-name="mdiMagnify"
-                        class="form-icon pr-2"
-                        :size="18"
-                     />
-                     <BaseIcon
-                        v-else
-                        icon-name="mdiBackspace"
-                        class="form-icon c-hand pr-2"
-                        :size="18"
-                        @click="searchTerm = ''"
-                     />
-                  </div>
-               </div>
+                     </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                     {{ showArchived ? t('application.hideArchivedNotes') : t('application.showArchivedNotes') }}
+                  </TooltipContent>
+               </Tooltip>
+            </div>
 
-               <div
-                  v-if="filteredNotes.length"
-                  ref="tableWrapper"
-                  class="vscroll px-2"
-                  :style="{'height': resultsSize+'px'}"
-               >
-                  <div ref="table">
-                     <BaseVirtualScroll
-                        ref="resultTable"
-                        :items="filteredNotes"
-                        :item-height="83"
-                        :visible-height="resultsSize"
-                        :scroll-element="scrollElement"
-                     >
-                        <template #default="{ items }">
-                           <ScratchpadNote
-                              v-for="note in items"
-                              :key="note.uid"
-                              :search-term="searchTerm"
-                              :note="note"
-                              :selected-note="selectedNote"
-                              @select-note="selectedNote = note.uid"
-                              @toggle-note="toggleNote"
-                              @edit-note="startEditNote(note)"
-                              @delete-note="deleteNote"
-                              @archive-note="archiveNote"
-                              @restore-note="restoreNote"
-                              @select-query="selectQuery"
-                           />
-                        </template>
-                     </BaseVirtualScroll>
-                  </div>
-               </div>
-               <div v-else class="empty">
-                  <div class="empty-icon">
-                     <BaseIcon icon-name="mdiNoteSearch" :size="48" />
-                  </div>
-                  <p class="empty-title h5">
-                     {{ t('application.thereAreNoNotesYet') }}
-                  </p>
-               </div>
-               <div
-                  class="btn btn-primary p-0 add-button tooltip tooltip-left"
-                  :data-tooltip="t('application.addNote')"
-                  @click="isAddModal = true"
-               >
-                  <BaseIcon
-                     icon-name="mdiPlus"
-                     :size="48"
-                  />
+            <div
+               v-show="filteredNotes.length || searchTerm.length"
+               ref="searchForm"
+               class="relative p-2 border-b border-border/60"
+            >
+               <Input
+                  v-model="searchTerm"
+                  type="text"
+                  class="pr-9"
+                  :placeholder="t('general.search')"
+               />
+               <BaseIcon
+                  v-if="!searchTerm"
+                  icon-name="mdiMagnify"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                  :size="18"
+               />
+               <BaseIcon
+                  v-else
+                  icon-name="mdiBackspace"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
+                  :size="18"
+                  @click="searchTerm = ''"
+               />
+            </div>
+
+            <div
+               v-if="filteredNotes.length"
+               ref="tableWrapper"
+               class="overflow-auto px-2 flex-1"
+               style="overflow-anchor: none;"
+               :style="{ height: resultsSize + 'px' }"
+            >
+               <div ref="table">
+                  <BaseVirtualScroll
+                     ref="resultTable"
+                     :items="filteredNotes"
+                     :item-height="83"
+                     :visible-height="resultsSize"
+                     :scroll-element="scrollElement"
+                  >
+                     <template #default="{ items }">
+                        <ScratchpadNote
+                           v-for="note in items"
+                           :key="note.uid"
+                           :search-term="searchTerm"
+                           :note="note"
+                           :selected-note="selectedNote"
+                           @select-note="selectedNote = note.uid"
+                           @toggle-note="toggleNote"
+                           @edit-note="startEditNote(note)"
+                           @delete-note="deleteNote"
+                           @archive-note="archiveNote"
+                           @restore-note="restoreNote"
+                           @select-query="selectQuery"
+                        />
+                     </template>
+                  </BaseVirtualScroll>
                </div>
             </div>
+            <div v-else class="flex flex-col items-center justify-center gap-3 py-10 flex-1">
+               <BaseIcon
+                  icon-name="mdiNoteSearch"
+                  :size="48"
+                  class="text-muted-foreground"
+               />
+               <p class="text-[15px] font-semibold text-muted-foreground">
+                  {{ t('application.thereAreNoNotesYet') }}
+               </p>
+            </div>
+
+            <Tooltip>
+               <TooltipTrigger as-child>
+                  <Button
+                     class="absolute bottom-4 right-4 !h-12 !w-12 rounded-full shadow-lg z-10"
+                     @click="isAddModal = true"
+                  >
+                     <BaseIcon icon-name="mdiPlus" :size="28" />
+                  </Button>
+               </TooltipTrigger>
+               <TooltipContent side="left">
+                  {{ t('application.addNote') }}
+               </TooltipContent>
+            </Tooltip>
          </div>
-      </div>
-   </Teleport>
+      </DialogContent>
+   </Dialog>
    <ModalNoteNew v-if="isAddModal" @hide="isAddModal = false" />
    <ModalNoteEdit
       v-if="isEditModal"
@@ -171,6 +185,10 @@ import BaseVirtualScroll from '@/components/BaseVirtualScroll.vue';
 import ModalNoteEdit from '@/components/ModalNoteEdit.vue';
 import ModalNoteNew from '@/components/ModalNoteNew.vue';
 import ScratchpadNote from '@/components/ScratchpadNote.vue';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApplicationStore } from '@/stores/application';
 import { useConnectionsStore } from '@/stores/connections';
 import { ConnectionNote, TagCode, useScratchpadStore } from '@/stores/scratchpad';
@@ -342,27 +360,3 @@ onBeforeUnmount(() => {
 });
 
 </script>
-
-<style lang="scss" scoped>
-.vscroll {
-  height: 1000px;
-  overflow: auto;
-  overflow-anchor: none;
-}
-
-.add-button{
-   border: none;
-   height: 48px;
-   width: 48px;
-   border-radius: 50%;
-   position: fixed;
-   margin-top: -40px;
-   margin-left: 580px;
-   z-index: 9;
-}
-.archived-button {
-   border-radius: 50%;
-   width: 36px;
-   height: 36px;
-}
-</style>
