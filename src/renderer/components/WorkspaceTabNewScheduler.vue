@@ -1,125 +1,104 @@
 <template>
-   <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
-      <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons">
-               <button
-                  class="btn btn-primary btn-sm"
-                  :disabled="!isChanged"
-                  :class="{'loading':isSaving}"
-                  @click="saveChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiContentSave"
-                     :size="24"
-                  />
-                  <span>{{ t('general.save') }}</span>
-               </button>
-               <button
-                  :disabled="!isChanged"
-                  class="btn btn-link btn-sm mr-0"
-                  :title="t('database.clearChanges')"
-                  @click="clearChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiDeleteSweep"
-                     :size="24"
-                  />
-                  <span>{{ t('general.clear') }}</span>
-               </button>
+   <PropsTabShell :is-selected="isSelected" :schema="schema">
+      <template #toolbar>
+         <Button
+            variant="default"
+            size="sm"
+            :disabled="!isChanged || isSaving"
+            @click="saveChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiContentSave"
+               :size="16"
+            />
+            {{ t('general.save') }}
+         </Button>
+         <Button
+            variant="ghost"
+            size="sm"
+            :disabled="!isChanged"
+            :title="t('database.clearChanges')"
+            @click="clearChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiDeleteSweep"
+               :size="16"
+            />
+            {{ t('general.clear') }}
+         </Button>
 
-               <div class="divider-vert py-3" />
-               <button class="btn btn-dark btn-sm" @click="showTimingModal">
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiTimer"
-                     :size="24"
-                  />
-                  <span>{{ t('database.timing') }}</span>
-               </button>
-            </div>
-            <div class="workspace-query-info">
-               <div class="d-flex" :title="t('database.schema')">
-                  <BaseIcon
-                     class="mt-1 mr-1"
-                     icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
+         <Separator orientation="vertical" class="!h-5 mx-1" />
+
+         <Button
+            variant="outline"
+            size="sm"
+            @click="showTimingModal"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiTimer"
+               :size="16"
+            />
+            {{ t('database.timing') }}
+         </Button>
+      </template>
+
+      <template #metadata>
+         <PropertyCard :label="t('general.name')">
+            <Input
+               ref="firstInput"
+               v-model="localScheduler.name"
+               type="text"
+               class="!h-[30px] w-[200px]"
+            />
+         </PropertyCard>
+         <PropertyCard :label="t('database.definer')">
+            <BaseSelect
+               v-model="localScheduler.definer"
+               :options="users"
+               :option-label="(user: any) => user.value === '' ? t('database.currentUser') : `${user.name}@${user.host}`"
+               :option-track-by="(user: any) => user.value === '' ? '' : `\`${user.name}\`@\`${user.host}\``"
+               class="!h-[30px] w-[180px]"
+            />
+         </PropertyCard>
+         <PropertyCard :label="t('database.comment')">
+            <Input
+               v-model="localScheduler.comment"
+               type="text"
+               class="!h-[30px] w-[220px]"
+            />
+         </PropertyCard>
+         <PropertyCard :label="t('database.state')">
+            <RadioGroup v-model="localScheduler.state" class="flex flex-row items-center gap-3 h-[30px]">
+               <div class="flex items-center gap-1.5">
+                  <RadioGroupItem id="scheduler-state-enable" value="ENABLE" />
+                  <Label for="scheduler-state-enable" class="!text-[12px] cursor-pointer !m-0">
+                     ENABLE
+                  </Label>
                </div>
-            </div>
-         </div>
-      </div>
-      <div class="container">
-         <div class="columns">
-            <div class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('general.name') }}</label>
-                  <input
-                     ref="firstInput"
-                     v-model="localScheduler.name"
-                     class="form-input"
-                     type="text"
-                  >
+               <div class="flex items-center gap-1.5">
+                  <RadioGroupItem id="scheduler-state-disable" value="DISABLE" />
+                  <Label for="scheduler-state-disable" class="!text-[12px] cursor-pointer !m-0">
+                     DISABLE
+                  </Label>
                </div>
-            </div>
-            <div class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('database.definer') }}</label>
-                  <BaseSelect
-                     v-model="localScheduler.definer"
-                     :options="users"
-                     :option-label="(user: any) => user.value === '' ? t('database.currentUser') : `${user.name}@${user.host}`"
-                     :option-track-by="(user: any) => user.value === '' ? '' : `\`${user.name}\`@\`${user.host}\``"
-                     class="form-select"
-                  />
+               <div class="flex items-center gap-1.5">
+                  <RadioGroupItem id="scheduler-state-disable-slave" value="DISABLE ON SLAVE" />
+                  <Label for="scheduler-state-disable-slave" class="!text-[12px] cursor-pointer !m-0">
+                     DISABLE ON SLAVE
+                  </Label>
                </div>
-            </div>
-            <div class="column">
-               <div class="form-group">
-                  <label class="form-label">{{ t('database.comment') }}</label>
-                  <input
-                     v-model="localScheduler.comment"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
-            </div>
-            <div class="column">
-               <div class="form-group">
-                  <label class="form-label mr-2">{{ t('database.state') }}</label>
-                  <label class="form-radio form-inline">
-                     <input
-                        v-model="localScheduler.state"
-                        type="radio"
-                        name="state"
-                        value="ENABLE"
-                     ><i class="form-icon" /> ENABLE
-                  </label>
-                  <label class="form-radio form-inline">
-                     <input
-                        v-model="localScheduler.state"
-                        type="radio"
-                        name="state"
-                        value="DISABLE"
-                     ><i class="form-icon" /> DISABLE
-                  </label>
-                  <label class="form-radio form-inline">
-                     <input
-                        v-model="localScheduler.state"
-                        type="radio"
-                        name="state"
-                        value="DISABLE ON SLAVE"
-                     ><i class="form-icon" /> DISABLE ON SLAVE
-                  </label>
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="workspace-query-results column col-12 mt-2 p-relative">
+            </RadioGroup>
+         </PropertyCard>
+      </template>
+
+      <template #content>
          <BaseLoader v-if="isLoading" />
-         <label class="form-label ml-2">{{ t('database.schedulerBody') }}</label>
+         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+            {{ t('database.schedulerBody') }}
+         </Label>
          <QueryEditor
             v-show="isSelected"
             ref="queryEditor"
@@ -128,15 +107,15 @@
             :schema="schema"
             :height="editorHeight"
          />
-      </div>
-      <WorkspaceTabPropsSchedulerTimingModal
-         v-if="isTimingModal"
-         :local-options="localScheduler"
-         :workspace="workspace"
-         @hide="hideTimingModal"
-         @options-update="timingUpdate"
-      />
-   </div>
+      </template>
+   </PropsTabShell>
+   <WorkspaceTabPropsSchedulerTimingModal
+      v-if="isTimingModal"
+      :local-options="localScheduler"
+      :workspace="workspace"
+      @hide="hideTimingModal"
+      @options-update="timingUpdate"
+   />
 </template>
 
 <script setup lang="ts">
@@ -150,6 +129,13 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import QueryEditor from '@/components/QueryEditor.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import PropertyCard from '@/components/workspace/props/PropertyCard.vue';
+import PropsTabShell from '@/components/workspace/props/PropsTabShell.vue';
 import WorkspaceTabPropsSchedulerTimingModal from '@/components/WorkspaceTabPropsSchedulerTimingModal.vue';
 import Schedulers from '@/ipc-api/Schedulers';
 import { useConsoleStore } from '@/stores/console';
@@ -318,7 +304,7 @@ onMounted(() => {
    window.addEventListener('antares:save-content', saveContentListener);
 
    setTimeout(() => {
-      firstInput.value.focus();
+      firstInput.value?.focus?.();
    }, 100);
 });
 
@@ -329,5 +315,4 @@ onBeforeUnmount(() => {
 onUnmounted(() => {
    window.removeEventListener('resize', resizeQueryEditor);
 });
-
 </script>

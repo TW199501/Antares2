@@ -1,18 +1,25 @@
 <template>
-   <div class="column col-12 empty">
-      <p class="h6 empty-subtitle">
-         {{ t('database.thereAreNoTableFields') }}
-      </p>
-      <div class="empty-action">
-         <button class="btn btn-gray d-flex" @click="emit('new-field')">
+   <div class="flex w-full items-center justify-center">
+      <Card class="m-auto max-w-[400px] !p-8 text-center bg-card/90 border-border/60 shadow-none">
+         <CardContent class="flex flex-col items-center gap-4 !p-0">
             <BaseIcon
-               class="mr-2"
-               icon-name="mdiPlaylistPlus"
-               :size="24"
+               icon-name="mdiTablePlus"
+               :size="48"
+               class="opacity-40"
             />
-            {{ t('database.addNewField') }}
-         </button>
-      </div>
+            <CardTitle class="text-[14px] font-semibold">
+               {{ t('database.thereAreNoTableFields') }}
+            </CardTitle>
+            <Button @click="emit('new-field')">
+               <BaseIcon
+                  class="mr-2"
+                  icon-name="mdiPlaylistPlus"
+                  :size="18"
+               />
+               {{ t('database.addNewField') }}
+            </Button>
+         </CardContent>
+      </Card>
    </div>
 </template>
 
@@ -20,23 +27,11 @@
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 
 const { t } = useI18n();
 const emit = defineEmits<{
    'new-field': [];
 }>();
 </script>
-
-<style scoped>
-  .empty {
-    border-radius: 0;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-left: auto;
-    margin-right: auto;
-    z-index: 9;
-  }
-</style>

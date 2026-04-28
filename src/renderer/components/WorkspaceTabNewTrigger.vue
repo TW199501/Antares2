@@ -1,118 +1,105 @@
 <template>
-   <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
-      <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons">
-               <button
-                  class="btn btn-primary btn-sm"
-                  :disabled="!isChanged"
-                  :class="{'loading':isSaving}"
-                  @click="saveChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiContentSave"
-                     :size="24"
-                  />
-                  <span>{{ t('general.save') }}</span>
-               </button>
-               <button
-                  :disabled="!isChanged"
-                  class="btn btn-link btn-sm mr-0"
-                  :title="t('database.clearChanges')"
-                  @click="clearChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiDeleteSweep"
-                     :size="24"
-                  />
-                  <span>{{ t('general.clear') }}</span>
-               </button>
-            </div>
-            <div class="workspace-query-info">
-               <div class="d-flex" :title="t('database.schema')">
-                  <BaseIcon
-                     class="mt-1 mr-1"
-                     icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="px-2">
-         <div class="columns">
-            <div class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('general.name') }}</label>
-                  <input
-                     ref="firstInput"
-                     v-model="localTrigger.name"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
-            </div>
-            <div v-if="customizations.definer" class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('database.definer') }}</label>
+   <PropsTabShell :is-selected="isSelected" :schema="schema">
+      <template #toolbar>
+         <Button
+            variant="default"
+            size="sm"
+            :disabled="!isChanged || isSaving"
+            @click="saveChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiContentSave"
+               :size="16"
+            />
+            {{ t('general.save') }}
+         </Button>
+         <Button
+            variant="ghost"
+            size="sm"
+            :disabled="!isChanged"
+            :title="t('database.clearChanges')"
+            @click="clearChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiDeleteSweep"
+               :size="16"
+            />
+            {{ t('general.clear') }}
+         </Button>
+      </template>
+
+      <template #metadata>
+         <PropertyCard :label="t('general.name')">
+            <Input
+               ref="firstInput"
+               v-model="localTrigger.name"
+               type="text"
+               class="!h-[30px] w-[200px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="customizations.definer"
+            :label="t('database.definer')"
+         >
+            <BaseSelect
+               v-model="localTrigger.definer"
+               :options="users"
+               :option-label="(user: any) => user.value === '' ? t('database.currentUser') : `${user.name}@${user.host}`"
+               :option-track-by="(user: any) => user.value === '' ? '' : `\`${user.name}\`@\`${user.host}\``"
+               class="!h-[30px] w-[180px]"
+            />
+         </PropertyCard>
+         <fieldset class="contents" :disabled="customizations.triggerOnlyRename">
+            <PropertyCard :label="t('database.table')">
+               <BaseSelect
+                  v-model="localTrigger.table"
+                  :options="schemaTables"
+                  option-label="name"
+                  option-track-by="name"
+                  class="!h-[30px] w-[180px]"
+               />
+            </PropertyCard>
+            <PropertyCard :label="t('database.event')">
+               <div class="flex items-center gap-2">
                   <BaseSelect
-                     v-model="localTrigger.definer"
-                     :options="users"
-                     :option-label="(user: any) => user.value === '' ? t('database.currentUser') : `${user.name}@${user.host}`"
-                     :option-track-by="(user: any) => user.value === '' ? '' : `\`${user.name}\`@\`${user.host}\``"
-                     class="form-select"
+                     v-model="localTrigger.activation"
+                     :options="['BEFORE', 'AFTER']"
+                     class="!h-[30px] w-[110px]"
                   />
-               </div>
-            </div>
-            <fieldset class="column columns mb-0" :disabled="customizations.triggerOnlyRename">
-               <div class="column col-auto">
-                  <div class="form-group">
-                     <label class="form-label">{{ t('database.table') }}</label>
-                     <BaseSelect
-                        v-model="localTrigger.table"
-                        :options="schemaTables"
-                        option-label="name"
-                        option-track-by="name"
-                        class="form-select"
-                     />
+                  <BaseSelect
+                     v-if="!customizations.triggerMultipleEvents"
+                     v-model="localTrigger.event"
+                     :options="Object.keys(localEvents)"
+                     class="!h-[30px] w-[110px]"
+                  />
+                  <div
+                     v-if="customizations.triggerMultipleEvents"
+                     class="flex items-center gap-3"
+                  >
+                     <label
+                        v-for="event in Object.keys(localEvents) as ('INSERT' | 'UPDATE' | 'DELETE')[]"
+                        :key="event"
+                        class="flex cursor-pointer items-center gap-1.5 text-[12px]"
+                     >
+                        <Checkbox
+                           :checked="localEvents[event]"
+                           @update:checked="changeEvents(event)"
+                        />
+                        {{ event }}
+                     </label>
                   </div>
                </div>
-               <div class="column col-auto">
-                  <div class="form-group">
-                     <label class="form-label">{{ t('database.event') }}</label>
-                     <div class="input-group">
-                        <BaseSelect
-                           v-model="localTrigger.activation"
-                           :options="['BEFORE', 'AFTER']"
-                           class="form-select"
-                        />
-                        <BaseSelect
-                           v-if="!customizations.triggerMultipleEvents"
-                           v-model="localTrigger.event"
-                           :options="Object.keys(localEvents)"
-                           class="form-select"
-                        />
-                        <div v-if="customizations.triggerMultipleEvents" class="px-4">
-                           <label
-                              v-for="event in Object.keys(localEvents) as ('INSERT' | 'UPDATE' | 'DELETE')[]"
-                              :key="event"
-                              class="form-checkbox form-inline"
-                              @change.prevent="changeEvents(event)"
-                           >
-                              <input :checked="localEvents[event]" type="checkbox"><i class="form-icon" /> {{ event }}
-                           </label>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </fieldset>
-         </div>
-      </div>
-      <div class="workspace-query-results column col-12 mt-2 p-relative">
+            </PropertyCard>
+         </fieldset>
+      </template>
+
+      <template #content>
          <BaseLoader v-if="isLoading" />
-         <label class="form-label ml-2">{{ t('database.triggerStatement') }}</label>
+         <Label class="!text-[12px] !text-muted-foreground !font-normal !m-0 ml-2">
+            {{ t('database.triggerStatement') }}
+         </Label>
          <QueryEditor
             v-show="isSelected"
             ref="queryEditor"
@@ -121,8 +108,8 @@
             :schema="schema"
             :height="editorHeight"
          />
-      </div>
-   </div>
+      </template>
+   </PropsTabShell>
 </template>
 
 <script setup lang="ts">
@@ -135,6 +122,12 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import QueryEditor from '@/components/QueryEditor.vue';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import PropertyCard from '@/components/workspace/props/PropertyCard.vue';
+import PropsTabShell from '@/components/workspace/props/PropsTabShell.vue';
 import Triggers from '@/ipc-api/Triggers';
 import { useConsoleStore } from '@/stores/console';
 import { useNotificationsStore } from '@/stores/notifications';
@@ -327,7 +320,7 @@ onMounted(() => {
    window.addEventListener('antares:save-content', saveContentListener);
 
    setTimeout(() => {
-      firstInput.value.focus();
+      firstInput.value?.focus?.();
    }, 100);
 
    window.addEventListener('resize', resizeQueryEditor);

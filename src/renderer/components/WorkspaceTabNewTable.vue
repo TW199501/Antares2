@@ -1,159 +1,143 @@
 <template>
-   <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
-      <div class="workspace-query-runner column col-12">
-         <div class="workspace-query-runner-footer">
-            <div class="workspace-query-buttons">
-               <button
-                  class="btn btn-primary btn-sm"
-                  :disabled="!isChanged || !isValid"
-                  :class="{'loading':isSaving}"
-                  @click="saveChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiContentSave"
-                     :size="24"
-                  />
-                  <span>{{ t('general.save') }}</span>
-               </button>
-               <button
-                  :disabled="!isChanged || isSaving"
-                  class="btn btn-link btn-sm mr-0"
-                  :title="t('database.clearChanges')"
-                  @click="clearChanges"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiDeleteSweep"
-                     :size="24"
-                  />
-                  <span>{{ t('general.clear') }}</span>
-               </button>
+   <PropsTabShell :is-selected="isSelected" :schema="schema">
+      <template #toolbar>
+         <Button
+            variant="default"
+            size="sm"
+            :disabled="!isChanged || !isValid || isSaving"
+            @click="saveChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiContentSave"
+               :size="16"
+            />
+            {{ t('general.save') }}
+         </Button>
+         <Button
+            variant="ghost"
+            size="sm"
+            :disabled="!isChanged || isSaving"
+            :title="t('database.clearChanges')"
+            @click="clearChanges"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiDeleteSweep"
+               :size="16"
+            />
+            {{ t('general.clear') }}
+         </Button>
 
-               <div class="divider-vert py-3" />
+         <Separator orientation="vertical" class="!h-5 mx-1" />
 
-               <button
-                  :disabled="isSaving"
-                  class="btn btn-dark btn-sm"
-                  :title="t('database.addNewField')"
-                  @click="addField"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiPlaylistPlus"
-                     :size="24"
-                  />
-                  <span>{{ t('general.add') }}</span>
-               </button>
-               <button
-                  :disabled="isSaving || !localFields.length"
-                  class="btn btn-dark btn-sm"
-                  :title="t('database.manageIndexes')"
-                  @click="showIntdexesModal"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiKey"
-                     :rotate="45"
-                     :size="24"
-                  />
-                  <span>{{ t('database.indexes') }}</span>
-               </button>
-               <button
-                  class="btn btn-dark btn-sm"
-                  :disabled="isSaving || !localFields.length"
-                  :title="t('database.manageForeignKeys')"
-                  @click="showForeignModal"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiKeyLink"
-                     :size="24"
-                  />
-                  <span>{{ t('database.foreignKeys') }}</span>
-               </button>
-               <button
-                  v-if="workspace.customizations.tableCheck"
-                  class="btn btn-dark btn-sm ml-2 mr-0"
-                  :disabled="isSaving || !localFields.length"
-                  :title="t('database.manageTableChecks')"
-                  @click="showTableChecksModal"
-               >
-                  <BaseIcon
-                     class="mr-1"
-                     icon-name="mdiTableCheck"
-                     :size="24"
-                  />
-                  <span>{{ t('database.tableChecks') }}</span>
-               </button>
-            </div>
-            <div class="workspace-query-info">
-               <div class="d-flex" :title="t('database.schema')">
-                  <BaseIcon
-                     class="mt-1 mr-1"
-                     icon-name="mdiDatabase"
-                     :size="18"
-                  /><b>{{ schema }}</b>
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="container">
-         <div class="columns mb-4">
-            <div class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">{{ t('general.name') }}</label>
-                  <input
-                     ref="firstInput"
-                     v-model="localOptions.name"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
-            </div>
-            <div v-if="workspace.customizations.comment" class="column">
-               <div class="form-group">
-                  <label class="form-label">{{ t('database.comment') }}</label>
-                  <input
-                     v-model="localOptions.comment"
-                     class="form-input"
-                     type="text"
-                  >
-               </div>
-            </div>
+         <Button
+            variant="outline"
+            size="sm"
+            :disabled="isSaving"
+            :title="t('database.addNewField')"
+            @click="addField"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiPlaylistPlus"
+               :size="16"
+            />
+            {{ t('general.add') }}
+         </Button>
+         <Button
+            variant="outline"
+            size="sm"
+            :disabled="isSaving || !localFields.length"
+            :title="t('database.manageIndexes')"
+            @click="showIntdexesModal"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiKey"
+               :rotate="45"
+               :size="16"
+            />
+            {{ t('database.indexes') }}
+         </Button>
+         <Button
+            variant="outline"
+            size="sm"
+            :disabled="isSaving || !localFields.length"
+            :title="t('database.manageForeignKeys')"
+            @click="showForeignModal"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiKeyLink"
+               :size="16"
+            />
+            {{ t('database.foreignKeys') }}
+         </Button>
+         <Button
+            v-if="workspace.customizations.tableCheck"
+            variant="outline"
+            size="sm"
+            :disabled="isSaving || !localFields.length"
+            :title="t('database.manageTableChecks')"
+            @click="showTableChecksModal"
+         >
+            <BaseIcon
+               class="mr-1"
+               icon-name="mdiTableCheck"
+               :size="16"
+            />
+            {{ t('database.tableChecks') }}
+         </Button>
+      </template>
 
-            <div v-if="workspace.customizations.collations" class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">
-                     {{ t('database.collation') }}
-                  </label>
-                  <BaseSelect
-                     v-model="localOptions.collation"
-                     :options="workspace.collations"
-                     :max-visible-options="1000"
-                     option-label="collation"
-                     option-track-by="collation"
-                     class="form-select"
-                  />
-               </div>
-            </div>
-            <div v-if="workspace.customizations.engines" class="column col-auto">
-               <div class="form-group">
-                  <label class="form-label">
-                     {{ t('database.engine') }}
-                  </label>
-                  <BaseSelect
-                     v-model="localOptions.engine"
-                     class="form-select"
-                     :options="workspace.engines"
-                     option-label="name"
-                     option-track-by="name"
-                  />
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="workspace-query-results column col-12 p-relative">
+      <template #metadata>
+         <PropertyCard :label="t('general.name')">
+            <Input
+               ref="firstInput"
+               v-model="localOptions.name"
+               type="text"
+               class="!h-[30px] w-[200px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.comment"
+            :label="t('database.comment')"
+         >
+            <Input
+               v-model="localOptions.comment"
+               type="text"
+               class="!h-[30px] w-[260px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.collations"
+            :label="t('database.collation')"
+         >
+            <BaseSelect
+               v-model="localOptions.collation"
+               :options="workspace.collations"
+               :max-visible-options="1000"
+               option-label="collation"
+               option-track-by="collation"
+               class="!h-[30px] w-[200px]"
+            />
+         </PropertyCard>
+         <PropertyCard
+            v-if="workspace.customizations.engines"
+            :label="t('database.engine')"
+         >
+            <BaseSelect
+               v-model="localOptions.engine"
+               :options="workspace.engines"
+               option-label="name"
+               option-track-by="name"
+               class="!h-[30px] w-[160px]"
+            />
+         </PropertyCard>
+      </template>
+
+      <template #content>
          <BaseLoader v-if="isLoading" />
          <WorkspaceTabNewTableEmptyState v-if="!localFields.length" @new-field="addField" />
          <WorkspaceTabPropsTableFields
@@ -174,38 +158,38 @@
             @add-to-index="addToIndex"
             @rename-field="renameField"
          />
-      </div>
-      <WorkspaceTabPropsTableIndexesModal
-         v-if="isIndexesModal"
-         :local-indexes="localIndexes"
-         table="new"
-         :fields="localFields"
-         :index-types="workspace.indexTypes"
-         :workspace="workspace"
-         @hide="hideIndexesModal"
-         @indexes-update="indexesUpdate"
-      />
-      <WorkspaceTabPropsTableForeignModal
-         v-if="isForeignModal"
-         :local-key-usage="localKeyUsage"
-         :connection="connection"
-         table="new"
-         :schema="schema"
-         :schema-tables="schemaTables"
-         :fields="localFields"
-         :workspace="workspace"
-         @hide="hideForeignModal"
-         @foreigns-update="foreignsUpdate"
-      />
-      <WorkspaceTabPropsTableChecksModal
-         v-if="isTableChecksModal"
-         :local-checks="localTableChecks"
-         table="new"
-         :workspace="workspace"
-         @hide="hideTableChecksModal"
-         @checks-update="checksUpdate"
-      />
-   </div>
+      </template>
+   </PropsTabShell>
+   <WorkspaceTabPropsTableIndexesModal
+      v-if="isIndexesModal"
+      :local-indexes="localIndexes"
+      table="new"
+      :fields="localFields"
+      :index-types="workspace.indexTypes"
+      :workspace="workspace"
+      @hide="hideIndexesModal"
+      @indexes-update="indexesUpdate"
+   />
+   <WorkspaceTabPropsTableForeignModal
+      v-if="isForeignModal"
+      :local-key-usage="localKeyUsage"
+      :connection="connection"
+      table="new"
+      :schema="schema"
+      :schema-tables="schemaTables"
+      :fields="localFields"
+      :workspace="workspace"
+      @hide="hideForeignModal"
+      @foreigns-update="foreignsUpdate"
+   />
+   <WorkspaceTabPropsTableChecksModal
+      v-if="isTableChecksModal"
+      :local-checks="localTableChecks"
+      table="new"
+      :workspace="workspace"
+      @hide="hideTableChecksModal"
+      @checks-update="checksUpdate"
+   />
 </template>
 
 <script setup lang="ts">
@@ -218,6 +202,11 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import BaseLoader from '@/components/BaseLoader.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import PropertyCard from '@/components/workspace/props/PropertyCard.vue';
+import PropsTabShell from '@/components/workspace/props/PropsTabShell.vue';
 import WorkspaceTabNewTableEmptyState from '@/components/WorkspaceTabNewTableEmptyState.vue';
 import WorkspaceTabPropsTableChecksModal from '@/components/WorkspaceTabPropsTableChecksModal.vue';
 import WorkspaceTabPropsTableFields from '@/components/WorkspaceTabPropsTableFields.vue';
@@ -522,7 +511,7 @@ onMounted(() => {
    window.addEventListener('antares:save-content', saveContentListener);
 
    setTimeout(() => {
-      firstInput.value.focus();
+      firstInput.value?.focus?.();
    }, 100);
 });
 
