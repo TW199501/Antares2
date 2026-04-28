@@ -59,7 +59,7 @@
             </div>
          </div>
       </div>
-      <Teleport :to="toolbarTarget" :disabled="!toolbarTarget">
+      <Teleport v-if="toolbarTarget" :to="toolbarTarget">
          <div class="flex items-center gap-2">
             <Button
                variant="default"
@@ -255,7 +255,10 @@ const props = defineProps({
    isSelected: Boolean,
    table: String,
    schema: String,
-   toolbarTarget: { type: String, default: '' }
+   // null when no toolbar mount point — Teleport then short-circuits via v-if.
+   // Empty string would crash Vue's Teleport (querySelector('') throws even
+   // when :disabled="true" is set, because Vue still validates the selector).
+   toolbarTarget: { type: String, default: null }
 });
 
 const { addNotification } = useNotificationsStore();
