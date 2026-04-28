@@ -1,6 +1,6 @@
 {
    "productName": "Antares2",
-   "version": "0.8.0",
+   "version": "0.8.1",
    "identifier": "com.tw199501.antares2",
    "build": {
       "beforeDevCommand": "npm run vite:dev",
