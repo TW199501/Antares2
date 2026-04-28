@@ -24,7 +24,7 @@
          >
       </div>
       <!-- 数据类型 -->
-      <div class="td p-0 text-uppercase [&_.form-select]:!h-[28px] [&_.form-select]:!text-[14px]" tabindex="0">
+      <div class="td p-0 text-uppercase" tabindex="0">
          <span
             v-if="!isInlineEditor.type"
             class="cell-content text-left text-[14px]"
@@ -42,7 +42,7 @@
             group-values="types"
             option-label="name"
             option-track-by="name"
-            class="form-select editable-field pl-1 pr-4 small-select text-uppercase"
+            class="editable-field pl-1 pr-4 text-uppercase !h-[28px] !text-[14px]"
             @blur="editOFF"
          />
       </div>

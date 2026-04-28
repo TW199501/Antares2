@@ -42,7 +42,7 @@
                   group-values="types"
                   option-label="name"
                   option-track-by="name"
-                  class="form-select uppercase [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px]"
+                  class="uppercase !h-[32px] !text-[14px]"
                />
             </div>
             <!-- 長度 / 精度 -->

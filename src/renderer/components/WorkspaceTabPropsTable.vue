@@ -42,7 +42,7 @@
                   option-label="collation"
                   option-track-by="collation"
                   :disabled="true"
-                  class="form-select w-[200px] !bg-background !bg-none [&.select--disabled]:!opacity-100 [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px] [&_.form-select]:!bg-background [&_.form-select]:!bg-none"
+                  class="w-[200px] !h-[32px] !text-[14px] !bg-background"
                />
             </div>
             <div v-if="workspace.customizations.engines" class="flex items-center gap-2">
@@ -51,7 +51,7 @@
                </Label>
                <BaseSelect
                   v-model="localOptions.engine"
-                  class="form-select !bg-background [&_.form-select]:!h-[32px] [&_.form-select]:!text-[14px] [&_.form-select]:!bg-background"
+                  class="!h-[32px] !text-[14px] !bg-background"
                   :options="workspace.engines"
                   option-label="name"
                   option-track-by="name"
