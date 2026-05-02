@@ -321,10 +321,11 @@
       "mvpComingSoon": "Coming in a future release",
       "generateSql": "Generate SQL",
       "execute": "Execute",
-      "queryDuration": "{n} rows · {ms}ms",
+      "queryResultSummary": "{n} rows · {ms}ms",
       "queryEmpty": "Enter SQL first.",
       "querySelectTableFirst": "Select a table first.",
-      "queryNoResults": "Run a query to see results."
+      "queryNoResults": "Run a query to see results.",
+      "showingFirstNRows": "Showing first 100 rows of {total}"
    },
    "application": {
       "settings": "Settings",
