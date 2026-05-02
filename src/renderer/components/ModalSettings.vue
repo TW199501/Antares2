@@ -147,10 +147,11 @@
                            <Input
                               v-model.number="localTableAutoRefreshInterval"
                               type="number"
-                              min="0"
+                              min="60"
                               max="3600"
                               step="1"
                               class="rounded-r-none"
+                              :title="t('application.tableAutoRefreshHint')"
                               @change="onChangeAutoRefresh"
                            />
                            <span class="inline-flex items-center px-2 border border-l-0 border-input bg-muted rounded-r-md text-xs text-muted-foreground">

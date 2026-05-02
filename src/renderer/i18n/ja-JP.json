@@ -442,7 +442,7 @@
       "zoomReset": "ズームをリセット",
       "tableAutoRefresh": "テーブルの自動更新",
       "tableAutoRefreshDescription": "N 秒ごとに現在のクエリを再実行し、手動更新なしでバックエンドの変更を反映します。",
-      "tableAutoRefreshHint": "0 = オフ。最大 3600 秒。ちらつきを避けるため ≥10 秒を推奨。",
+      "tableAutoRefreshHint": "60～3600秒を入力。空欄にすると無効化。",
       "specsnap": {
          "inspector": "SpecSnap インスペクター",
          "startInspect": "検査開始",

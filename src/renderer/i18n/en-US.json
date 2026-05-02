@@ -309,7 +309,22 @@
       "inheritFromTable": "Inherit from table",
       "translateDescription": "Translate description",
       "searchReferenceTable": "Search reference table…",
-      "editTableOptions": "Edit table options"
+      "editTableOptions": "Edit table options",
+      "queryBuilder": "SQL Query",
+      "queryBuilderDescription": "Build and execute SQL queries against the selected schema",
+      "singleTable": "Single table",
+      "directSql": "Raw SQL",
+      "joinQuery": "JOIN",
+      "aggregateQuery": "Aggregate",
+      "joinAggregateQuery": "JOIN + Aggregate",
+      "subquery": "Subquery",
+      "mvpComingSoon": "Coming in a future release",
+      "generateSql": "Generate SQL",
+      "execute": "Execute",
+      "queryDuration": "{n} rows · {ms}ms",
+      "queryEmpty": "Enter SQL first.",
+      "querySelectTableFirst": "Select a table first.",
+      "queryNoResults": "Run a query to see results."
    },
    "application": {
       "settings": "Settings",
@@ -442,7 +457,7 @@
       "zoomReset": "Reset zoom",
       "tableAutoRefresh": "Auto-refresh tables",
       "tableAutoRefreshDescription": "Re-run the current query every N seconds so the view reflects backend changes without manual refresh.",
-      "tableAutoRefreshHint": "0 = off. Max 3600. Recommend ≥10 to avoid flicker.",
+      "tableAutoRefreshHint": "Enter 60-3600 seconds. Leave empty to disable.",
       "specsnap": {
          "inspector": "SpecSnap Inspector",
          "startInspect": "Start Inspect",

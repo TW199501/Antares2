@@ -55,7 +55,7 @@ export const useSettingsStore = defineStore('settings', {
          if (settings.disable_blur !== undefined) this.disableBlur = settings.disable_blur;
          if (settings.default_copy_type !== undefined) this.defaultCopyType = settings.default_copy_type;
          if (settings.ai_api_key !== undefined) this.aiApiKey = settings.ai_api_key;
-         if (settings.table_auto_refresh_interval !== undefined) this.tableAutoRefreshInterval = settings.table_auto_refresh_interval;
+         if (settings.table_auto_refresh_interval !== undefined) this.tableAutoRefreshInterval = clampAutoRefresh(settings.table_auto_refresh_interval);
          if (settings.table_query_area_height !== undefined) this.tableQueryAreaHeight = settings.table_query_area_height;
          if (shortcuts.shortcuts !== undefined) this.shortcuts = shortcuts.shortcuts;
 
@@ -160,8 +160,18 @@ export const useSettingsStore = defineStore('settings', {
          this.persistSettings();
       },
       changeTableAutoRefreshInterval (value: number) {
-         this.tableAutoRefreshInterval = Math.max(0, Math.min(3600, value));
+         this.tableAutoRefreshInterval = clampAutoRefresh(value);
          this.persistSettings();
       }
    }
 });
+
+// 0 = explicitly disabled. Non-zero values are floored to 60s — anything
+// shorter races the SQL roundtrip + Vue render cycle and produces visible
+// UI flicker (the disabled-state of the Insert button strobes at the
+// polling rate). 60s = "once a minute" matches typical DB GUI conventions.
+// Upper bound 3600 = 1 hour.
+function clampAutoRefresh (value: number): number {
+   const v = Math.min(3600, Math.max(0, value));
+   return v === 0 ? 0 : Math.max(60, v);
+}

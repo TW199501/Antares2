@@ -442,7 +442,7 @@
       "zoomReset": "重設縮放",
       "tableAutoRefresh": "資料表自動更新",
       "tableAutoRefreshDescription": "每 N 秒重跑目前查詢，不必手動按重整就能看到後端變更。",
-      "tableAutoRefreshHint": "0 = 關閉。最大 3600 秒。建議 ≥10 秒避免畫面閃動。",
+      "tableAutoRefreshHint": "輸入 60-3600 秒。清空欄位即停用。",
       "specsnap": {
          "inspector": "SpecSnap 檢查器",
          "startInspect": "開始檢查",
