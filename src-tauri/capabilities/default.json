@@ -10,6 +10,8 @@
       "os:default",
       "global-shortcut:default",
       "clipboard-manager:default",
+      "updater:default",
+      "process:allow-restart",
       {
          "identifier": "fs:allow-exists",
          "allow": [{ "path": "$APPDATA/**" }]

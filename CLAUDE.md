@@ -209,7 +209,32 @@ Five workflow files live under `.github/workflows/`. Two drive routine builds, t
 
 Each non-Windows job has a `Download Node.js binary for <platform>` step that `curl`s the exact `nodejs.org` tarball into `sidecar/`. The Windows job uses PowerShell `Invoke-WebRequest` to fetch the win-x64 zip and extract `node.exe`. **Required** because `sidecar/node*` is gitignored — without this step `stage-resources.mjs` fails with `✗ missing: sidecar/node[.exe]`. If you bump `NODE_VERSION` in any of the four download steps, bump it in all four (currently `20.19.0`).
 
-Antares2 currently has **no** Tauri updater plugin configured (`tauri.conf.json` has no `plugins.updater` block). This means CI does not need `TAURI_SIGNING_PRIVATE_KEY` secrets and there is no signing step that can fail post-bundle. If updater is added later, the keypair must be generated **once** and stored as a GitHub Secret + a local backup — the private key is not retrievable from GitHub Secrets after upload.
+**In-app auto-updater is wired but `tauri.conf.json` has NO `plugins.updater` block on purpose** — the updater plugin panics at startup if `pubkey` isn't a valid minisign base64 string, and the project doesn't ship a real keypair (would leak the private key). What's already in place:
+
+- `tauri-plugin-updater` registered in `src-tauri/src/lib.rs`
+- `updater:default` + `process:allow-restart` permissions in `src-tauri/capabilities/default.json`
+- 4 build jobs in `.github/workflows/release.yml` pass `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` env vars to `pnpm tauri:build`
+- Renderer flow complete: `src/renderer/ipc-api/Updater.ts` + `application` Pinia store (`checkForUpdates` / `installUpdate`) + `ModalSettingsUpdate.vue` UI + i18n keys
+
+**Without `plugins.updater` config, `check()` errors → caught in Updater.ts → status becomes `'nocheck'`.** The "Check for updates" button in settings shows a graceful no-op instead of crashing. Activating the feature is a one-time setup:
+
+1. `pnpm tauri signer generate -w ~/.tauri/antares2-updater.key` (no password recommended)
+2. Add this block to `src-tauri/tauri.conf.json` (top-level), pasting the **contents of `~/.tauri/antares2-updater.key.pub`** as the `pubkey` value (single line, base64):
+   ```json
+   "plugins": {
+     "updater": {
+       "endpoints": ["https://github.com/TW199501/Antares2/releases/latest/download/latest.json"],
+       "pubkey": "<paste here>",
+       "windows": { "installMode": "passive" }
+     }
+   }
+   ```
+3. `gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri/antares2-updater.key`
+4. (optional) `gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --body "<your-password>"`
+5. **Back up `~/.tauri/antares2-updater.key`** outside of git — GitHub Secrets are write-only after upload, so this private key is the only way to keep signing the same chain. Lose it = all installed users must re-install when you rotate to a new pubkey.
+6. Cut a release with `pnpm release patch`.
+
+**Outstanding (not yet implemented):** generating `latest.json` manifest after build and uploading it to the Release. Without this file, the updater endpoint returns 404 and `check()` resolves to `null` → `'noupdate'` status (graceful but the feature is moot until done). Approaches: a) post-build Node script that reads `*.sig` files + composes `latest.json`, b) switch to `tauri-action` which handles this natively. Track this work as a follow-up.
 
 ### Cross-platform Rust caveat
 
