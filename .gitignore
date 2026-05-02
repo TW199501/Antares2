@@ -9,6 +9,7 @@ thumbs.db
 NOTES.md
 *.txt
 *.heapsnapshot
+.claude-code-history
 
 # Tauri build artifacts
 src-tauri/target/
