@@ -7,9 +7,16 @@
  *   - WorkspaceTabQuery (Phase 2, future refactor — currently uses its own inline copy)
  *
  * Intentionally NOT included:
- *   - History saving (`saveHistory`) — WorkspaceTabQuery-local; caller hooks in via onSuccess
+ *   - History saving (`saveHistory`) — WorkspaceTabQuery-local; caller subscribes
+ *     to runQuery completion if history is needed (modal omits for MVP).
  *   - Ace editor coupling (`getSelectedText`) — routed via optional callback only
  *   - i18n (`useI18n`) — commit/rollback success notifications are caller responsibility
+ *
+ * Caller contract: Pass refs (e.g. `toRef(props, 'tabUid')`) when the input
+ * may change during the composable's lifetime. Plain strings are snapshot-only
+ * — captured at construction time and not re-read. Modal callers are short-
+ * lived (open → run → close) so plain values are fine; long-lived consumers
+ * like a refactored WorkspaceTabQuery must pass refs.
  */
 
 import { QueryResult } from 'common/interfaces/antares';
@@ -74,6 +81,13 @@ export function useQueryExecution (input: UseQueryExecutionInput): UseQueryExecu
    const lastQuery = ref('');
 
    // --- helpers ---
+
+   /**
+    * Reset all result-related state (results array, counts, affected) to
+    * their initial empty/zero/null values. Called internally before each
+    * runQuery; exposed externally so modal callers can wipe state when
+    * the dialog is dismissed without running a query.
+    */
    const clearResults = () => {
       results.value = [];
       resultsCount.value = 0;
@@ -91,9 +105,6 @@ export function useQueryExecution (input: UseQueryExecutionInput): UseQueryExecu
     *
     * Error notifications are emitted directly; success notifications are the
     * caller's responsibility (commit/rollback follow the same contract).
-    *
-    * TODO: caller can subscribe to runQuery completion to save history
-    * (WorkspaceTabQuery uses saveHistory internally; modal omits it for MVP).
     */
    const runQuery = async (query: string): Promise<void> => {
       if (!query || isQuering.value) return;
