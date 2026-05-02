@@ -23,6 +23,9 @@
                <BaseIcon icon-name="mdiCog" :size="20" />
                <span>{{ t('application.settings') }}</span>
             </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ t('application.settings') }}
+            </DialogDescription>
             <Button
                variant="ghost"
                size="icon"
@@ -123,10 +126,6 @@
                            option-label="name"
                            @change="changeLocale(localLocale)"
                         />
-                        <small class="text-[11px] leading-tight text-muted-foreground">
-                           {{ t('application.missingOrIncompleteTranslation') }}<br>
-                           <a class="font-semibold cursor-pointer hover:text-primary" @click="openOutside('https://github.com/antares-sql/antares/wiki/Translate-Antares')">{{ t('application.findOutHowToContribute') }}</a>
-                        </small>
                      </div>
 
                      <div class="grid grid-cols-[200px_240px_1fr] items-center gap-3">
@@ -387,22 +386,7 @@
                            >
                               <BaseIcon icon-name="mdiGithub" :size="16" /> GitHub
                            </a>
-                           <span class="text-muted-foreground">•</span>
-                           <a
-                              class="inline-flex items-center gap-1 cursor-pointer hover:text-primary"
-                              @click="openOutside('https://fosstodon.org/@AntaresSQL')"
-                           >
-                              <BaseIcon icon-name="mdiMastodon" :size="16" /> Mastodon
-                           </a>
-                           <span class="text-muted-foreground">•</span>
-                           <a
-                              class="inline-flex items-center gap-1 cursor-pointer hover:text-primary"
-                              @click="openOutside('https://antares-sql.app/')"
-                           >
-                              <BaseIcon icon-name="mdiWeb" :size="16" /> Website
-                           </a>
-                        </span><br>
-                        <small class="text-[11px] text-muted-foreground">{{ t('general.author') }} <a class="cursor-pointer hover:text-primary" @click="openOutside('https://github.com/Fabio286')">{{ appAuthor }}</a></small>
+                        </span>
                      </p>
                      <div class="space-y-1">
                         <small class="block text-[11px] uppercase text-muted-foreground">{{ t('general.contributors') }}:</small>
@@ -433,7 +417,7 @@ import ModalSettingsData from '@/components/ModalSettingsData.vue';
 import ModalSettingsShortcuts from '@/components/ModalSettingsShortcuts.vue';
 import ModalSettingsUpdate from '@/components/ModalSettingsUpdate.vue';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -496,10 +480,9 @@ const {
 } = applicationStore;
 const { getWorkspace } = workspacesStore;
 
-const appAuthor = 'Fabio Di Stasio';
 const pageSizes = [30, 40, 100, 250, 500, 1000];
 const contributors = import.meta.env?.VITE_APP_CONTRIBUTORS || '';
-const appLogo = new URL('../images/logo.svg', import.meta.url).href;
+const appLogo = new URL('../images/logo.png', import.meta.url).href;
 const darkPreview = new URL('../images/dark.png', import.meta.url).href;
 const lightPreview = new URL('../images/light.png', import.meta.url).href;
 const exampleQuery = `-- This is an example
@@ -610,7 +593,6 @@ const workspace = computed(() => {
 const otherContributors = computed(() => {
    return contributors
       .split(',')
-      .filter(c => !c.includes(appAuthor))
       .sort((a, b) => a.toLowerCase().trim().localeCompare(b.toLowerCase()));
 });
 

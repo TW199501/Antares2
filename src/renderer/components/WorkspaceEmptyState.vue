@@ -1,6 +1,6 @@
 <template>
    <div class="flex flex-col items-center justify-center mx-auto h-full w-full gap-4">
-      <img :src="logos[applicationTheme]" width="200">
+      <img :src="appLogo" width="200">
       <p class="text-[15px] font-semibold text-muted-foreground">
          {{ t('application.noOpenTabs') }}
       </p>
@@ -21,7 +21,6 @@ import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
 import { Button } from '@/components/ui/button';
-import { useSettingsStore } from '@/stores/settings';
 import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
@@ -30,15 +29,10 @@ const emit = defineEmits<{
    'new-tab': [];
 }>();
 
-const logos = {
-   light: new URL('../images/logo-light.svg', import.meta.url).href,
-   dark: new URL('../images/logo-dark.svg', import.meta.url).href
-};
+const appLogo = new URL('../images/logo.png', import.meta.url).href;
 
-const settingsStore = useSettingsStore();
 const workspacesStore = useWorkspacesStore();
 
-const { applicationTheme } = storeToRefs(settingsStore);
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 
 const { getWorkspace, changeBreadcrumbs } = workspacesStore;

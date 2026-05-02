@@ -62,7 +62,7 @@ const workspacesStore = useWorkspacesStore();
 const { getSelected: selectedWorkspace } = storeToRefs(workspacesStore);
 const { getWorkspace } = workspacesStore;
 
-const appIcon = new URL('@/images/logo.svg', import.meta.url).href;
+const appIcon = new URL('@/images/logo.png', import.meta.url).href;
 const isDevelopment = ref(import.meta.env?.MODE === 'development');
 const isMacOS = navigator.platform.startsWith('Mac');
 const isWindows = navigator.platform.startsWith('Win');

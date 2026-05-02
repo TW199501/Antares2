@@ -30,7 +30,9 @@
       "Bash(tasklist //FI \"PID eq 68340\" //NH)",
       "Bash(taskkill //PID 68340 //F)",
       "Bash(taskkill //PID 47992 //F //T)",
-      "Bash(tasklist //FI \"PID eq 60508\" //NH)"
+      "Bash(tasklist //FI \"PID eq 60508\" //NH)",
+      "Bash(pnpm type-check *)",
+      "Bash(node -e 'const j=require\\('\\\\''./src/renderer/i18n/en-US.json'\\\\''\\); const path='\\\\''__TRACKED_VAR__'\\\\''.split\\('\\\\''.'\\\\''\\); let v=j; for\\(const p of path\\){v=v?.[p]} console.log\\(v\\)')"
     ]
   }
 }
