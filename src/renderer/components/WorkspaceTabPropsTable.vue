@@ -235,7 +235,7 @@
          :options="localOptions"
          :table="table"
          :customizations="workspace.customizations"
-         :engines="workspace.engines || []"
+         :engines="Array.isArray(workspace.engines) ? workspace.engines : []"
          @confirm="optionsUpdate"
          @hide="hideOptionsModal"
       />
