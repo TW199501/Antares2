@@ -307,7 +307,8 @@
       "newMaterializedView": "新的物化視圖",
       "charset": "字符集",
       "inheritFromTable": "繼承自資料表",
-      "translateDescription": "翻譯描述"
+      "translateDescription": "翻譯描述",
+      "searchReferenceTable": "搜尋參考資料表…"
    },
    "application": {
       "settings": "設定",

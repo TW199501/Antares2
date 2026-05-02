@@ -1,7 +1,7 @@
 <template>
    <ConfirmModal
       :confirm-text="t('general.confirm')"
-      size="medium"
+      size="resize"
       class="options-modal"
       @confirm="confirmForeignsChange"
       @hide="$emit('hide')"
@@ -18,7 +18,7 @@
       </template>
       <template #body>
          <div class="grid grid-cols-12 gap-0">
-            <div class="col-span-5">
+            <div class="col-span-4">
                <div class="flex flex-col" :style="{ height: modalInnerHeight + 'px'}">
                   <div class="flex items-center gap-2 mb-2">
                      <Button
@@ -112,7 +112,7 @@
                </div>
             </div>
 
-            <div class="col-span-7 pl-2">
+            <div class="col-span-8 pl-2">
                <form
                   v-if="selectedForeignObj"
                   :style="{ height: modalInnerHeight + 'px'}"
@@ -155,6 +155,8 @@
                         :options="schemaTables"
                         option-label="name"
                         option-track-by="name"
+                        searchable
+                        :placeholder="t('database.searchReferenceTable')"
                         class="[&_.select-base]:!h-[32px] [&_.select-base]:!text-sm"
                         @change="reloadRefFields"
                      />
@@ -416,7 +418,7 @@ onUnmounted(() => {
 }
 
 .fields-list {
-  max-height: 90px;
+  max-height: 50vh;
   overflow: auto;
 }
 
@@ -425,7 +427,10 @@ onUnmounted(() => {
 }
 
 .fk-details-wrapper {
-  max-width: calc(100% - 1rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
 
   .fk-details {
     display: flex;

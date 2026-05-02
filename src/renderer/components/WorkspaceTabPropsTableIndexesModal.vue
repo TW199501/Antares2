@@ -1,7 +1,7 @@
 <template>
    <ConfirmModal
       :confirm-text="t('general.confirm')"
-      size="medium"
+      size="resize"
       class="options-modal"
       @confirm="confirmIndexesChange"
       @hide="$emit('hide')"
@@ -19,7 +19,7 @@
       </template>
       <template #body>
          <div class="grid grid-cols-12 gap-0">
-            <div class="col-span-5">
+            <div class="col-span-4">
                <div class="flex flex-col" :style="{ height: modalInnerHeight + 'px'}">
                   <div class="flex items-center gap-2 mb-2">
                      <Button
@@ -90,7 +90,7 @@
                </div>
             </div>
 
-            <div class="col-span-7 pl-2 editor-col">
+            <div class="col-span-8 pl-2 editor-col">
                <form
                   v-if="selectedIndexObj"
                   :style="{ height: modalInnerHeight + 'px'}"
@@ -296,7 +296,7 @@ onUnmounted(() => {
 }
 
 .fields-list {
-  max-height: 300px;
+  max-height: 50vh;
   overflow: auto;
 }
 

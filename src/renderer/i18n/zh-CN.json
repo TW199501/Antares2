@@ -307,7 +307,8 @@
       "savedQueries": "已保存的查询",
       "charset": "字符集",
       "inheritFromTable": "继承自表",
-      "translateDescription": "翻译描述"
+      "translateDescription": "翻译描述",
+      "searchReferenceTable": "搜索参考表…"
    },
    "application": {
       "settings": "设置",

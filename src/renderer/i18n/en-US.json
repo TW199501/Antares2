@@ -307,7 +307,8 @@
       "savedQueries": "Saved queries",
       "charset": "Charset",
       "inheritFromTable": "Inherit from table",
-      "translateDescription": "Translate description"
+      "translateDescription": "Translate description",
+      "searchReferenceTable": "Search reference table…"
    },
    "application": {
       "settings": "Settings",

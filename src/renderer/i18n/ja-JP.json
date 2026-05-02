@@ -307,7 +307,8 @@
       "savedQueries": "保存済のクエリ",
       "charset": "文字セット",
       "inheritFromTable": "テーブルから継承",
-      "translateDescription": "説明を翻訳"
+      "translateDescription": "説明を翻訳",
+      "searchReferenceTable": "参照テーブルを検索…"
    },
    "application": {
       "settings": "設定",
