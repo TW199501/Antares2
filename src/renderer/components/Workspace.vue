@@ -467,10 +467,10 @@
                      <li class="ws-tab-cell">
                         <a
                            class="tab-add"
-                           :title="t('application.openNewTab')"
+                           :title="t('database.queryBuilder')"
                            @click="addQueryTab"
                         >
-                           <BaseIcon icon-name="mdiPlus" :size="24" />
+                           <BaseIcon icon-name="mdiDatabaseSearch" :size="22" />
                         </a>
                      </li>
                   </template>
@@ -651,6 +651,19 @@
          @confirm="closeTab(unsavedTab, true)"
          @close="unsavedTab = null"
       />
+
+      <!-- Canonical SQL query entry — replaces the legacy "+" → new Query
+           tab flow (Phase 1: feat(query-builder) MVP). All three former
+           addQueryTab call sites (tab-strip "+", WorkspaceEmptyState button,
+           antares:new-tab keyboard shortcut) now open this modal. -->
+      <ModalQueryBuilder
+         v-if="isQueryBuilderModalOpen && workspace?.client"
+         :open="isQueryBuilderModalOpen"
+         :connection="{ uid: connection.uid, client: workspace.client }"
+         :schema="currentSchema"
+         :tables="currentTables"
+         @update:open="(v) => { isQueryBuilderModalOpen = v; }"
+      />
    </div>
 </template>
 
@@ -665,6 +678,7 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import DebugConsole from '@/components/DebugConsole.vue';
 import ModalDiscardChanges from '@/components/ModalDiscardChanges.vue';
 import ModalProcessesList from '@/components/ModalProcessesList.vue';
+import ModalQueryBuilder from '@/components/ModalQueryBuilder.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceEditConnectionPanel from '@/components/WorkspaceEditConnectionPanel.vue';
 import WorkspaceEmptyState from '@/components/WorkspaceEmptyState.vue';
@@ -724,6 +738,7 @@ const props = defineProps({
 
 const hasWheelEvent = ref(false);
 const isProcessesModal = ref(false);
+const isQueryBuilderModalOpen = ref(false);
 const unsavedTab = ref(null);
 const tabWrap = ref(null);
 const contextEvent = ref(null);
@@ -731,6 +746,11 @@ const isTabContext = ref(false);
 const selectedContextTab = ref(null);
 
 const workspace = computed(() => getWorkspace(props.connection.uid));
+const currentSchema = computed(() => workspace.value?.breadcrumbs?.schema ?? '');
+const currentTables = computed(() => {
+   const schemaStruct = workspace.value?.structure?.find(s => s.name === currentSchema.value);
+   return schemaStruct?.tables ?? [];
+});
 
 const draggableTabs = computed<WorkspaceTab[]>({
    get () {
@@ -774,8 +794,18 @@ watch(queryTabs, (newVal, oldVal) => {
    }
 });
 
+/**
+ * Canonical SQL query entry — opens the unified ModalQueryBuilder
+ * instead of creating a new Query tab. Function name preserved for
+ * backwards-compat with all 3 original call sites (tab-strip "+",
+ * WorkspaceEmptyState, antares:new-tab keyboard shortcut).
+ *
+ * Phase 2 will rename to `openQueryBuilder` and remove `newTab` of
+ * type 'query' from internal callers (function/routine/scheduler
+ * "Run" buttons, scratchpad, etc.).
+ */
 const addQueryTab = () => {
-   newTab({ uid: props.connection.uid, type: 'query', schema: workspace.value.breadcrumbs.schema });
+   isQueryBuilderModalOpen.value = true;
 };
 
 const getSelectedTab = () => {
