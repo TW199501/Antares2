@@ -38,13 +38,11 @@ pnpm verify:tauri-migration
 # from com.fabio286.antares → com.tw199501.antares2). Not a routine dev task.
 pnpm migrate:appdata
 
-# Cut a release: bump the 4 version files (package.json / Cargo.toml /
-# Cargo.lock antares2 entry / tauri.conf.json), generate the docs/release-
-# notes-vX.Y.Z.md skeleton from `git log v_prev..HEAD`, commit, tag, push.
-# Use `--dry-run` to preview, `--no-push` to keep it local. **Do not** edit
-# the 4 version files by hand — let this script do it so they never drift.
-pnpm release patch          # 0.8.3 -> 0.8.4
-pnpm release 0.9.0 --dry-run
+# Cut a release (see `### Release process` for the full flow). Bumps the 4
+# version files, generates docs/release-notes-vX.Y.Z.md skeleton, commits,
+# tags, pushes. NEVER hand-edit the 4 version files — they drift.
+pnpm release patch              # 0.8.3 -> 0.8.4
+pnpm release 0.9.0 --dry-run    # preview without writing
 ```
 
 > The Vite dev server alone (`pnpm vite:dev`) also works: `sidecarPlugin` in `vite.config.ts` auto-starts the Fastify sidecar on port 5555.
@@ -202,12 +200,32 @@ Tauri v2 auto-merges `tauri.{windows,macos,linux}.conf.json` (no CLI flag needed
 Five workflow files live under `.github/workflows/`. Two drive routine builds, three are auxiliary:
 
 - **`test-build.yml`** — triggers on push to `dev` (and manual dispatch). Builds 4 platforms (Windows / macOS Intel x64 / macOS Apple Silicon / Linux) and uploads as `actions/upload-artifact` with 3-day retention.
-- **`release.yml`** — triggers on tag `v[0-9]+.[0-9]+.[0-9]+` from `master`. Builds the same 4 platforms and uploads via `ncipollo/release-action` to a draft GitHub Release.
+- **`release.yml`** — triggers on tag `v[0-9]+.[0-9]+.[0-9]+`, builds the same 4 platforms, and uploads via `ncipollo/release-action` to a **public** (non-draft) GitHub Release. See `### Release process` below for the full flow.
 - **`codeql-analysis.yml`** — GitHub-managed security scan, scheduled.
 - **`test-e2e-win.yml`** — Playwright e2e on Windows, **manual dispatch only** (the `push` trigger is commented out). Not part of the merge gate.
 - **`create-generated-sources.yml`** — upstream legacy from `antares-sql/antares`, retained but not relied on.
 
 Each non-Windows job has a `Download Node.js binary for <platform>` step that `curl`s the exact `nodejs.org` tarball into `sidecar/`. The Windows job uses PowerShell `Invoke-WebRequest` to fetch the win-x64 zip and extract `node.exe`. **Required** because `sidecar/node*` is gitignored — without this step `stage-resources.mjs` fails with `✗ missing: sidecar/node[.exe]`. If you bump `NODE_VERSION` in any of the four download steps, bump it in all four (currently `20.19.0`).
+
+### Release process
+
+The canonical release flow is **one command**: `pnpm release <version>` (e.g. `pnpm release patch` for 0.8.3 → 0.8.4). The script (`scripts/release.mjs`) does everything:
+
+1. Pre-flight: refuses to run unless on `dev` with a clean working tree.
+2. Bumps the version in **all 4 places it must stay in sync**: `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` (`antares2` entry only — Cargo.lock has many unrelated `version = "0.8.x"` lines for other crates, so the regex is anchored on the `[[package]]/name="antares2"` block), and `src-tauri/tauri.conf.json`.
+3. Generates `docs/release-notes-vX.Y.Z.md` skeleton: groups commits since the previous tag by Conventional Commit type (`feat`/`fix`/`refactor`/`docs`/`chore`/etc.). Already-existing files are kept (re-running is idempotent).
+4. Pauses for the author to fill in the prose section (skip via `--no-prompt`).
+5. Commits `chore(release): bump version <prev> -> <next>`, annotated tag `vX.Y.Z`, pushes `dev` + tag.
+
+Tag push triggers `release.yml`. Each of the 4 build jobs ends with `ncipollo/release-action` which **creates one public Release** (`draft: false`) with **`docs/release-notes-vX.Y.Z.md` as the body** (`bodyFile`), `omitBodyDuringUpdate: true` so only the first finishing job sets the body. Subsequent jobs add their artifacts.
+
+**Three pre-existing bugs were closed in the v0.8.3 release work; if anything regresses, check these first:**
+
+1. **`permissions: contents: write`** at `release.yml` workflow level. Without it, `ncipollo/release-action` gets `HTTP 403 "Resource not accessible by integration"` because GitHub's default `GITHUB_TOKEN` is `contents: read` since 2023. Symptom: build steps succeed, the "Upload to Release" step fails with that exact 403.
+2. **`bundle.icon` in `tauri.conf.json` references `icons/icon.icns` and `icons/icon.ico`**, but neither was committed for the first 2 releases. Bundle step on macOS / Linux silently fails: `Failed to create app icon: resource path 'icons/icon.icns' doesn't exist`. Regenerate the full set with `pnpm tauri icon src-tauri/icons/1024X1024.png` if you ever swap the source PNG; only commit the 4 files actually referenced by `bundle.icon` (32x32.png, 128x128.png, icon.ico, icon.icns) — skip the auto-generated Android/iOS/Windows-Store outputs.
+3. **`generateReleaseNotes: true`** must NOT be passed to `ncipollo/release-action` — the project ships hand-written `docs/release-notes-vX.Y.Z.md` files. The auto-generation API also needs `contents: write`, so leaving it on creates a second 403 path.
+
+**If a release goes wrong** (build failures, 403, etc.) before the tag has produced a usable Release: cancel the in-flight workflow run, fix the issue on `dev` + merge to `master`, then `git tag -d vX.Y.Z && git tag -a vX.Y.Z <new-master-sha> && git push origin vX.Y.Z --force`. Force-pushing a tag is acceptable **only** when the prior attempt didn't produce a public Release (which it can't, if it 403'd). Once a Release with that tag has been published and downloaded, re-tagging is destructive and should be avoided.
 
 **In-app auto-updater is half-wired but kept dormant.** Both halves of the feature panic when triggered without a real keypair, so two pieces are deliberately left disabled until the user runs the activation procedure below:
 
