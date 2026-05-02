@@ -25,10 +25,13 @@
          </label>
          <div class="flex-1">
             <div v-if="isLoadingFields" class="text-sm text-muted-foreground">
-               Loading…
+               {{ t('general.loading', 'Loading…') }}
+            </div>
+            <div v-else-if="!selectedTable" class="text-sm text-muted-foreground italic">
+               {{ t('database.selectTableHint', '— select a table —') }}
             </div>
             <div v-else-if="fields.length === 0" class="text-sm text-muted-foreground italic">
-               — select a table —
+               {{ t('database.tableHasNoColumns', '(table has no columns)') }}
             </div>
             <div v-else class="flex flex-col gap-1">
                <!-- 全選 row -->
@@ -118,6 +121,7 @@
                   size="icon"
                   type="button"
                   class="shrink-0"
+                  :aria-label="t('general.remove', 'Remove')"
                   @click="removeCondition(idx)"
                >
                   <BaseIcon icon-name="mdiMinusCircleOutline" :size="16" />
@@ -177,6 +181,7 @@
                   variant="secondary"
                   size="icon"
                   type="button"
+                  :aria-label="t('general.remove', 'Remove')"
                   @click="removeOrderBy(idx)"
                >
                   <BaseIcon icon-name="mdiMinusCircleOutline" :size="16" />
@@ -213,6 +218,7 @@
                size="icon"
                type="button"
                class="!h-8 !w-8 shrink-0"
+               :aria-label="t('general.decrease', 'Decrease')"
                @click="decrementLimit"
             >
                <BaseIcon icon-name="mdiMinus" :size="14" />
@@ -230,6 +236,7 @@
                size="icon"
                type="button"
                class="!h-8 !w-8 shrink-0"
+               :aria-label="t('general.increase', 'Increase')"
                @click="incrementLimit"
             >
                <BaseIcon icon-name="mdiPlus" :size="14" />
@@ -290,7 +297,6 @@ const conditions = ref<Array<{
    op: SqlOperator;
    value: string;
    value2: string;
-   active: boolean;
 }>>([]);
 const orderBy = ref<SqlOrderBy[]>([]);
 const limit = ref<number>(100);
@@ -370,7 +376,7 @@ const loadFields = async (tableName: string | null) => {
          uid: props.uid,
          schema: props.schema,
          table: tableName
-      } as Parameters<typeof Tables.getTableColumns>[0]);
+      });
 
       if (status === 'success') {
          fields.value = response as TableField[];
@@ -402,6 +408,12 @@ watch(selectedTable, (tableName) => {
    });
 }, { immediate: true });
 
+// I3: when parent swaps `tables` (e.g. schema change), drop stale selection
+watch(() => props.tables, (newTables) => {
+   if (selectedTable.value && !newTables.some(t => t.name === selectedTable.value))
+      selectedTable.value = null;
+}, { deep: false });
+
 // ---------------------------------------------------------------------------
 // Conditions helpers
 // ---------------------------------------------------------------------------
@@ -411,8 +423,7 @@ const addCondition = () => {
       field: fields.value[0]?.name ?? '',
       op: '=',
       value: '',
-      value2: '',
-      active: true
+      value2: ''
    });
 };
 
@@ -475,14 +486,13 @@ const getInput = (): BuildSingleTableInput | null => {
       // If all fields are selected, pass empty array → buildSingleTableSql emits SELECT *
       fields: selectedFields.value.length === fields.value.length ? [] : selectedFields.value,
       conditions: conditions.value
-         .filter(c => c.active && c.field)
+         .filter(c => c.field)
          .map(c => ({
             field: c.field,
             op: c.op,
             value: c.value || undefined,
             value2: c.value2 || undefined,
-            valueKind: inferValueKind(c.field),
-            active: true
+            valueKind: inferValueKind(c.field)
          })),
       orderBy: orderBy.value.filter(o => o.field),
       limit: limit.value > 0 ? limit.value : undefined

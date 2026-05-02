@@ -3,7 +3,7 @@ import { AlterTableParams, CreateTableParams, IpcResponse } from 'common/interfa
 import { apiCall } from './httpClient';
 
 export default class {
-   static getTableColumns (params: {schema: string; table: string }): Promise<IpcResponse> {
+   static getTableColumns (params: { uid: string; schema: string; table: string }): Promise<IpcResponse> {
       return apiCall('/api/tables/getColumns', params);
    }
 
