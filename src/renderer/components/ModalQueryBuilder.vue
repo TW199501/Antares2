@@ -430,18 +430,24 @@ const handleExecute = () => {
    return runQuery(query);
 };
 
-/** Commit open transaction and notify success */
+/** Commit open transaction. Composable returns false on backend / IPC failure
+ *  (already notified). On success we clear results so the commit/rollback
+ *  buttons hide (gated on results.length) and show a success toast. */
 const handleCommit = async () => {
-   await commitTab();
+   const ok = await commitTab();
+   if (!ok) return;
+   clearResults();
    notificationsStore.addNotification({
       status: 'success',
       message: t('general.actionSuccessful', { action: 'COMMIT' })
    });
 };
 
-/** Roll back open transaction and notify success */
+/** Same contract as handleCommit. */
 const handleRollback = async () => {
-   await rollbackTab();
+   const ok = await rollbackTab();
+   if (!ok) return;
+   clearResults();
    notificationsStore.addNotification({
       status: 'success',
       message: t('general.actionSuccessful', { action: 'ROLLBACK' })

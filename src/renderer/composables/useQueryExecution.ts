@@ -61,8 +61,16 @@ export interface UseQueryExecutionReturn {
 
    // --- actions ---
    runQuery: (query: string) => Promise<void>;
-   commitTab: () => Promise<void>;
-   rollbackTab: () => Promise<void>;
+   /**
+    * Commits the open transaction. Resolves to `true` only when the backend
+    * confirms success; `false` on either IpcResponse error status or thrown
+    * exception. Callers must gate "success" UI feedback on the boolean —
+    * showing a success toast unconditionally will mislead users when a
+    * transaction fails server-side.
+    */
+   commitTab: () => Promise<boolean>;
+   /** Same return contract as commitTab. */
+   rollbackTab: () => Promise<boolean>;
    killTabQuery: () => Promise<void>;
    clearResults: () => void;
 }
@@ -196,7 +204,7 @@ export function useQueryExecution (input: UseQueryExecutionInput): UseQueryExecu
     * The caller is responsible for showing a success notification and any
     * i18n string (this keeps the composable free of vue-i18n).
     */
-   const commitTab = async (): Promise<void> => {
+   const commitTab = async (): Promise<boolean> => {
       isQuering.value = true;
 
       try {
@@ -205,19 +213,27 @@ export function useQueryExecution (input: UseQueryExecutionInput): UseQueryExecu
             tabUid: unref(input.tabUid)
          };
 
-         await Schema.commitTab(params);
+         const { status, response } = await Schema.commitTab(params);
+
+         if (status !== 'success') {
+            addNotification({ status: 'error', message: String(response) });
+            return false;
+         }
 
          setUnsavedChanges({
             uid: unref(input.connectionUid),
             tUid: unref(input.tabUid),
             isChanged: false
          });
+         return true;
       }
       catch (err) {
          addNotification({ status: 'error', message: err.stack });
+         return false;
       }
-
-      isQuering.value = false;
+      finally {
+         isQuering.value = false;
+      }
    };
 
    /**
@@ -227,7 +243,7 @@ export function useQueryExecution (input: UseQueryExecutionInput): UseQueryExecu
     * The caller is responsible for showing a success notification and any
     * i18n string.
     */
-   const rollbackTab = async (): Promise<void> => {
+   const rollbackTab = async (): Promise<boolean> => {
       isQuering.value = true;
 
       try {
@@ -236,19 +252,27 @@ export function useQueryExecution (input: UseQueryExecutionInput): UseQueryExecu
             tabUid: unref(input.tabUid)
          };
 
-         await Schema.rollbackTab(params);
+         const { status, response } = await Schema.rollbackTab(params);
+
+         if (status !== 'success') {
+            addNotification({ status: 'error', message: String(response) });
+            return false;
+         }
 
          setUnsavedChanges({
             uid: unref(input.connectionUid),
             tUid: unref(input.tabUid),
             isChanged: false
          });
+         return true;
       }
       catch (err) {
          addNotification({ status: 'error', message: err.stack });
+         return false;
       }
-
-      isQuering.value = false;
+      finally {
+         isQuering.value = false;
+      }
    };
 
    return {
