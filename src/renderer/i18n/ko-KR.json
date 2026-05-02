@@ -308,7 +308,8 @@
       "charset": "문자 집합",
       "inheritFromTable": "테이블에서 상속",
       "translateDescription": "설명 번역",
-      "searchReferenceTable": "참조 테이블 검색…"
+      "searchReferenceTable": "참조 테이블 검색…",
+      "editTableOptions": "테이블 옵션 편집"
    },
    "application": {
       "settings": "설정",

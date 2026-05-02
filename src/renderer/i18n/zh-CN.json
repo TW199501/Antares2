@@ -308,7 +308,8 @@
       "charset": "字符集",
       "inheritFromTable": "继承自表",
       "translateDescription": "翻译描述",
-      "searchReferenceTable": "搜索参考表…"
+      "searchReferenceTable": "搜索参考表…",
+      "editTableOptions": "编辑表选项"
    },
    "application": {
       "settings": "设置",

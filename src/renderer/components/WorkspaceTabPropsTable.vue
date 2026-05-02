@@ -57,6 +57,16 @@
                   option-track-by="name"
                />
             </div>
+            <Button
+               variant="outline"
+               size="sm"
+               class="!h-[32px] !text-sm gap-1 !text-[#4a9eff] hover:!bg-[#4a9eff]/10 hover:!border-[#4a9eff]"
+               :title="t('database.editTableOptions')"
+               @click="showOptionsModal"
+            >
+               <BaseIcon icon-name="mdiPencilOutline" :size="16" />
+               <span>{{ t('general.edit') }}</span>
+            </Button>
          </div>
       </div>
       <Teleport v-if="toolbarTarget" :to="toolbarTarget">
@@ -220,6 +230,15 @@
          @confirm="confirmEditModal"
          @hide="hideEditModal"
       />
+      <WorkspaceTabPropsTableOptionsModal
+         v-if="isOptionsModal"
+         :options="localOptions"
+         :table="table"
+         :customizations="workspace.customizations"
+         :engines="workspace.engines || []"
+         @confirm="optionsUpdate"
+         @hide="hideOptionsModal"
+      />
    </div>
 </template>
 
@@ -242,6 +261,7 @@ import WorkspaceTabPropsTableEditModal from '@/components/WorkspaceTabPropsTable
 import WorkspaceTabPropsTableFields from '@/components/WorkspaceTabPropsTableFields.vue';
 import WorkspaceTabPropsTableForeignModal from '@/components/WorkspaceTabPropsTableForeignModal.vue';
 import WorkspaceTabPropsTableIndexesModal from '@/components/WorkspaceTabPropsTableIndexesModal.vue';
+import WorkspaceTabPropsTableOptionsModal from '@/components/WorkspaceTabPropsTableOptionsModal.vue';
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
 import { useSettingsStore } from '@/stores/settings';
@@ -285,6 +305,7 @@ const isIndexesModal = ref(false);
 const isForeignModal = ref(false);
 const isTableChecksModal = ref(false);
 const isDdlModal = ref(false);
+const isOptionsModal = ref(false);
 const editModalOpen = ref(false);
 const editModalMode = ref<'edit' | 'create'>('edit');
 const editModalDraft: Ref<TableField | null> = ref(null);
@@ -856,6 +877,19 @@ const showIntdexesModal = () => {
 
 const hideIndexesModal = () => {
    isIndexesModal.value = false;
+};
+
+const showOptionsModal = () => {
+   isOptionsModal.value = true;
+};
+
+const hideOptionsModal = () => {
+   isOptionsModal.value = false;
+};
+
+const optionsUpdate = (next: typeof localOptions.value) => {
+   Object.assign(localOptions.value, next);
+   isOptionsModal.value = false;
 };
 
 const indexesUpdate = (indexes: TableIndex[]) => {

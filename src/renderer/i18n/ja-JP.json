@@ -308,7 +308,8 @@
       "charset": "文字セット",
       "inheritFromTable": "テーブルから継承",
       "translateDescription": "説明を翻訳",
-      "searchReferenceTable": "参照テーブルを検索…"
+      "searchReferenceTable": "参照テーブルを検索…",
+      "editTableOptions": "テーブルオプションを編集"
    },
    "application": {
       "settings": "設定",

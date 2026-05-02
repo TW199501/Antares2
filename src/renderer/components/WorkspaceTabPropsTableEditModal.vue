@@ -70,40 +70,38 @@
                   />
                </div>
             </div>
-            <!-- 主鍵 / 自增 / 可空 -->
-            <div class="flex items-center gap-2">
-               <!-- PK: read-only -->
-               <div class="text-xs text-muted-foreground">
-                  {{ t('database.primaryKey') }}
+            <!-- 主鍵 / 自增 / 可空 — Switch UI for clear toggle affordance -->
+            <div class="grid grid-cols-3 gap-3 px-2 py-3 border border-border rounded-md bg-muted/30">
+               <!-- PK: read-only (set on table level via index modal) -->
+               <div class="flex flex-col gap-1.5">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0 flex items-center gap-1.5">
+                     {{ t('database.primaryKey') }}
+                     <span class="text-xs text-muted-foreground/70">({{ t('general.readOnly') }})</span>
+                  </Label>
+                  <Switch :model-value="isPrimaryKey" disabled />
                </div>
-               <span
-                  class="field-chip"
-                  :class="isPrimaryKey ? 'chip-key-primary' : 'chip-inactive'"
-               >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
                <!-- AI -->
-               <template v-if="customizations.autoIncrement">
-                  <div class="text-xs text-muted-foreground ml-2">
+               <div v-if="customizations.autoIncrement" class="flex flex-col gap-1.5">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.autoIncrement') }}
-                  </div>
-                  <span
-                     class="field-chip field-chip-toggle"
-                     :class="local.autoIncrement ? 'chip-active' : 'chip-inactive'"
-                     :style="!canAutoincrement ? 'opacity:0.3;cursor:not-allowed' : ''"
-                     @click="canAutoincrement && toggleAutoIncrement()"
-                  >{{ local.autoIncrement ? t('general.yes') : t('general.no') }}</span>
-               </template>
-               <!-- NULL -->
-               <template v-if="customizations.nullable">
-                  <div class="text-xs text-muted-foreground ml-2">
+                  </Label>
+                  <Switch
+                     :model-value="!!local.autoIncrement"
+                     :disabled="!canAutoincrement"
+                     @update:model-value="canAutoincrement && toggleAutoIncrement()"
+                  />
+               </div>
+               <!-- Nullable -->
+               <div v-if="customizations.nullable" class="flex flex-col gap-1.5">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                      {{ t('database.allowNull') }}
-                  </div>
-                  <span
-                     class="field-chip field-chip-toggle"
-                     :class="local.nullable ? 'chip-null-active' : 'chip-null-inactive'"
-                     :style="!isNullable ? 'opacity:0.3;cursor:not-allowed' : ''"
-                     @click="isNullable && (local.nullable = !local.nullable)"
-                  >{{ local.nullable ? t('general.yes') : t('general.no') }}</span>
-               </template>
+                  </Label>
+                  <Switch
+                     :model-value="!!local.nullable"
+                     :disabled="!isNullable"
+                     @update:model-value="(v: boolean) => isNullable && (local.nullable = v)"
+                  />
+               </div>
             </div>
             <!-- 預設值 -->
             <div class="flex flex-col gap-1">
@@ -187,6 +185,7 @@ import BaseSelect from '@/components/BaseSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import Ai from '@/ipc-api/Ai';
 import { useSettingsStore } from '@/stores/settings';
 

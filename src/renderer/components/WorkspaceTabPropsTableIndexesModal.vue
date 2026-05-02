@@ -125,13 +125,14 @@
                         <label
                            v-for="(field, i) in fields"
                            :key="`${field.name}-${i}`"
-                           class="flex items-center gap-2 cursor-pointer text-sm"
+                           class="flex items-center gap-2 cursor-pointer text-sm py-0.5"
                         >
                            <Checkbox
                               :model-value="selectedIndexObj.fields.some((f: string) => f === field.name)"
                               @update:model-value="toggleField(field.name)"
                            />
-                           <span>{{ field.name }}</span>
+                           <span class="font-mono">{{ field.name }}</span>
+                           <span v-if="field.comment" class="text-xs text-muted-foreground truncate">— {{ field.comment }}</span>
                         </label>
                      </div>
                   </div>

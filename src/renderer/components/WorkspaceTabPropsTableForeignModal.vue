@@ -136,13 +136,14 @@
                         <label
                            v-for="(field, i) in fields"
                            :key="`${field.name}-${i}`"
-                           class="flex items-center gap-2 cursor-pointer text-sm"
+                           class="flex items-center gap-2 cursor-pointer text-sm py-0.5"
                         >
                            <Checkbox
                               :model-value="selectedForeignObj.field === field.name"
                               @update:model-value="toggleField(field.name)"
                            />
-                           <span>{{ field.name }}</span>
+                           <span class="font-mono">{{ field.name }}</span>
+                           <span v-if="field.comment" class="text-xs text-muted-foreground truncate">— {{ field.comment }}</span>
                         </label>
                      </div>
                   </div>
@@ -169,13 +170,14 @@
                         <label
                            v-for="(field, i) in refFields[selectedForeignID]"
                            :key="`${field.name}-${i}`"
-                           class="flex items-center gap-2 cursor-pointer text-sm"
+                           class="flex items-center gap-2 cursor-pointer text-sm py-0.5"
                         >
                            <Checkbox
                               :model-value="selectedForeignObj.refField === field.name && selectedForeignObj.refTable === field.table"
                               @update:model-value="toggleRefField(field.name)"
                            />
-                           <span>{{ field.name }}</span>
+                           <span class="font-mono">{{ field.name }}</span>
+                           <span v-if="field.comment" class="text-xs text-muted-foreground truncate">— {{ field.comment }}</span>
                         </label>
                      </div>
                   </div>

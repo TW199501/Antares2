@@ -308,7 +308,8 @@
       "charset": "Charset",
       "inheritFromTable": "Inherit from table",
       "translateDescription": "Translate description",
-      "searchReferenceTable": "Search reference table…"
+      "searchReferenceTable": "Search reference table…",
+      "editTableOptions": "Edit table options"
    },
    "application": {
       "settings": "Settings",
