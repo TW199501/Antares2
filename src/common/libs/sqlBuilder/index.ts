@@ -1,3 +1,8 @@
+/**
+ * SQL Builder dispatcher — routes builder calls to the right per-client
+ * implementation. MVP only supports `mssql`; other clients throw
+ * `NotImplementedError` at call time so callers can degrade gracefully.
+ */
 import { ClientCode } from 'common/interfaces/antares';
 
 import {

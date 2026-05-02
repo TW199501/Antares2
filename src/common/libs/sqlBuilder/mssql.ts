@@ -52,11 +52,13 @@ export interface BuildSingleTableInput {
 }
 
 export const quoteMssqlIdent = (name: string): string => {
-   return '[' + name.replace(/]/g, ']]') + ']';
+   // Mirrors SQLServerClient._bid (src/main/libs/clients/SQLServerClient.ts:73)
+   return '[' + name.replace(/\]/g, ']]') + ']';
 };
 
 export const escapeMssqlString = (value: string): string => {
-   return value.replace(/'/g, '\'\'');
+   // Mirrors SQLServerClient._esc (src/main/libs/clients/SQLServerClient.ts:77)
+   return value.replaceAll('\'', '\'\'');
 };
 
 const formatValue = (raw: string, kind: SqlValueKind = 'string'): string => {
@@ -85,7 +87,9 @@ const formatCondition = (cond: SqlCondition): string | null => {
       case 'IS NOT NULL':
          return `${col} IS NOT NULL`;
       case 'BETWEEN':
-         if (cond.value === undefined || cond.value2 === undefined) return null;
+         // Treat empty inputs as inactive — form fields produce '' (not undefined)
+         // when cleared, and `BETWEEN '' AND '...'` is semantically broken SQL.
+         if (!cond.value || !cond.value2) return null;
          return `${col} BETWEEN ${formatValue(cond.value, kind)} AND ${formatValue(cond.value2, kind)}`;
       case 'IN':
       case 'NOT IN':
@@ -106,11 +110,12 @@ const formatCondition = (cond: SqlCondition): string | null => {
          }
       case 'LIKE':
       case 'NOT LIKE':
-         if (cond.value === undefined) return null;
+         // Empty string is treated as inactive (form-cleared = no condition)
+         if (!cond.value) return null;
          // LIKE always quoted; user includes their own % wildcards.
          return `${col} ${cond.op} ${formatValue(cond.value, 'string')}`;
       default:
-         if (cond.value === undefined) return null;
+         if (!cond.value) return null;
          return `${col} ${cond.op} ${formatValue(cond.value, kind)}`;
    }
 };
