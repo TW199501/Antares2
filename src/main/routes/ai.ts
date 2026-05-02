@@ -1,46 +1,58 @@
 import { FastifyInstance } from 'fastify';
 
+/**
+ * Translate a column name into the user's UI locale using the unofficial
+ * public Google Translate endpoint (no API key required).
+ *
+ * This replaced an earlier Claude Haiku-based generator that needed
+ * `settings.aiApiKey`. The user explicitly opted out of paid keys for the
+ * description-translate feature.
+ *
+ * Tradeoff: this endpoint is `client=gtx` which is the same one used by
+ * the public translate.google.com web UI. It works without auth but has
+ * no SLA; on heavy bursts Google may IP-throttle. We surface the failure
+ * verbatim so the user knows when to retry.
+ *
+ * Response shape kept compatible with the previous /translate-column so
+ * the renderer doesn't need a different handler — `{ description }`.
+ */
 export default async function aiRoutes (app: FastifyInstance) {
-   // POST /api/ai/translate-column
-   // Translates a snake_case column name into a short Traditional Chinese description
-   // Body: { columnName: string, tableName?: string, apiKey: string }
    app.post('/api/ai/translate-column', async (request) => {
-      const { columnName, tableName, apiKey } = request.body as {
+      const { columnName, targetLocale } = request.body as {
          columnName: string;
-         tableName?: string;
-         apiKey: string;
+         targetLocale: string;
       };
 
-      if (!apiKey)
-         throw new Error('AI API key not configured. Please set it in Settings.');
+      if (!columnName) throw new Error('columnName is required');
+      const target = (targetLocale || 'zh-TW').trim();
 
-      if (!columnName)
-         throw new Error('columnName is required');
+      // Convert snake_case / kebab-case / camelCase to space-separated words
+      // so Google Translate sees natural phrases, not unsplit identifiers.
+      const phrase = columnName
+         .replace(/[_-]+/g, ' ')
+         .replace(/([a-z])([A-Z])/g, '$1 $2')
+         .toLowerCase()
+         .trim();
 
-      const contextLine = tableName ? `Table: ${tableName}\n` : '';
-      const prompt = `${contextLine}Column: ${columnName}\n\nGenerate a concise Traditional Chinese description (6-10 characters) for this database column. Output only the description text, nothing else.`;
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(phrase)}`;
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-         method: 'POST',
-         headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json'
-         },
-         body: JSON.stringify({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 64,
-            messages: [{ role: 'user', content: prompt }]
-         })
+      const response = await fetch(url, {
+         method: 'GET',
+         headers: { 'user-agent': 'Mozilla/5.0' }
       });
 
       if (!response.ok) {
          const err = await response.text();
-         throw new Error(`AI API error ${response.status}: ${err}`);
+         throw new Error(`Google Translate error ${response.status}: ${err.slice(0, 200)}`);
       }
 
-      const data = await response.json() as { content: { text: string }[] };
-      const description = data.content?.[0]?.text?.trim() ?? '';
+      // Google returns a deeply nested array; sentence translations live in
+      // result[0][i][0]. Concatenate all sentences for multi-segment input.
+      const data = await response.json() as unknown[][];
+      const segments = (data[0] as unknown[][]) ?? [];
+      const description = segments.map(s => s[0]).join('').trim();
+
+      if (!description) throw new Error('Empty translation result');
 
       return { description };
    });

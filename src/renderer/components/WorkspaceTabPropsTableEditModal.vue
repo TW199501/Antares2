@@ -117,7 +117,33 @@
                   class="!h-[32px] !text-sm"
                />
             </div>
-            <!-- 描述 (with AI translate) -->
+            <!-- 字符集 / 定序 (only when DB supports collation: MySQL / SQL Server) -->
+            <template v-if="customizations.collation">
+               <div class="flex flex-col gap-1">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
+                     {{ t('database.charset') }}
+                  </Label>
+                  <Input
+                     v-model="local.charset"
+                     type="text"
+                     :placeholder="t('database.inheritFromTable')"
+                     class="!h-[32px] !text-sm"
+                  />
+               </div>
+               <div class="flex flex-col gap-1">
+                  <Label class="!text-sm !text-muted-foreground !font-normal !m-0 flex items-center gap-1.5">
+                     {{ t('database.collation') }}
+                     <span class="text-xs text-muted-foreground/70">({{ t('general.readOnly') }})</span>
+                  </Label>
+                  <Input
+                     :model-value="local.collation || t('database.inheritFromTable')"
+                     type="text"
+                     readonly
+                     class="!h-[32px] !text-sm bg-muted/40 cursor-not-allowed"
+                  />
+               </div>
+            </template>
+            <!-- 描述 (with Google Translate) -->
             <div v-if="customizations.comment" class="flex flex-col gap-1">
                <Label class="!text-sm !text-muted-foreground !font-normal !m-0">
                   {{ t('database.comment') }}
@@ -133,17 +159,14 @@
                      variant="secondary"
                      size="sm"
                      class="!h-[32px] !w-[36px] !p-0"
-                     :title="settingsStore.aiApiKey ? t('database.translateWithAi') : t('database.aiKeyRequired')"
-                     :disabled="isTranslating || !settingsStore.aiApiKey"
+                     :title="t('database.translateDescription')"
+                     :disabled="isTranslating"
                      @click.prevent="translateDescription"
                   >
                      <span v-if="!isTranslating" aria-hidden="true">🌐</span>
                      <span v-else class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
                   </Button>
                </div>
-               <p v-if="!settingsStore.aiApiKey" class="text-xs mt-1 text-amber-600">
-                  {{ t('database.aiKeyRequired') }}
-               </p>
                <p v-if="translateError" class="text-xs mt-1 text-destructive">
                   {{ translateError }}
                </p>
@@ -239,14 +262,13 @@ const toggleAutoIncrement = () => {
 };
 
 const translateDescription = async () => {
-   if (!settingsStore.aiApiKey) return;
+   if (!local.name) return;
    isTranslating.value = true;
    translateError.value = '';
    try {
       const { status, response } = await Ai.translateColumn({
          columnName: local.name,
-         tableName: props.row.table,
-         apiKey: settingsStore.aiApiKey
+         targetLocale: settingsStore.locale || 'zh-TW'
       });
       if (status === 'ok')
          local.comment = response.description;

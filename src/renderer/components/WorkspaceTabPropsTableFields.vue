@@ -25,7 +25,7 @@
                   </div>
                </div>
                <div class="th">
-                  <div class="column-resizable min-120">
+                  <div class="column-resizable min-200">
                      <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
                         {{ t('database.fieldName') }}
                      </div>

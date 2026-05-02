@@ -199,13 +199,13 @@
                <BaseIcon icon-name="mdiArrowDown" :size="14" />
             </Button>
             <Button
-               variant="ghost"
+               variant="outline"
                size="icon"
-               class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100 hover:!text-[#4a9eff]"
+               class="!h-[28px] !w-[28px] !text-[#4a9eff] hover:!bg-[#4a9eff]/10 hover:!border-[#4a9eff]"
                :title="t('database.editField')"
                @click.stop="emit('edit-field', localRow._antares_id)"
             >
-               <BaseIcon icon-name="mdiPencilOutline" :size="14" />
+               <BaseIcon icon-name="mdiPencilOutline" :size="16" />
             </Button>
             <Button
                variant="ghost"
