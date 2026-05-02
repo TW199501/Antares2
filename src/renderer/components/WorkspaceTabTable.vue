@@ -395,24 +395,43 @@ const hideFakerModal = () => {
    rowToDuplicate.value = null;
 };
 
-watchEffect((onCleanup) => {
-   if (refreshInterval.value)
-      clearInterval(refreshInterval.value);
-
-   if (tableAutoRefreshInterval.value > 0) {
-      refreshInterval.value = setInterval(() => {
-         if (!isQuering.value)
-            reloadTable();
-      }, tableAutoRefreshInterval.value * 1000);
-   }
-   else
-      refreshInterval.value = null;
-
-   onCleanup(() => {
-      if (refreshInterval.value)
+// Auto-refresh: re-run getTableData every N seconds when configured.
+//
+// PREVIOUSLY this used `watchEffect` which read AND wrote `refreshInterval`
+// in the same effect — Vue's reactive scheduler treated the write as a
+// dependency change and re-triggered the effect, racing the cleanup. The
+// observable symptom was the timer firing far more often than configured
+// (set 60s, fired roughly every 1s).
+//
+// Switched to explicit `watch` over the only inputs that should restart
+// the timer: `tableAutoRefreshInterval` (user setting) and `viewMode`
+// (auto-refresh is data-only — refreshing metadata while user edits in
+// Properties view would clobber unsaved changes). The interval handle
+// is plain mutable state, no longer a reactive ref.
+watch(
+   [tableAutoRefreshInterval, viewMode],
+   ([interval, mode], _, onCleanup) => {
+      if (refreshInterval.value !== null) {
          clearInterval(refreshInterval.value);
-   });
-});
+         refreshInterval.value = null;
+      }
+
+      if (mode === 'data' && interval > 0) {
+         refreshInterval.value = setInterval(() => {
+            if (!isQuering.value && viewMode.value === 'data')
+               reloadTable();
+         }, interval * 1000);
+      }
+
+      onCleanup(() => {
+         if (refreshInterval.value !== null) {
+            clearInterval(refreshInterval.value);
+            refreshInterval.value = null;
+         }
+      });
+   },
+   { immediate: true }
+);
 
 const downloadTable = (format: 'csv' | 'json' | 'sql' | 'php') => {
    queryTable.value.downloadTable(format, props.table);
