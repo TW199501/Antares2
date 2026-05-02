@@ -9,6 +9,10 @@ thumbs.db
 NOTES.md
 *.txt
 *.heapsnapshot
+.claude-code-history
+.codex-history/
+.openmcp/
+skills.json
 
 # Tauri build artifacts
 src-tauri/target/
