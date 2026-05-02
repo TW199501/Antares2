@@ -1,7 +1,7 @@
 {
   "name": "antares2",
   "productName": "Antares2",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "A modern, fast and productivity driven SQL client with a focus in UX.",
   "license": "MIT",
   "repository": "https://github.com/TW199501/Antares2.git",
