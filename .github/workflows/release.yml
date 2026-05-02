@@ -60,7 +60,9 @@ jobs:
             src-tauri/target/release/bundle/nsis/*.exe,
             src-tauri/target/release/bundle/msi/*.msi
           allowUpdates: true
-          draft: true
+          draft: false
+          bodyFile: docs/release-notes-${{ github.ref_name }}.md
+          omitBodyDuringUpdate: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos-x64:
@@ -105,7 +107,9 @@ jobs:
         with:
           artifacts: src-tauri/target/release/bundle/dmg/*.dmg
           allowUpdates: true
-          draft: true
+          draft: false
+          bodyFile: docs/release-notes-${{ github.ref_name }}.md
+          omitBodyDuringUpdate: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos-arm:
@@ -152,7 +156,9 @@ jobs:
         with:
           artifacts: src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
           allowUpdates: true
-          draft: true
+          draft: false
+          bodyFile: docs/release-notes-${{ github.ref_name }}.md
+          omitBodyDuringUpdate: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build-linux:
@@ -210,5 +216,7 @@ jobs:
             src-tauri/target/release/bundle/deb/*.deb,
             src-tauri/target/release/bundle/rpm/*.rpm
           allowUpdates: true
-          draft: true
+          draft: false
+          bodyFile: docs/release-notes-${{ github.ref_name }}.md
+          omitBodyDuringUpdate: true
           token: ${{ secrets.GITHUB_TOKEN }}
