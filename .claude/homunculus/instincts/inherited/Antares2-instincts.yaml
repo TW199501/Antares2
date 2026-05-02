@@ -1,0 +1,417 @@
+# Instincts generated from https://github.com/TW199501/Antares2
+# Generated: 2026-05-02T18:36:15.806Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: Antares2-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, chore, fix, docs
+
+## Evidence
+
+- 8 commits analyzed
+- Detected conventional commit pattern
+- Examples: chore: merge release.yml auto-public-release fix back to dev, feat(scripts): add pnpm release for one-shot version bump + tag
+
+---
+id: Antares2-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Commit Length
+
+## Action
+
+Write moderate-length commit messages (~64 characters)
+
+## Evidence
+
+- Average commit message length: 64 chars
+- Based on 8 commits
+
+---
+id: Antares2-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: Antares2-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: Antares2-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: Antares2-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: Antares2-workflow-release-version-bump-and-tag
+trigger: "when doing release version bump and tag"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Release Version Bump And Tag
+
+## Action
+
+Follow the release-version-bump-and-tag workflow:
+1. Ensure on dev branch with clean working tree.
+2. Bump version in package.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock (antares2 entry), and src-tauri/tauri.conf.json.
+3. Generate docs/release-notes-vX.Y.Z.md skeleton if not exists.
+4. Pause for author to fill in release notes prose section.
+5. Commit all version and release note changes.
+6. Create annotated git tag vX.Y.Z.
+7. Push dev branch and tag to origin.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: package.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock
+
+---
+id: Antares2-workflow-release-workflow-yml-update
+trigger: "when doing release workflow yml update"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Release Workflow Yml Update
+
+## Action
+
+Follow the release-workflow-yml-update workflow:
+1. Edit .github/workflows/release.yml to fix or enhance release automation.
+2. Document the change in CLAUDE.md if it affects the release process.
+3. Merge changes back to dev if hotfixed on another branch.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: .github/workflows/release.yml, CLAUDE.md
+
+---
+id: Antares2-workflow-updater-plugin-wiring-and-documentation
+trigger: "when doing updater plugin wiring and documentation"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Updater Plugin Wiring And Documentation
+
+## Action
+
+Follow the updater-plugin-wiring-and-documentation workflow:
+1. Edit src-tauri/src/lib.rs to register or comment out the updater plugin.
+2. Update src-tauri/capabilities/default.json and regenerate related schemas if permissions change.
+3. Edit .github/workflows/release.yml if CI/CD needs to pass new env vars.
+4. Document activation or deactivation procedures in CLAUDE.md.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: src-tauri/src/lib.rs, src-tauri/capabilities/default.json, src-tauri/gen/schemas/capabilities.json
+
+---
+id: antares2-instinct-camelcase-functions
+trigger: "When naming a function in Rust code"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Camelcase Functions
+
+## Action
+
+Use camelCase for the function name
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: antares2-instinct-pascalcase-classes
+trigger: "When naming a class or struct in Rust code"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Pascalcase Classes
+
+## Action
+
+Use PascalCase for the class or struct name
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: antares2-instinct-screaming-snake-constants
+trigger: "When naming a constant in Rust code"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Screaming Snake Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for the constant name
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: antares2-instinct-camelcase-files
+trigger: "When naming a file in the repository"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Camelcase Files
+
+## Action
+
+Use camelCase for the file name
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+
+---
+id: antares2-instinct-relative-imports
+trigger: "When importing modules in Rust code"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Relative Imports
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: antares2-instinct-named-exports
+trigger: "When exporting functions or types in Rust code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Named Exports
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: antares2-instinct-test-separate-location
+trigger: "When adding or updating tests"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Test Separate Location
+
+## Action
+
+Place tests in a separate location from source code
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+
+---
+id: antares2-instinct-conventional-commits
+trigger: "When writing a git commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Conventional Commits
+
+## Action
+
+Use Conventional Commits format with a prefix (feat, fix, chore, docs) and a concise description
+
+## Evidence
+
+- Seen in commit: 'feat(scripts): add pnpm release for one-shot version bump + tag'
+- Pattern in commits.prefixes
+
+---
+id: antares2-instinct-release-version-bump
+trigger: "When releasing a new version of the project"
+confidence: 0.98
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Release Version Bump
+
+## Action
+
+Bump versions in package.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock, and src-tauri/tauri.conf.json; generate docs/release-notes-vX.Y.Z.md if missing; pause for release notes; commit changes; tag and push
+
+## Evidence
+
+- Workflow: release-version-bump-and-tag
+- Seen in commits: 'chore(release): bump version 0.8.3 -> 0.8.4'
+
+---
+id: antares2-instinct-update-release-workflow
+trigger: "When fixing or improving the release automation pipeline"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Update Release Workflow
+
+## Action
+
+Edit .github/workflows/release.yml; document changes in CLAUDE.md if process is affected; merge back to dev if hotfixed
+
+## Evidence
+
+- Workflow: release-workflow-yml-update
+- Seen in commits: 'docs(claude): document release process + 3 hard-won release.yml fixes'
+
+---
+id: antares2-instinct-updater-plugin-wiring
+trigger: "When enabling, disabling, or documenting the Tauri updater plugin integration"
+confidence: 0.88
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Instinct Updater Plugin Wiring
+
+## Action
+
+Edit src-tauri/src/lib.rs for plugin registration; update src-tauri/capabilities/default.json and regenerate schemas if permissions change; update .github/workflows/release.yml if CI/CD needs new env vars; document procedures in CLAUDE.md
+
+## Evidence
+
+- Workflow: updater-plugin-wiring-and-documentation
+- Seen in commits: 'fix(updater): comment out plugin registration so dev/build doesn't panic'
+
