@@ -147,9 +147,9 @@ function generateReleaseNotes (prevTag, nextVersion) {
 
    const buckets = {};
    for (const line of log.split('\n')) {
-      const [, ...rest] = line.match(/^(\S+) (.*)$/) || [];
-      const subject = rest.join(' ');
-      if (!subject) continue;
+      const m = line.match(/^(\S+) (.*)$/);
+      if (!m) continue;
+      const subject = m[2];
       const type = classifyCommit(subject);
       (buckets[type] ||= []).push(subject);
    }
