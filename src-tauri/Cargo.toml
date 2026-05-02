@@ -1,6 +1,6 @@
 [package]
 name = "antares2"
-version = "0.8.3"
+version = "0.8.4"
 description = "A modern, fast SQL client"
 authors = ["TW199501"]
 edition = "2021"
