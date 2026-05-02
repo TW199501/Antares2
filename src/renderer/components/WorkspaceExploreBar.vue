@@ -218,7 +218,7 @@ const searchInput: Ref<HTMLInputElement> = ref(null);
 const explorebar: Ref<HTMLInputElement> = ref(null);
 const resizer: Ref<HTMLInputElement> = ref(null);
 const databases: Ref<string[]> = ref([]);
-const schema: Ref<Component & { selectSchema: (name: string) => void; $refs: {schemaAccordion: HTMLDetailsElement} }[]> = ref(null);
+const schema: Ref<Component & { selectSchema: (name: string) => void; openSchemaAccordion: () => void }[]> = ref(null);
 const isRefreshing = ref(false);
 const isNewDBModal = ref(false);
 const localWidth = ref(null);
@@ -292,7 +292,7 @@ onMounted(async () => {
 
    if (workspace.value.structure.length === 1 && schema.value?.[0]) { // Auto-open if just one schema
       schema.value[0].selectSchema(workspace.value.structure[0].name);
-      schema.value[0].$refs.schemaAccordion.open = true;
+      schema.value[0].openSchemaAccordion();
    }
 
    if (customizations.value.database) {

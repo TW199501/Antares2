@@ -1,7 +1,7 @@
 {
   "name": "antares2",
   "productName": "Antares2",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "A modern, fast and productivity driven SQL client with a focus in UX.",
   "license": "MIT",
   "repository": "https://github.com/TW199501/Antares2.git",
@@ -16,6 +16,7 @@
     "lint:fix": "eslint . --ext .js,.ts,.vue --fix && stylelint \"./src/**/*.{css,scss,sass,vue}\" --fix",
     "type-check": "vue-tsc --noEmit",
     "verify:tauri-migration": "node ./scripts/checkTauriMigration.js",
+    "check:eol": "node ./scripts/check-eol.mjs",
     "test:e2e": "npx playwright test",
     "translation:check": "tsx ./scripts/translationCheck.ts",
     "migrate:appdata": "node ./scripts/migrate-appdata.mjs",
