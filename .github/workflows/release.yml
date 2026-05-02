@@ -5,6 +5,13 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
+# ncipollo/release-action calls POST /repos/{owner}/{repo}/releases (and
+# /releases/generate-notes if generateReleaseNotes:true). Both require
+# contents:write. Default GITHUB_TOKEN is contents:read since 2023, hence
+# the historical 403 "Resource not accessible by integration".
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     name: Windows (x64)
@@ -54,7 +61,6 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
           allowUpdates: true
           draft: true
-          generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos-x64:
