@@ -80,7 +80,11 @@
       "moveTo": "Move to",
       "error": "Error",
       "copied": "Copied",
-      "readOnly": "Read-only"
+      "readOnly": "Read-only",
+      "loading": "Loading…",
+      "decrease": "Decrease",
+      "increase": "Increase",
+      "remove": "Remove"
    },
    "connection": {
       "connection": "Connection",
@@ -325,7 +329,16 @@
       "queryEmpty": "Enter SQL first.",
       "querySelectTableFirst": "Select a table first.",
       "queryNoResults": "Run a query to see results.",
-      "showingFirstNRows": "Showing first 100 rows of {total}"
+      "showingFirstNRows": "Showing first 100 rows of {total}",
+      "queryTable": "Table",
+      "allFields": "All fields",
+      "conditions": "Conditions",
+      "orderBy": "Order By",
+      "addCondition": "+ Add condition",
+      "addOrderBy": "+ Add sort",
+      "limit": "Limit",
+      "selectTableHint": "— select a table —",
+      "tableHasNoColumns": "(table has no columns)"
    },
    "application": {
       "settings": "Settings",
