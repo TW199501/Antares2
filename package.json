@@ -17,6 +17,7 @@
     "type-check": "vue-tsc --noEmit",
     "verify:tauri-migration": "node ./scripts/checkTauriMigration.js",
     "check:eol": "node ./scripts/check-eol.mjs",
+    "release": "node ./scripts/release.mjs",
     "test:e2e": "npx playwright test",
     "translation:check": "tsx ./scripts/translationCheck.ts",
     "migrate:appdata": "node ./scripts/migrate-appdata.mjs",

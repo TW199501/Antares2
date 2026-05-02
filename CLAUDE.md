@@ -37,6 +37,14 @@ pnpm verify:tauri-migration
 # One-shot migration for users coming from upstream antares (copies AppData
 # from com.fabio286.antares → com.tw199501.antares2). Not a routine dev task.
 pnpm migrate:appdata
+
+# Cut a release: bump the 4 version files (package.json / Cargo.toml /
+# Cargo.lock antares2 entry / tauri.conf.json), generate the docs/release-
+# notes-vX.Y.Z.md skeleton from `git log v_prev..HEAD`, commit, tag, push.
+# Use `--dry-run` to preview, `--no-push` to keep it local. **Do not** edit
+# the 4 version files by hand — let this script do it so they never drift.
+pnpm release patch          # 0.8.3 -> 0.8.4
+pnpm release 0.9.0 --dry-run
 ```
 
 > The Vite dev server alone (`pnpm vite:dev`) also works: `sidecarPlugin` in `vite.config.ts` auto-starts the Fastify sidecar on port 5555.
