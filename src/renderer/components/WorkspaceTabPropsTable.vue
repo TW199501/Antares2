@@ -1,61 +1,29 @@
 <template>
    <div v-show="isSelected" class="workspace-query-tab column col-12 columns col-gapless">
+      <!-- Read-only summary of table options. Editing happens via Edit modal
+           (Edit button at end of this row). All mutations are autocommit on
+           modal confirm — there's no draft/Save flow anymore. -->
       <div class="px-4 pt-2 pb-3">
-         <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <div class="flex items-center gap-2">
                <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('general.name') }}</Label>
-               <Input
-                  v-model="localOptions.name"
-                  type="text"
-                  class="!h-[32px] !text-sm !bg-background"
-               />
+               <span class="rounded-md border bg-muted/40 px-2.5 py-1 font-medium">{{ localOptions.name }}</span>
             </div>
-            <div v-if="workspace.customizations.comment" class="flex items-center gap-2">
+            <div v-if="workspace.customizations.comment && localOptions.comment" class="flex items-center gap-2">
                <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.comment') }}</Label>
-               <Input
-                  v-model="localOptions.comment"
-                  type="text"
-                  class="!h-[32px] !text-sm !w-[200px] !bg-background"
-               />
+               <span class="rounded-md border bg-muted/40 px-2.5 py-1 max-w-[300px] truncate" :title="localOptions.comment">{{ localOptions.comment }}</span>
             </div>
-
-            <div v-if="workspace.customizations.autoIncrement" class="flex items-center gap-2">
-               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
-                  {{ t('database.autoIncrement') }}
-               </Label>
-               <Input
-                  ref="firstInput"
-                  v-model="localOptions.autoIncrement"
-                  type="number"
-                  :disabled="localOptions.autoIncrement === null"
-                  class="!h-[32px] !text-sm !bg-background"
-               />
+            <div v-if="workspace.customizations.autoIncrement && localOptions.autoIncrement != null" class="flex items-center gap-2">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.autoIncrement') }}</Label>
+               <span class="rounded-md border bg-muted/40 px-2.5 py-1 font-mono">{{ localOptions.autoIncrement }}</span>
             </div>
-            <div v-if="workspace.customizations.collations" class="flex items-center gap-2">
-               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
-                  {{ t('database.collation') }}
-               </Label>
-               <BaseSelect
-                  v-model="localOptions.collation"
-                  :options="workspace.collations"
-                  :max-visible-options="1000"
-                  option-label="collation"
-                  option-track-by="collation"
-                  :disabled="true"
-                  class="w-[200px] !h-[32px] !text-sm !bg-background"
-               />
+            <div v-if="workspace.customizations.collations && localOptions.collation" class="flex items-center gap-2">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.collation') }}</Label>
+               <span class="rounded-md border bg-muted/40 px-2.5 py-1 text-xs">{{ localOptions.collation }}</span>
             </div>
-            <div v-if="workspace.customizations.engines" class="flex items-center gap-2">
-               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">
-                  {{ t('database.engine') }}
-               </Label>
-               <BaseSelect
-                  v-model="localOptions.engine"
-                  class="!h-[32px] !text-sm !bg-background"
-                  :options="workspace.engines"
-                  option-label="name"
-                  option-track-by="name"
-               />
+            <div v-if="workspace.customizations.engines && localOptions.engine" class="flex items-center gap-2">
+               <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('database.engine') }}</Label>
+               <span class="rounded-md border bg-muted/40 px-2.5 py-1">{{ localOptions.engine }}</span>
             </div>
             <Button
                variant="outline"
@@ -71,30 +39,9 @@
       </div>
       <Teleport v-if="toolbarTarget" :to="toolbarTarget">
          <div class="flex items-center gap-2">
-            <Button
-               variant="default"
-               size="sm"
-               :disabled="!isChanged"
-               :class="['h-[32px] !text-sm gap-1', { 'loading': isSaving }]"
-               @click="saveChanges"
-            >
-               <BaseIcon icon-name="mdiContentSave" :size="16" />
-               <span>{{ t('general.save') }}</span>
-            </Button>
-            <Button
-               variant="outline"
-               size="sm"
-               :disabled="!isChanged || isSaving"
-               class="h-[32px] !text-sm gap-1"
-               :title="t('database.clearChanges')"
-               @click="clearChanges"
-            >
-               <BaseIcon icon-name="mdiDeleteSweep" :size="16" />
-               <span>{{ t('general.clear') }}</span>
-            </Button>
-
-            <div class="mx-1 h-[20px] w-px bg-border" />
-
+            <!-- Save / Clear removed: each modal commits via Tables.alterTable
+                 immediately on confirm (autocommit-on-confirm). The Edit button
+                 lives at the end of the inline read-only summary row above. -->
             <Button
                variant="secondary"
                size="sm"
@@ -699,11 +646,19 @@ const saveChanges = async () => {
          else
             getFieldsData();
       }
-      else
+      else {
          addNotification({ status: 'error', message: response });
+         // Autocommit-on-confirm relies on local state always matching DB
+         // after every operation. On ALTER TABLE rejection, refetch so
+         // local snaps back to the pre-mutation state — otherwise the
+         // failed mutation lingers in localXxx with no Save button to
+         // retry/clear it.
+         await getFieldsData();
+      }
    }
    catch (err) {
       addNotification({ status: 'error', message: err.stack });
+      await getFieldsData();
    }
 
    isSaving.value = false;
@@ -791,7 +746,7 @@ const hideEditModal = () => {
    editModalTargetId.value = null;
 };
 
-const confirmEditModal = (updated: TableField) => {
+const confirmEditModal = async (updated: TableField) => {
    if (editModalMode.value === 'create') {
       localFields.value.push({ ...updated });
       setTimeout(() => {
@@ -809,6 +764,7 @@ const confirmEditModal = (updated: TableField) => {
       }
    }
    hideEditModal();
+   await saveChanges();
 };
 
 const renameField = (payload: {index: string; new: string; old: string}) => {
@@ -826,7 +782,7 @@ const renameField = (payload: {index: string; new: string; old: string}) => {
    });
 };
 
-const duplicateField = (uid: string) => {
+const duplicateField = async (uid: string) => {
    const fieldToClone = Object.assign({}, localFields.value.find(field => field._antares_id === uid));
    fieldToClone._antares_id = uidGen();
    fieldToClone.name = `${fieldToClone.name}_copy`;
@@ -837,9 +793,10 @@ const duplicateField = (uid: string) => {
       const scrollable = indexTable.value.tableWrapper;
       scrollable.scrollTop = scrollable.scrollHeight + 30;
    }, 20);
+   await saveChanges();
 };
 
-const removeField = (uid: string) => {
+const removeField = async (uid: string) => {
    localFields.value = localFields.value.filter(field => field._antares_id !== uid);
    localKeyUsage.value = localKeyUsage.value.filter(fk =>// Clear foreign keys
       localFields.value.some(field => field.name === fk.field)
@@ -849,6 +806,7 @@ const removeField = (uid: string) => {
          index.fields.includes(field.name)
       )
    );
+   await saveChanges();
 };
 
 const addNewIndex = (payload: { index: string; field: string }) => {
@@ -887,13 +845,15 @@ const hideOptionsModal = () => {
    isOptionsModal.value = false;
 };
 
-const optionsUpdate = (next: typeof localOptions.value) => {
+const optionsUpdate = async (next: typeof localOptions.value) => {
    Object.assign(localOptions.value, next);
    isOptionsModal.value = false;
+   await saveChanges();
 };
 
-const indexesUpdate = (indexes: TableIndex[]) => {
+const indexesUpdate = async (indexes: TableIndex[]) => {
    localIndexes.value = indexes;
+   await saveChanges();
 };
 
 const showForeignModal = () => {
@@ -920,12 +880,14 @@ const hideDdlModal = () => {
    isDdlModal.value = false;
 };
 
-const foreignsUpdate = (foreigns: TableForeign[]) => {
+const foreignsUpdate = async (foreigns: TableForeign[]) => {
    localKeyUsage.value = foreigns;
+   await saveChanges();
 };
 
-const checksUpdate = (checks: TableCheck[]) => {
+const checksUpdate = async (checks: TableCheck[]) => {
    localTableChecks.value = checks;
+   await saveChanges();
 };
 
 const saveContentListener = () => {

@@ -46,7 +46,11 @@ export const customizations: Customizations = {
    functionSettings: true,
    indexes: true,
    foreigns: true,
-   sortableFields: true,
+   // SQL Server has no native column reorder via ALTER TABLE. SSMS exposes a
+   // drag-to-reorder UI, but the actual SQL is "drop + recreate + copy data"
+   // which locks the entire table and can break FK / constraint chains. Not
+   // worth exposing a button that does this silently. Hide it.
+   sortableFields: false,
    nullable: true,
    autoIncrement: true,
    comment: true,

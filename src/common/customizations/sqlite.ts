@@ -37,7 +37,10 @@ export const customizations: Customizations = {
    triggerSettings: true,
    indexes: true,
    foreigns: true,
-   sortableFields: true,
+   // SQLite has no native column reorder via ALTER TABLE — reorder would
+   // require drop + recreate + copy data, which is destructive on big tables
+   // and breaks FK references. Hide the up/down buttons instead.
+   sortableFields: false,
    nullable: true,
    nullablePrimary: true,
    triggerSql: 'BEGIN\r\n\r\nEND',

@@ -1,137 +1,60 @@
 <template>
-   <div class="tr" @contextmenu.prevent="!editingField ? emit('contextmenu', $event, localRow._antares_id) : null">
-      <!-- 序號 (column ordinal position) -->
+   <!-- All cells are read-only. Per the autocommit-on-confirm contract,
+        the only mutation entry point is the per-row Edit (✏️) button which
+        opens WorkspaceTabPropsTableEditModal. Cells render as plain text
+        (selectable for copy via default browser behavior) — no dblclick
+        edit, no chip toggles. -->
+   <div class="tr" @contextmenu.prevent="emit('contextmenu', $event, localRow._antares_id)">
+      <!-- 序號 -->
       <div class="td p-0 text-center" tabindex="0">
          <span class="cell-content text-center text-sm">{{ localRow.order }}</span>
       </div>
       <!-- 字段名 -->
       <div class="td p-0" tabindex="0">
-         <span
-            v-if="!isInlineEditor.name"
-            class="cell-content text-sm"
-            @dblclick="editON($event, localRow.name, 'name')"
-         >
-            {{ localRow.name }}
-         </span>
-         <input
-            v-else
-            ref="editField"
-            v-model="editingContent"
-            type="text"
-            autofocus
-            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            @blur="editOFF"
-         >
+         <span class="cell-content text-sm">{{ localRow.name }}</span>
       </div>
       <!-- 数据类型 -->
       <div class="td p-0 text-uppercase" tabindex="0">
-         <span
-            v-if="!isInlineEditor.type"
-            class="cell-content text-left text-sm"
-            :class="typeClass(localRow.type)"
-            @dblclick="editON($event, localRow.type.toUpperCase(), 'type')"
-         >
-            {{ localRow.type }}
-         </span>
-         <BaseSelect
-            v-else
-            ref="editField"
-            v-model="editingContent"
-            :options="types"
-            group-label="group"
-            group-values="types"
-            option-label="name"
-            option-track-by="name"
-            class="editable-field pl-1 pr-4 text-uppercase !h-[28px] !text-sm"
-            @blur="editOFF"
-         />
+         <span class="cell-content text-left text-sm" :class="typeClass(localRow.type)">{{ localRow.type }}</span>
       </div>
-      <!-- 主键 PK (read-only chip) -->
+      <!-- 主键 PK -->
       <div class="td p-0 text-center" tabindex="0">
          <span
             class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium"
             :class="isPrimaryKey ? 'bg-blue-100 text-blue-700' : 'bg-orange-50 text-orange-600'"
          >{{ isPrimaryKey ? t('general.yes') : t('general.no') }}</span>
       </div>
-      <!-- 自增 AI (toggle chip, conditional) -->
+      <!-- 自增 AI -->
       <div
          v-if="customizations.autoIncrement"
          class="td p-0 text-center"
          tabindex="0"
       >
          <span
-            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium select-none transition-colors"
-            :class="[
-               localRow.autoIncrement ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600',
-               !canAutoincrement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            ]"
-            @click="canAutoincrement && toggleAutoIncrement()"
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium"
+            :class="localRow.autoIncrement ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600'"
          >{{ localRow.autoIncrement ? t('general.yes') : t('general.no') }}</span>
       </div>
-      <!-- 可空 NULL (toggle chip, conditional) -->
+      <!-- 可空 NULL -->
       <div
          v-if="customizations.nullable"
          class="td p-0 text-center"
          tabindex="0"
       >
          <span
-            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium select-none transition-colors"
-            :class="[
-               localRow.nullable ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600',
-               !isNullable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            ]"
-            @click="isNullable && (localRow.nullable = !localRow.nullable)"
+            class="inline-flex items-center justify-center h-[20px] min-w-[28px] px-1.5 rounded text-[11px] font-medium"
+            :class="localRow.nullable ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-50 text-orange-600'"
          >{{ localRow.nullable ? t('general.yes') : t('general.no') }}</span>
       </div>
       <!-- 长度 -->
       <div class="td p-0 type-int text-center" tabindex="0">
-         <span
-            v-if="!isInlineEditor.length"
-            class="cell-content text-center text-sm"
-            :class="!fieldType?.length ? 'cell-readonly text-muted-foreground cursor-not-allowed' : ''"
-            @dblclick="fieldType?.length ? editON($event, localLength, 'length') : null"
-         >{{ localRow.enumValues || localLength || '-' }}</span>
-         <template v-if="fieldType?.length && isInlineEditor.length">
-            <input
-               v-if="localRow.enumValues"
-               ref="editField"
-               v-model="editingContent"
-               type="text"
-               autofocus
-               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-               @blur="editOFF"
-            >
-            <input
-               v-else
-               ref="editField"
-               v-model="editingContent"
-               type="number"
-               autofocus
-               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-               @blur="editOFF"
-            >
-         </template>
+         <span class="cell-content text-center text-sm">{{ localRow.enumValues || localLength || '-' }}</span>
       </div>
       <!-- 精度 (scale) -->
       <div class="td p-0 type-int text-center" tabindex="0">
-         <template v-if="fieldType?.scale">
-            <span
-               v-if="!isInlineEditor.numScale"
-               class="cell-content text-center text-sm"
-               @dblclick="editON($event, localRow.numScale, 'numScale')"
-            >{{ localRow.numScale }}</span>
-            <input
-               v-else
-               ref="editField"
-               v-model="editingContent"
-               type="number"
-               autofocus
-               class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-               @blur="editOFF"
-            >
-         </template>
+         <span v-if="fieldType?.scale" class="cell-content text-center text-sm">{{ localRow.numScale }}</span>
       </div>
-      <!-- FK / UQ (read-only chips) -->
+      <!-- FK / UQ -->
       <div class="td p-0 text-center" tabindex="0">
          <div class="flex flex-wrap gap-[2px] justify-center px-[0.2rem] py-[2px]">
             <span
@@ -150,37 +73,21 @@
       </div>
       <!-- 默认值 -->
       <div class="td p-0" tabindex="0">
-         <span class="cell-content text-sm" @dblclick="editON($event, localRow.default, 'default')">
-            {{ fieldDefault }}
-         </span>
+         <span class="cell-content text-sm">{{ fieldDefault }}</span>
       </div>
-      <!-- 描述 (conditional) -->
+      <!-- 描述 -->
       <div
          v-if="customizations.comment"
          class="td p-0 type-varchar"
          tabindex="0"
       >
-         <span
-            v-if="!isInlineEditor.comment"
-            class="cell-content text-sm"
-            @dblclick="editON($event, localRow.comment, 'comment')"
-         >
-            {{ localRow.comment }}
-         </span>
-         <input
-            v-else
-            ref="editField"
-            v-model="editingContent"
-            type="text"
-            autofocus
-            class="editable-field h-[28px] w-full rounded-md border border-input bg-background px-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            @blur="editOFF"
-         >
+         <span class="cell-content text-sm">{{ localRow.comment }}</span>
       </div>
       <!-- 操作 -->
       <div class="td p-0 td-ops" tabindex="0">
          <div class="ops-btns">
             <Button
+               v-if="customizations.sortableFields"
                variant="ghost"
                size="icon"
                class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100"
@@ -190,6 +97,7 @@
                <BaseIcon icon-name="mdiArrowUp" :size="14" />
             </Button>
             <Button
+               v-if="customizations.sortableFields"
                variant="ghost"
                size="icon"
                class="!h-[24px] !w-[24px] opacity-55 hover:opacity-100"
@@ -218,8 +126,13 @@
             </Button>
          </div>
       </div>
+      <!-- Legacy default-value editor modal — kept for reference but never
+           opened now (isDefaultModal is permanently false). All field edits
+           go through WorkspaceTabPropsTableEditModal, which has its own
+           Default field. The block below is dead and slated for removal in
+           a follow-up commit. -->
       <ConfirmModal
-         v-if="isDefaultModal"
+         v-if="false && isDefaultModal"
          :confirm-text="t('general.confirm')"
          size="400"
          @confirm="editOFF"
