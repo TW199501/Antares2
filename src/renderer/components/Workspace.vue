@@ -662,6 +662,7 @@
          :connection="{ uid: connection.uid, client: workspace.client }"
          :schema="currentSchema"
          :tables="currentTables"
+         :default-table="defaultTableForQuery"
          @update:open="(v) => { isQueryBuilderModalOpen = v; }"
       />
    </div>
@@ -750,6 +751,17 @@ const currentSchema = computed(() => workspace.value?.breadcrumbs?.schema ?? '')
 const currentTables = computed(() => {
    const schemaStruct = workspace.value?.structure?.find(s => s.name === currentSchema.value);
    return schemaStruct?.tables ?? [];
+});
+
+/** When the active tab is a data view, pre-select that table in the
+ * query modal — context-aware shortcut. Returns undefined for other
+ * tab types (Modal renders empty table picker). */
+const defaultTableForQuery = computed(() => {
+   const active = workspace.value?.tabs?.find(t => t.uid === selectedTab.value);
+   if (!active) return undefined;
+   if (active.type === 'data' || active.type === 'temp-data')
+      return active.elementName as string;
+   return undefined;
 });
 
 const draggableTabs = computed<WorkspaceTab[]>({
