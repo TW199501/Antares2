@@ -555,10 +555,21 @@ src-net/Tables/
   - `get_furion_doc SQL分頁查詢`（在 SqlSugar_Docs 子目錄）— 同步/非同步分頁的差異
   - `get_furion_doc Where用法` / `Select用法` / `OrderBY` — 各別深入文件
   - `search_knowledge "GetForeignKeys"` — DbMaintenance FK 探測（這是 Phase 10 cascade 核心）
+  - `get_furion_doc SQL注入防護`（SqlSugar_Docs 子目錄）— 對齊 searchColumns 收緊（見下）
+
+### 安全強化（順手收掉的 legacy 弱點）
+**搬移 `searchColumns` 時收緊 SQL injection 防護**：
+- 現況：[MySQLClient.ts:568](src/main/libs/clients/MySQLClient.ts#L568) 用 `search.replace(/'/g, '\'\'')` 手動 escape — 安全但不嚴謹（依賴單一 char escaping，未來改 SQL 引擎或加新 sanitize 路徑容易破功）
+- 改法：.NET 版改用 SqlSugar parameterized query
+  - `db.Ado.GetDataTable("... LIKE @kw", new SugarParameter("@kw", $"%{search}%"))`
+  - 每個 DB 的 INFORMATION_SCHEMA 查詢都走 `SugarParameter`，不靠字串拼接
+- 對齊 `getTableData` 的 WHERE 過濾也一律走 parameterized — 跟 SqlSugar fluent `Queryable<dynamic>().Where(expr, parameters)` 配合
+- 不算新功能、是 1:1 平移時順便收緊的安全 baseline
 
 ### Verification gate
 - 4 DB e2e：載入大表 (1M rows)、分頁、排序、過濾、欄位 metadata
 - `pnpm test:e2e e2e/mssql-empty-table-header.spec.ts e2e/mssql-limit-guards.spec.ts` 全綠
+- **SQL injection regression test**：input `';-- 測試%` 等 payload 至 search 欄、不能 panic、查詢結果應為空（而非執行注入）
 
 ---
 
