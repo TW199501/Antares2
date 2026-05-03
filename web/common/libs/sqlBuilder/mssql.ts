@@ -2,7 +2,7 @@
  * SQL Server (mssql) single-table query builder.
  *
  * Mirrors the bracket-quoting + single-quote-escape logic used in
- * src/main/libs/clients/SQLServerClient.ts (_bid / _esc) so that the
+ * web/main/libs/clients/SQLServerClient.ts (_bid / _esc) so that the
  * renderer-side builder produces identifiers compatible with what the
  * sidecar will execute.
  *
@@ -52,12 +52,12 @@ export interface BuildSingleTableInput {
 }
 
 export const quoteMssqlIdent = (name: string): string => {
-   // Mirrors SQLServerClient._bid (src/main/libs/clients/SQLServerClient.ts:73)
+   // Mirrors SQLServerClient._bid (web/main/libs/clients/SQLServerClient.ts:73)
    return '[' + name.replace(/\]/g, ']]') + ']';
 };
 
 export const escapeMssqlString = (value: string): string => {
-   // Mirrors SQLServerClient._esc (src/main/libs/clients/SQLServerClient.ts:77)
+   // Mirrors SQLServerClient._esc (web/main/libs/clients/SQLServerClient.ts:77)
    return value.replaceAll('\'', '\'\'');
 };
 

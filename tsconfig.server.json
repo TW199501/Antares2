@@ -11,9 +11,9 @@
       "skipLibCheck": true,
       "outDir": "dist-server",
       "paths": {
-         "common/*": ["./src/common/*"]
+         "common/*": ["./web/common/*"]
       }
    },
-   "include": ["src/main/**/*", "src/common/**/*"],
-   "exclude": ["node_modules", "src/main/ipc-handlers/**"]
+   "include": ["web/main/**/*", "web/common/**/*"],
+   "exclude": ["node_modules", "web/main/ipc-handlers/**"]
 }
