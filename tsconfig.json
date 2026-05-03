@@ -2,7 +2,9 @@
   "include": [
     "./web/renderer/**/*",
     "./web/common/**/*",
-    "./web/main/**/*"
+    "./web/main/**/*",
+    "./vitest.config.ts",
+    "./tests/**/*"
   ],
   "exclude": [
     "./web/renderer/libs/ext-language_tools.js",
@@ -29,6 +31,7 @@
     "paths": {
       "common/*": ["./web/common/*"],
       "@/*": ["./web/renderer/*"],
+      "@tests/*": ["./tests/*"],
     }
   }
 }
