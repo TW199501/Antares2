@@ -25,11 +25,16 @@ export function mountWithPinia<T extends Component> (
       createSpy: vi.fn
    });
 
+   // Cast to any: @vue/test-utils 2.4.x distinguishes ComponentMountingOptions<T>
+   // from MountingOptions<T> via deep ComponentProps<T> inference, which our
+   // pass-through Omit<MountingOptions<T>, 'global'> can't satisfy. The public
+   // surface (MountWithPiniaOptions) keeps type checking at the call site —
+   // only this internal mount() invocation needs the cast.
    return mount(component, {
       ...rest,
       global: {
          ...global,
          plugins: [pinia, ...(global?.plugins ?? [])]
       }
-   });
+   } as Parameters<typeof mount>[1]);
 }
