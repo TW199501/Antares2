@@ -111,6 +111,14 @@ vi.mock('@/ipc-api/httpClient', () => ({
 }));
 
 // 2c. @/i18n — identity stub so component snapshots don't depend on locale JSON
+//
+// IMPORTANT: vi.mock here is module-graph-level. Tests in *different* .test.ts
+// files all see the mock (vitest re-initializes module graph per file).
+// Within the *same* .test.ts file, vi.doUnmock + vi.resetModules removes the
+// mock for subsequent imports BUT does NOT auto-restore for later tests in
+// that same file. Consequence: tests that need real vue-i18n must live in a
+// separate .test.ts file with `vi.unmock('vue-i18n')` at module top + a
+// custom mount that provides i18n via createI18n. Don't mix.
 vi.mock('@/i18n', () => ({
    i18n: {
       global: {
