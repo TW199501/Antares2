@@ -20,6 +20,7 @@
     "test:unit:run": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage --passWithNoTests",
     "test:coverage:check": "node scripts/check-coverage.mjs",
+    "capture:contract": "node scripts/capture-contract-fixtures.mjs",
     "verify:tauri-migration": "node ./scripts/checkTauriMigration.js",
     "check:eol": "node ./scripts/check-eol.mjs",
     "release": "node ./scripts/release.mjs",
