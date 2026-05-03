@@ -1,10 +1,68 @@
-# .NET 10 + Furion + SqlSugar 後端遷移：可執行計畫（15 Phase 版）
+# .NET 10 + Furion + SqlSugar 後端遷移：可執行計畫（15 Phase 版 + MCP 整合）
 
 > **配套既有文件**:
 > - `docs/superpowers/plans/2026-05-03-net-sqlsugar-migration.md` — 7-phase roadmap（概念層）
 > - `docs/superpowers/plans/2026-05-03-backend-inventory.md` — 現狀清點（baseline）
 >
-> **參考架構**：`E:/source/platfrom-admin/`（Admin.NET.Core，Furion + SqlSugar 成熟範本）。本計畫多處 adoption 直接套用其慣例，每個 phase 末尾都註明對應的 Admin.NET 檔案路徑。
+> **參考架構**：`E:/source/platfrom-admin/`（Admin.NET.Core，Furion + SqlSugar 成熟範本）。
+>
+> **知識源**：`@elf-express/admin-net-mcp`（npm 已發布）— 把 Furion / SqlSugar / Admin.NET 慣例打包成 10 個 MCP tool，本計畫每個 phase 都註明「該查哪個 MCP tool」而非內聯說明 Furion 概念。
+
+---
+
+## 知識源整合：admin-net MCP Server
+
+### 為什麼要整合
+原 plan v2 把 Furion/SqlSugar 慣例內聯說明（例如 `IUnifyResultProvider` 用法、`IDynamicApiController` 結構），維護負擔大且容易跟上游 drift。改用 MCP server 把知識外部化：
+
+- **實作期間 Claude 直接呼叫 MCP tool 取知識**，不必每次 session 重講 Furion
+- **知識更新只需 `git pull` + `npm run build`**，計畫文件不變
+
+### 可用 MCP Tools（在 antares2 也能用）
+| Tool | 用在哪個 phase |
+|------|-------------|
+| `get_entity_guide` | Phase 5（連線 session 模型）、Phase 9-10（DTO） |
+| `get_service_guide` | Phase 1, 5+（`IDynamicApiController` + `[ApiDescriptionSettings]` 樣板） |
+| `get_sqlsugar_guide` | Phase 5+（連線、查詢、AOP、UnitOfWork） |
+| `get_config_guide` | Phase 1（`IConfigurableOptions` + `Configuration/*.json`） |
+| `get_plugin_guide` | （antares2 用不到，single csproj） |
+| `get_event_guide` | Phase 13-14（背景任務跨服務溝通） |
+| `get_attribute_guide` | 各 phase 用到 `[Idempotent]`、`[DataMask]` 時 |
+| `get_vue_typescript_guide` | renderer 工作（不在這次 scope） |
+| `search_knowledge` | 任何主題快速 keyword 搜尋（中英文） |
+| `list_topics` | 不確定該查哪個時 |
+| `list_furion_docs` | 列 25+ 章 Furion 教學手冊 |
+| `get_furion_doc` | 拿 `06-1規範化接口`、`10-1-SqlSugar整合` 等深入文件 |
+
+### 設定方式（Phase 0 deliverable）
+在 antares2 的 `.claude/settings.json` 加（已驗證的 npm 版本）：
+```json
+{
+  "mcpServers": {
+    "admin-net": {
+      "command": "npx",
+      "args": ["-y", "@elf-express/admin-net-mcp"]
+    }
+  }
+}
+```
+或本地路徑（離線環境）：
+```json
+{
+  "mcpServers": {
+    "admin-net": {
+      "command": "node",
+      "args": ["e:/source/platfrom-admin/.claude/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+### 驗證
+重啟 Claude Code 後 `/mcp` 應看到 `admin-net  ✓ connected  12 tools`。
+
+### 風險（新增 R11）
+- **MCP server 知識可能跟 Admin.NET upstream drift** → 緩解：commit 一份 `mcp-version-pin.txt` 記錄當下 npm version，每月驗證一次。
 
 ---
 
@@ -88,18 +146,24 @@ Vue renderer  <─────────────────────
 
 ### Deliverables
 - 工作機 .NET 10 SDK 確認
+- **在 antares2 `.claude/settings.json` 掛 `admin-net` MCP server**（見上方「知識源整合」段）
 - 在 repo 根目錄建立空 `src-net/`（佔位）
-- 把這份 plan v2 commit 進去
+- 把這份 plan v3 commit 進去
 - 跟 roadmap + inventory 交叉檢核衝突項
+- commit `mcp-version-pin.txt` 記錄當下 `@elf-express/admin-net-mcp` npm version（R11 緩解）
 
 ### 動到的檔案
 - 修改：`docs/superpowers/plans/2026-05-03-net-sqlsugar-execution-plan.md`（這份）
 - 新增：`src-net/.gitkeep`
+- 修改：`.claude/settings.json`（加 mcpServers）
+- 新增：`mcp-version-pin.txt`（紀錄 MCP server npm version）
 
 ### Verification gate
 ```bash
 dotnet --list-sdks | grep -E '^10\.'
 ls src-net/
+# Claude Code 內 /mcp 應該看到 admin-net  ✓ connected  12 tools
+# Claude 執行：list_topics → 應回 8 主題；list_furion_docs → 應回 25+ 檔
 ```
 
 ---
@@ -138,10 +202,13 @@ public class HealthService : IDynamicApiController, ITransient
 }
 ```
 
-### 對應 Admin.NET 參考
-- [Admin.NET.Web.Entry/Program.cs](E:/source/platfrom-admin/Admin.NET.Web.Entry/Program.cs)
-- [Admin.NET.Web.Core/Startup.cs](E:/source/platfrom-admin/Admin.NET.Web.Core/Startup.cs) line 1-50（services 註冊順序）
-- [Admin.NET.Application/Configuration/](E:/source/platfrom-admin/Admin.NET.Application/Configuration/) — 範本資料夾結構
+### 對應 Admin.NET 參考 + MCP tool
+- 程式碼樣板：[Admin.NET.Web.Entry/Program.cs](E:/source/platfrom-admin/Admin.NET.Web.Entry/Program.cs)、[Admin.NET.Web.Core/Startup.cs](E:/source/platfrom-admin/Admin.NET.Web.Core/Startup.cs)、[Admin.NET.Application/Configuration/](E:/source/platfrom-admin/Admin.NET.Application/Configuration/)
+- **MCP 查詢**（實作期間呼叫）：
+  - `get_service_guide` — `IDynamicApiController` + `[ApiDescriptionSettings]` 完整樣板
+  - `get_config_guide` — `IConfigurableOptions` + `Configuration/*.json` 自動 scan 細節
+  - `get_furion_doc 04-1-配置` / `04-2-選項` — Furion 配置系統深入解說
+  - `get_furion_doc 05-1-動態WebAPI` — `IDynamicApiController` 完整教學
 
 ### Verification gate
 ```bash
@@ -199,9 +266,12 @@ public class SidecarResultProvider : IUnifyResultProvider
 services.AddInjectWithUnifyResult<SidecarResultProvider>();
 ```
 
-### 對應 Admin.NET 參考
-- [Admin.NET.Core/Utils/AdminResultProvider.cs](E:/source/platfrom-admin/Admin.NET.Core/Utils/AdminResultProvider.cs) — 整支照抄改名
-- [Admin.NET.Web.Core/Startup.cs:111](E:/source/platfrom-admin/Admin.NET.Web.Core/Startup.cs#L111) — 註冊 line
+### 對應 Admin.NET 參考 + MCP tool
+- 程式碼樣板：[Admin.NET.Core/Utils/AdminResultProvider.cs](E:/source/platfrom-admin/Admin.NET.Core/Utils/AdminResultProvider.cs)（整支照抄改名）、[Admin.NET.Web.Core/Startup.cs:111](E:/source/platfrom-admin/Admin.NET.Web.Core/Startup.cs#L111)（註冊 line）
+- **MCP 查詢**：
+  - `get_furion_doc 06-1規範化接口` — `IUnifyResultProvider` 完整理論 + 範例
+  - `get_furion_doc 05-3-篩選器攔截器AOP` — middleware 與 filter 的 pipeline 順序差異
+  - `get_furion_doc 07-友好例外處理` — `OnException` 攔截法，避免 stack trace 外洩
 
 ### Verification gate
 ```bash
@@ -365,9 +435,14 @@ public class ConnectionService(ConnectionRegistry registry, SshTunnelService ssh
 }
 ```
 
-### 對應 Admin.NET 參考
-- [Admin.NET.Core/Service/Auth/SysAuthService.cs](E:/source/platfrom-admin/Admin.NET.Core/Service/Auth/SysAuthService.cs) — `IDynamicApiController + ITransient` 樣板
-- [Admin.NET.Core/SqlSugar/SqlSugarSetup.cs](E:/source/platfrom-admin/Admin.NET.Core/SqlSugar/SqlSugarSetup.cs) — 多 DB ConnectionConfig 範本（850 行，但我們只需要其中的「動態 build ConnectionConfig」段）
+### 對應 Admin.NET 參考 + MCP tool
+- 程式碼樣板：[Admin.NET.Core/Service/Auth/SysAuthService.cs](E:/source/platfrom-admin/Admin.NET.Core/Service/Auth/SysAuthService.cs)（service base）、[Admin.NET.Core/SqlSugar/SqlSugarSetup.cs](E:/source/platfrom-admin/Admin.NET.Core/SqlSugar/SqlSugarSetup.cs)（ConnectionConfig builder）
+- **MCP 查詢**：
+  - `get_service_guide` — service class 完整 CRUD 樣板
+  - `get_sqlsugar_guide` — Repository 注入、AOP 自動填充、`ISqlSugarClient` factory
+  - `get_furion_doc 10-1-SqlSugar整合` — Furion 端 SqlSugar 整合最佳實踐
+  - `get_furion_doc 11-SaaS 多租戶筆記` — 多 DB 動態切換的範本（雖然 antares2 不是多租戶，但「per-request 切 DB」邏輯一樣）
+  - `search_knowledge "ConnectionConfig"` — 找散落各文件的相關段落
 
 ### Verification gate
 - 4 種 DB 各自手動 sanity test（MySQL 8、PG 16、MSSQL 2022、SQLite）
@@ -473,8 +548,13 @@ src-net/Tables/
 └── ForeignKeyResolver.cs              # inbound + outbound FK 探測
 ```
 
-### 對應 Admin.NET 參考
-- 沒有直接對應（Admin.NET 是用自家 entity，不是用戶任意 DB）。但 `SqlSugarRepository<T>` 的 query 樣板可以參考 [Admin.NET.Core/Service/User/SysUserService.cs](E:/source/platfrom-admin/Admin.NET.Core/Service/User/SysUserService.cs)
+### 對應 Admin.NET 參考 + MCP tool
+- 程式碼樣板：Admin.NET 是用自家 entity，沒有直接對應。但 `Queryable<dynamic>` 樣板可以參考 [Admin.NET.Core/Service/User/SysUserService.cs](E:/source/platfrom-admin/Admin.NET.Core/Service/User/SysUserService.cs)
+- **MCP 查詢**：
+  - `get_sqlsugar_guide` — `Queryable` 鏈式語法、分頁、排序
+  - `get_furion_doc SQL分頁查詢`（在 SqlSugar_Docs 子目錄）— 同步/非同步分頁的差異
+  - `get_furion_doc Where用法` / `Select用法` / `OrderBY` — 各別深入文件
+  - `search_knowledge "GetForeignKeys"` — DbMaintenance FK 探測（這是 Phase 10 cascade 核心）
 
 ### Verification gate
 - 4 DB e2e：載入大表 (1M rows)、分頁、排序、過濾、欄位 metadata
@@ -589,6 +669,11 @@ src-net/
     └── ExportSchemaHub.cs              # WS endpoint + token 驗證（R7 第二段）
 ```
 
+### MCP 查詢
+- `get_furion_doc 24-即時通訊SignalR` — WS hub 的 broadcast pattern
+- `get_furion_doc 25-輔助角色服務WorkerService` — `IHostedService` 背景任務樣板
+- `get_event_guide` — 用 EventBus 推進度的替代方案
+
 ### Verification gate
 - export 1MB / 100MB / 1GB 表 — 對比 Node 版時間、不能慢超過 1.5x
 - snapshot test：對同 DB 同表 dump 出來的 SQL byte-for-byte 跟 Node 版一致
@@ -682,6 +767,7 @@ grep -rn "Download Node.js binary" .github/workflows/  # 必須無結果
 | R8 | 8 個 CI Node-download step 漏改 | 低 | grep verify | 已規劃 |
 | ~~R9~~ | ~~沒有 API schema、type drift~~ | — | **已解決**：Phase 3 Swagger codegen | ✅ 解除 |
 | R10 | openapi-typescript 對 Furion polymorphicSchema 支援度未知 | 低 | 退路：改用 nswag | Phase 3 驗 |
+| R11 | `admin-net` MCP server 知識跟 Admin.NET upstream drift | 低 | `mcp-version-pin.txt` 鎖 npm version；月驗 + 重新 build | 已規劃（Phase 0） |
 
 ---
 
@@ -741,6 +827,7 @@ grep -rn "Download Node.js binary" .github/workflows/  # 必須無結果
 | `[ApiDescriptionSettings(Name=…), HttpPost]` | 所有 service action | 客製 RPC-style routing |
 | `Configuration/*.json` 自動 scan | Phase 1 | `Configuration/Server.json` etc. |
 | Swagger codegen → frontend types | Phase 3 | `src/common/api-generated/` |
+| **`@elf-express/admin-net-mcp` 知識源** | Phase 0 起，每個 phase 都會用 | `.claude/settings.json` 掛上去，`mcp-version-pin.txt` 鎖版本 |
 
 ---
 
