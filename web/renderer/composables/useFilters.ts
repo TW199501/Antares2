@@ -23,7 +23,10 @@ export function useFilters () {
          return number.toLocaleString();
    };
 
-   const wrapNumber = (num: number) => {
+   // Accept the union actually returned by callers (e.g. fieldLength() returns
+   // number | string | null | undefined). Implementation already handles all
+   // falsy values via the early-return.
+   const wrapNumber = (num: number | string | null | undefined | false) => {
       if (!num) return '';
       return `(${num})`;
    };

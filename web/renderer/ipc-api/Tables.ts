@@ -80,7 +80,10 @@ export default class {
       uid: string;
       schema: string;
       table: string;
-      row: Record<string, string | number | boolean | Date | Buffer>;
+      // Per-field faker descriptor: backend reads row[key].group to decide
+      // whether to use the literal value (group: 'manual') or generate one
+      // (other groups). See web/main/routes/tables.ts insertFakeRows handler.
+      row: Record<string, { group?: string; value: unknown }>;
       repeat: number;
       fields: Record<string, string>;
       locale: string;

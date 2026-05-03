@@ -327,7 +327,10 @@ onMounted(() => {
 
    setCustomCompleter();
 
-   editor.value.commands.on('afterExec', (e: { args: string; command: { name: string } }) => {
+   // ace-builds execEventHandler expects Ace.ExecEvent (has more fields than
+   // we read). The narrower inline type was rejected by TS — widen to the
+   // handler's full signature, keep destructuring narrow.
+   editor.value.commands.on('afterExec', ((e: { args: string; command: { name: string } }) => {
       if (['insertstring', 'backspace', 'del'].includes(e.command.name)) {
          if (isLastWordATable.value || e.args === '.') {
             if (e.args !== ' ') {
@@ -356,7 +359,8 @@ onMounted(() => {
          else
             editor.value.completers = customCompleter.value;
       }
-   });
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   }) as any);
 
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    (editor.value.session as any).on('change', () => {

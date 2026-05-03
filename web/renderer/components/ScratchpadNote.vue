@@ -147,7 +147,7 @@
 </template>
 <script setup lang="ts">
 import { useElementBounding } from '@vueuse/core';
-import { marked } from 'marked';
+import { marked, type Tokens } from 'marked';
 import { highlight } from 'sql-highlight';
 import { computed, PropType, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -196,12 +196,15 @@ const isSelected = computed(() => props.selectedNote === props.note.uid);
 const isBig = computed(() => noteHeight.value > 75);
 
 const parseMarkdown = (text: string) => {
+   // marked v9+ migrated RendererObject from positional args to token-based.
+   // listitem now receives Tokens.ListItem (text is raw markdown source);
+   // link now receives Tokens.Link.
    const renderer = {
-      listitem (text: string) {
-         return `<li>${text.replace(/ *\([^)]*\) */g, '')}</li>`;
+      listitem (token: Tokens.ListItem) {
+         return `<li>${token.text.replace(/ *\([^)]*\) */g, '')}</li>`;
       },
-      link (href: string, title: string, text: string) {
-         return `<a>${text}</a>`;
+      link (token: Tokens.Link) {
+         return `<a>${token.text}</a>`;
       }
    };
 

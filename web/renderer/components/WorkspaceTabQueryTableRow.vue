@@ -629,8 +629,14 @@ const typeFormat = (val: string | number | boolean | Date | number[], type: stri
 
    if (!val) return val;
 
-   if (DATE.includes(type))
-      return moment(val).isValid() ? moment(val).format('YYYY-MM-DD') : val;
+   if (DATE.includes(type)) {
+      // val is a cell value of declared DATE type — DB drivers never return
+      // boolean for these. Cast through MomentInput because TS sees the
+      // wider runtime union (including boolean from BIT columns earlier in
+      // the function) but our DATE.includes() guard narrows to date types.
+      const m = moment(val as moment.MomentInput);
+      return m.isValid() ? m.format('YYYY-MM-DD') : val;
+   }
 
    if (DATETIME.includes(type)) {
       if (typeof val === 'string')
@@ -640,7 +646,8 @@ const typeFormat = (val: string | number | boolean | Date | number[], type: stri
       for (let i = 0; i < Number(precision); i++)
          datePrecision += i === 0 ? '.S' : 'S';
 
-      return moment(val).isValid() ? moment(val).format(`YYYY-MM-DD HH:mm:ss${datePrecision}`) : val;
+      const m = moment(val as moment.MomentInput);
+      return m.isValid() ? m.format(`YYYY-MM-DD HH:mm:ss${datePrecision}`) : val;
    }
 
    if (BLOB.includes(type)) {

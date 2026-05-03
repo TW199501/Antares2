@@ -22,7 +22,9 @@ pnpm tauri:build
 pnpm lint
 pnpm lint:fix
 
-# Type-check Vue + TypeScript (12 known pre-existing errors as of 2026-04-28; new code should not add more)
+# Type-check Vue + TypeScript (4 known pre-existing errors as of 2026-05-03,
+# all in WorkspaceTabPropsTable.vue from props-table refactor — fixing requires
+# original refactor author context; new code should not add more)
 pnpm type-check
 
 # End-to-end tests (Playwright)

@@ -32,3 +32,4 @@ verify-*.png
 debug-*.png
 current-snap.yml
 e2e-results/
+coverage

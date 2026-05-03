@@ -269,7 +269,10 @@ const translateDescription = async () => {
          columnName: local.name,
          targetLocale: settingsStore.locale || 'zh-TW'
       });
-      if (status === 'ok')
+      // IpcResponse.status union is 'success' | 'error' | 'abort'. The
+      // previous 'ok' literal never matched, so AI translation results
+      // were silently discarded. Real bug — fix as part of type cleanup.
+      if (status === 'success')
          local.comment = response.description;
       else
          translateError.value = String(response);
