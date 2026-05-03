@@ -48,7 +48,8 @@ const FIXTURES_DIR = join(ROOT, 'tests', 'fixtures', 'contract');
 const PORT = 5556;
 const HOST = '127.0.0.1';
 
-const argDialect = process.argv[2]; // optional dialect filter
+// Filter out the '--' separator that `pnpm run <script> -- <args>` injects.
+const argDialect = process.argv.slice(2).filter((a) => a !== '--')[0];
 
 // ─────────────────────────────────────────────────────────────────
 // Config loaded from env (with safe placeholders for env-less probe)
@@ -81,7 +82,9 @@ const CONFIGS = {
       port: Number(process.env.DEV_MSSQL_PORT || 1433),
       user: process.env.DEV_MSSQL_USER || 'sa',
       password: process.env.DEV_MSSQL_PASSWORD || '',
-      database: 'antares_test_fixture',
+      // master always exists; connect there for metadata-only capture if no
+      // dedicated fixture DB present. Override via DEV_MSSQL_DATABASE.
+      database: process.env.DEV_MSSQL_DATABASE || 'master',
       schema: 'dbo'
    },
    sqlite: {
@@ -269,6 +272,11 @@ function anonymize (obj) {
       // Tokens
       .replace(/"X-Sidecar-Token"\s*:\s*"[^"]*"/g, '"X-Sidecar-Token":"<REDACTED>"')
       .replace(/"authToken"\s*:\s*"[^"]*"/g, '"authToken":"<REDACTED>"')
+      // RFC 1918 private LAN addresses → 127.0.0.1 (host doesn't reveal infra topology)
+      .replace(/"(?:host|server|address)"\s*:\s*"(?:10|192\.168|172\.(?:1[6-9]|2[0-9]|3[01]))\.[0-9]+\.[0-9]+\.[0-9]+"/g,
+         (m) => m.replace(/"(?:10|192\.168|172\.(?:1[6-9]|2[0-9]|3[01]))\.[0-9]+\.[0-9]+\.[0-9]+"/, '"127.0.0.1"'))
+      // Bare IP literals anywhere (catch-all, less common but possible in error messages)
+      .replace(/(10|192\.168|172\.(?:1[6-9]|2[0-9]|3[01]))\.\d+\.\d+\.\d+/g, '127.0.0.1')
       // Windows user-home paths
       .replace(/[A-Z]:\\\\Users\\\\[^"\\\\]+/g, '<USER_HOME>')
       // POSIX user-home paths
@@ -334,6 +342,17 @@ async function main () {
    console.log(`Spawning sidecar on port ${PORT}…`);
    const { proc, port, token } = await spawnSidecar();
    console.log(`Sidecar ready on ${port}, token=${token ? '<set>' : '<empty (DEV_MODE)>'}`);
+
+   // Ensure spawned sidecar is killed even if main is interrupted (Ctrl+C,
+   // SIGTERM from timeout, uncaught exception). Without this, the sidecar
+   // keeps holding port 5556 and the next invocation hits EADDRINUSE.
+   const cleanup = () => {
+      try { proc.kill(); }
+      catch { /* already dead */ }
+   };
+   process.on('SIGINT', () => { cleanup(); process.exit(130); });
+   process.on('SIGTERM', () => { cleanup(); process.exit(143); });
+   process.on('uncaughtException', (err) => { cleanup(); console.error(err); process.exit(1); });
 
    try {
       const dialects = argDialect ? [argDialect] : Object.keys(CONFIGS);

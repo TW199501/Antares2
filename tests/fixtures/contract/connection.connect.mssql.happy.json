@@ -1,0 +1,123 @@
+{
+   "metadata": {
+      "captured_at": "2026-01-01T00:00:00.000Z",
+      "dialect": "mssql",
+      "scenario": "happy",
+      "anonymized": true,
+      "source": "hand-crafted-from-wrapper-and-route-source"
+   },
+   "request": {
+      "route": "/api/connection/connect",
+      "method": "POST",
+      "headers": {
+         "Content-Type": "application/json",
+         "X-Sidecar-Token": "<REDACTED>"
+      },
+      "payload": {
+         "uid": "00000000-0000-0000-0000-000000000001",
+         "name": "Local MSSQL (fixture)",
+         "client": "mssql",
+         "host": "127.0.0.1",
+         "port": 1433,
+         "user": "testuser",
+         "password": "<REDACTED>",
+         "database": "master",
+         "schema": "dbo",
+         "ask": false,
+         "readonly": true,
+         "singleConnectionMode": false,
+         "ssl": false,
+         "untrustedConnection": true,
+         "ssh": false
+      }
+   },
+   "response": {
+      "status": 200,
+      "body": {
+         "status": "success",
+         "response": [
+            {
+               "name": "dbo",
+               "size": 32768,
+               "tables": [
+                  {
+                     "name": "users",
+                     "type": "table",
+                     "rows": 5,
+                     "size": 16384,
+                     "collation": "",
+                     "comment": "",
+                     "engine": ""
+                  },
+                  {
+                     "name": "orders",
+                     "type": "table",
+                     "rows": 4,
+                     "size": 16384,
+                     "collation": "",
+                     "comment": "",
+                     "engine": ""
+                  },
+                  {
+                     "name": "user_orders",
+                     "type": "view",
+                     "rows": 0,
+                     "size": 0,
+                     "collation": "",
+                     "comment": "",
+                     "engine": ""
+                  }
+               ],
+               "functions": [],
+               "procedures": [],
+               "triggers": [],
+               "triggerFunctions": [],
+               "schedulers": []
+            }
+         ]
+      }
+   },
+   "expected": {
+      "status": "success",
+      "response": [
+         {
+            "name": "dbo",
+            "size": 32768,
+            "tables": [
+               {
+                  "name": "users",
+                  "type": "table",
+                  "rows": 5,
+                  "size": 16384,
+                  "collation": "",
+                  "comment": "",
+                  "engine": ""
+               },
+               {
+                  "name": "orders",
+                  "type": "table",
+                  "rows": 4,
+                  "size": 16384,
+                  "collation": "",
+                  "comment": "",
+                  "engine": ""
+               },
+               {
+                  "name": "user_orders",
+                  "type": "view",
+                  "rows": 0,
+                  "size": 0,
+                  "collation": "",
+                  "comment": "",
+                  "engine": ""
+               }
+            ],
+            "functions": [],
+            "procedures": [],
+            "triggers": [],
+            "triggerFunctions": [],
+            "schedulers": []
+         }
+      ]
+   }
+}

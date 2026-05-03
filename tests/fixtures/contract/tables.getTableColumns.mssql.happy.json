@@ -1,0 +1,161 @@
+{
+   "metadata": {
+      "captured_at": "2026-01-01T00:00:00.000Z",
+      "dialect": "mssql",
+      "scenario": "happy",
+      "anonymized": true,
+      "source": "hand-crafted-from-wrapper-and-route-source"
+   },
+   "request": {
+      "route": "/api/tables/getColumns",
+      "method": "POST",
+      "headers": {
+         "Content-Type": "application/json",
+         "X-Sidecar-Token": "<REDACTED>"
+      },
+      "payload": {
+         "uid": "00000000-0000-0000-0000-000000000001",
+         "schema": "dbo",
+         "table": "users"
+      }
+   },
+   "response": {
+      "status": 200,
+      "body": {
+         "status": "success",
+         "response": [
+            {
+               "name": "id",
+               "key": null,
+               "type": "INT",
+               "schema": "dbo",
+               "table": "users",
+               "numScale": 0,
+               "numPrecision": 10,
+               "datePrecision": null,
+               "charLength": null,
+               "nullable": false,
+               "unsigned": null,
+               "zerofill": null,
+               "order": 1,
+               "default": null,
+               "charset": null,
+               "collation": null,
+               "autoIncrement": true,
+               "onUpdate": null,
+               "comment": ""
+            },
+            {
+               "name": "name",
+               "key": null,
+               "type": "NVARCHAR",
+               "schema": "dbo",
+               "table": "users",
+               "numScale": null,
+               "numPrecision": null,
+               "datePrecision": null,
+               "charLength": 50,
+               "nullable": true,
+               "unsigned": null,
+               "zerofill": null,
+               "order": 2,
+               "default": null,
+               "charset": null,
+               "collation": "SQL_Latin1_General_CP1_CI_AS",
+               "autoIncrement": false,
+               "onUpdate": null,
+               "comment": ""
+            },
+            {
+               "name": "created_at",
+               "key": null,
+               "type": "DATETIME2",
+               "schema": "dbo",
+               "table": "users",
+               "numScale": null,
+               "numPrecision": null,
+               "datePrecision": 7,
+               "charLength": null,
+               "nullable": true,
+               "unsigned": null,
+               "zerofill": null,
+               "order": 3,
+               "default": null,
+               "charset": null,
+               "collation": null,
+               "autoIncrement": false,
+               "onUpdate": null,
+               "comment": ""
+            }
+         ]
+      }
+   },
+   "expected": {
+      "status": "success",
+      "response": [
+         {
+            "name": "id",
+            "key": null,
+            "type": "INT",
+            "schema": "dbo",
+            "table": "users",
+            "numScale": 0,
+            "numPrecision": 10,
+            "datePrecision": null,
+            "charLength": null,
+            "nullable": false,
+            "unsigned": null,
+            "zerofill": null,
+            "order": 1,
+            "default": null,
+            "charset": null,
+            "collation": null,
+            "autoIncrement": true,
+            "onUpdate": null,
+            "comment": ""
+         },
+         {
+            "name": "name",
+            "key": null,
+            "type": "NVARCHAR",
+            "schema": "dbo",
+            "table": "users",
+            "numScale": null,
+            "numPrecision": null,
+            "datePrecision": null,
+            "charLength": 50,
+            "nullable": true,
+            "unsigned": null,
+            "zerofill": null,
+            "order": 2,
+            "default": null,
+            "charset": null,
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "autoIncrement": false,
+            "onUpdate": null,
+            "comment": ""
+         },
+         {
+            "name": "created_at",
+            "key": null,
+            "type": "DATETIME2",
+            "schema": "dbo",
+            "table": "users",
+            "numScale": null,
+            "numPrecision": null,
+            "datePrecision": 7,
+            "charLength": null,
+            "nullable": true,
+            "unsigned": null,
+            "zerofill": null,
+            "order": 3,
+            "default": null,
+            "charset": null,
+            "collation": null,
+            "autoIncrement": false,
+            "onUpdate": null,
+            "comment": ""
+         }
+      ]
+   }
+}
