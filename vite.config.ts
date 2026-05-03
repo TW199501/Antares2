@@ -11,7 +11,7 @@ function sidecarPlugin (): Plugin {
    let killed = false;
 
    function startSidecar () {
-      sidecar = spawn('npx', ['tsx', 'src/main/server.ts', '--port', '5555'], {
+      sidecar = spawn('npx', ['tsx', 'web/main/server.ts', '--port', '5555'], {
          shell: true,
          stdio: ['ignore', 'pipe', 'pipe'],
          cwd: path.resolve(__dirname)
@@ -55,8 +55,8 @@ export default defineConfig({
    plugins: [vue(), tailwindcss(), sidecarPlugin()],
    resolve: {
       alias: {
-         '@': path.resolve(__dirname, 'src/renderer'),
-         common: path.resolve(__dirname, 'src/common'),
+         '@': path.resolve(__dirname, 'web/renderer'),
+         common: path.resolve(__dirname, 'web/common'),
          '~spectre.css': path.resolve(__dirname, 'node_modules/spectre.css'),
          '~': path.resolve(__dirname, 'node_modules'),
          buffer: 'buffer/'

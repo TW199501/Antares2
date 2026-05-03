@@ -16,7 +16,7 @@ const external = [
 
 // Build main server
 await build({
-   entryPoints: ['src/main/server.ts'],
+   entryPoints: ['web/main/server.ts'],
    bundle: true,
    platform: 'node',
    format: 'cjs',
@@ -31,7 +31,7 @@ await build({
 // require.resolve is called from sidecar/__dirname, so '../workers/' = install_dir/workers/
 for (const worker of ['exporter', 'importer']) {
    await build({
-      entryPoints: [`src/main/workers/${worker}.ts`],
+      entryPoints: [`web/main/workers/${worker}.ts`],
       bundle: true,
       platform: 'node',
       format: 'cjs',

@@ -139308,14 +139308,14 @@ var require_mssql = __commonJS({
   }
 });
 
-// src/main/server.ts
+// web/main/server.ts
 var import_cors = __toESM(require_cors());
 var import_websocket = __toESM(require_websocket2());
 var import_crypto4 = require("crypto");
 var import_fastify = __toESM(require_fastify());
 var net = __toESM(require("net"));
 
-// src/main/routes/ai.ts
+// web/main/routes/ai.ts
 async function aiRoutes(app) {
   app.post("/api/ai/translate-column", async (request) => {
     const { columnName, targetLocale } = request.body;
@@ -139339,16 +139339,16 @@ async function aiRoutes(app) {
   });
 }
 
-// src/main/routes/application.ts
+// web/main/routes/application.ts
 var fs = __toESM(require("fs"));
 
-// src/main/libs/safeError.ts
+// web/main/libs/safeError.ts
 function safeErrorMessage(err) {
   if (err instanceof Error) return err.message;
   return String(err);
 }
 
-// src/main/routes/application.ts
+// web/main/routes/application.ts
 async function applicationRoutes(app) {
   app.post("/api/app/readFile", async (request) => {
     const { filePath, encoding } = request.body;
@@ -139370,10 +139370,10 @@ async function applicationRoutes(app) {
   });
 }
 
-// src/main/routes/connection.ts
+// web/main/routes/connection.ts
 var fs7 = __toESM(require("fs"));
 
-// src/common/data-types/firebird.ts
+// web/common/data-types/firebird.ts
 var firebird_default = [
   {
     group: "integer",
@@ -139509,7 +139509,7 @@ var firebird_default = [
   }
 ];
 
-// src/common/fieldTypes.ts
+// web/common/fieldTypes.ts
 var TEXT = [
   "CHAR",
   "VARCHAR",
@@ -139584,10 +139584,10 @@ var BIT = [
   "BIT VARYING"
 ];
 
-// src/common/libs/sqlUtils.ts
+// web/common/libs/sqlUtils.ts
 var import_moment = __toESM(require_moment());
 
-// src/common/customizations/defaults.ts
+// web/common/customizations/defaults.ts
 var defaults = {
   // Defaults
   defaultPort: null,
@@ -139690,7 +139690,7 @@ var defaults = {
   systemSchemas: []
 };
 
-// src/common/customizations/firebird.ts
+// web/common/customizations/firebird.ts
 var customizations = {
   ...defaults,
   // Defaults
@@ -139751,7 +139751,7 @@ var customizations = {
   nullable: true
 };
 
-// src/common/data-types/mysql.ts
+// web/common/data-types/mysql.ts
 var mysql_default = [
   {
     group: "integer",
@@ -140063,7 +140063,7 @@ var mysql_default = [
   }
 ];
 
-// src/common/customizations/mysql.ts
+// web/common/customizations/mysql.ts
 var customizations2 = {
   ...defaults,
   // Defaults
@@ -140154,7 +140154,7 @@ var customizations2 = {
   readOnlyMode: true
 };
 
-// src/common/data-types/postgresql.ts
+// web/common/data-types/postgresql.ts
 var postgresql_default = [
   {
     group: "integer",
@@ -140449,7 +140449,7 @@ var postgresql_default = [
   }
 ];
 
-// src/common/customizations/postgresql.ts
+// web/common/customizations/postgresql.ts
 var customizations3 = {
   ...defaults,
   // Defaults
@@ -140536,7 +140536,7 @@ var customizations3 = {
   readOnlyMode: true
 };
 
-// src/common/data-types/sqlite.ts
+// web/common/data-types/sqlite.ts
 var sqlite_default = [
   {
     group: "integer",
@@ -140682,7 +140682,7 @@ var sqlite_default = [
   }
 ];
 
-// src/common/customizations/sqlite.ts
+// web/common/customizations/sqlite.ts
 var customizations4 = {
   ...defaults,
   dataTypes: sqlite_default,
@@ -140718,14 +140718,17 @@ var customizations4 = {
   triggerSettings: true,
   indexes: true,
   foreigns: true,
-  sortableFields: true,
+  // SQLite has no native column reorder via ALTER TABLE — reorder would
+  // require drop + recreate + copy data, which is destructive on big tables
+  // and breaks FK references. Hide the up/down buttons instead.
+  sortableFields: false,
   nullable: true,
   nullablePrimary: true,
   triggerSql: "BEGIN\r\n\r\nEND",
   readOnlyMode: true
 };
 
-// src/common/data-types/sqlserver.ts
+// web/common/data-types/sqlserver.ts
 var sqlserver_default = [
   {
     group: "integer",
@@ -140791,7 +140794,7 @@ var sqlserver_default = [
   }
 ];
 
-// src/common/customizations/sqlserver.ts
+// web/common/customizations/sqlserver.ts
 var customizations5 = {
   ...defaults,
   defaultPort: 1433,
@@ -140836,7 +140839,11 @@ var customizations5 = {
   functionSettings: true,
   indexes: true,
   foreigns: true,
-  sortableFields: true,
+  // SQL Server has no native column reorder via ALTER TABLE. SSMS exposes a
+  // drag-to-reorder UI, but the actual SQL is "drop + recreate + copy data"
+  // which locks the entire table and can break FK / constraint chains. Not
+  // worth exposing a button that does this silently. Hide it.
+  sortableFields: false,
   nullable: true,
   autoIncrement: true,
   comment: true,
@@ -140846,7 +140853,7 @@ var customizations5 = {
   functionSql: "T-SQL"
 };
 
-// src/common/customizations/index.ts
+// web/common/customizations/index.ts
 var customizations_default = {
   maria: customizations2,
   mysql: customizations2,
@@ -140856,7 +140863,7 @@ var customizations_default = {
   firebird: customizations
 };
 
-// src/common/libs/sqlUtils.ts
+// web/common/libs/sqlUtils.ts
 var querySplitter = (sql, dbType) => {
   const queries = [];
   let currentQuery = "";
@@ -140974,11 +140981,11 @@ var formatJsonForSqlWhere = (jsonValue, clientType) => {
   }
 };
 
-// src/main/libs/clients/FirebirdSQLClient.ts
+// web/main/libs/clients/FirebirdSQLClient.ts
 var firebird = __toESM(require("node-firebird"));
 var path = __toESM(require("path"));
 
-// src/main/libs/misc/ipcLogger.ts
+// web/main/libs/misc/ipcLogger.ts
 var ipcLogger = ({ content, cUid, level }) => {
   if (level === "error") {
     console.error(`[${cUid}] ${content}`);
@@ -140988,7 +140995,7 @@ var ipcLogger = ({ content, cUid, level }) => {
   }
 };
 
-// src/main/libs/clients/BaseClient.ts
+// web/main/libs/clients/BaseClient.ts
 var BaseClient = class {
   _client;
   _cUid;
@@ -141225,7 +141232,7 @@ var BaseClient = class {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 };
 
-// src/main/libs/clients/FirebirdSQLClient.ts
+// web/main/libs/clients/FirebirdSQLClient.ts
 var FirebirdSQLClient = class extends BaseClient {
   _schema;
   _runningConnections;
@@ -142135,7 +142142,7 @@ var FirebirdSQLClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/MySQLClient.ts
+// web/main/libs/clients/MySQLClient.ts
 var import_ssh2_promise = __toESM(require("@fabio286/ssh2-promise"));
 var mysql = __toESM(require_promise2());
 try {
@@ -143523,7 +143530,7 @@ var MySQLClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/PostgreSQLClient.ts
+// web/main/libs/clients/PostgreSQLClient.ts
 var import_ssh2_promise2 = __toESM(require("@fabio286/ssh2-promise"));
 
 // node_modules/pg/esm/index.mjs
@@ -143540,7 +143547,7 @@ var Result = import_lib.default.Result;
 var TypeOverrides = import_lib.default.TypeOverrides;
 var defaults2 = import_lib.default.defaults;
 
-// src/main/libs/clients/PostgreSQLClient.ts
+// web/main/libs/clients/PostgreSQLClient.ts
 var pgAst = __toESM(require_pgsql_ast_parser());
 function pgToString(value2) {
   return value2.toString();
@@ -144904,7 +144911,7 @@ var PostgreSQLClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/SQLiteClient.ts
+// web/main/libs/clients/SQLiteClient.ts
 var import_better_sqlite3 = __toESM(require("better-sqlite3"));
 var SQLiteClient = class extends BaseClient {
   _schema;
@@ -145463,7 +145470,7 @@ var SQLiteClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/SQLServerClient.ts
+// web/main/libs/clients/SQLServerClient.ts
 var import_ssh2_promise3 = __toESM(require("@fabio286/ssh2-promise"));
 var mssql = __toESM(require_mssql());
 var SQLServerClient = class extends BaseClient {
@@ -146707,7 +146714,7 @@ END`;
   }
 };
 
-// src/main/libs/ClientsFactory.ts
+// web/main/libs/ClientsFactory.ts
 var ClientsFactory = class {
   static getClient(args) {
     switch (args.client) {
@@ -146728,7 +146735,7 @@ var ClientsFactory = class {
   }
 };
 
-// src/main/routes/connection.ts
+// web/main/routes/connection.ts
 var connections = {};
 var isAborting = {};
 function getConnections() {
@@ -146913,7 +146920,7 @@ async function connectionRoutes(app) {
   });
 }
 
-// src/main/routes/databases.ts
+// web/main/routes/databases.ts
 async function databaseRoutes(app) {
   app.post("/api/databases/getDatabases", async (request) => {
     const connections2 = getConnections();
@@ -146937,7 +146944,7 @@ async function databaseRoutes(app) {
   });
 }
 
-// src/main/routes/functions.ts
+// web/main/routes/functions.ts
 async function functionRoutes(app) {
   app.post("/api/functions/getInformations", async (request) => {
     const params = request.body;
@@ -146995,7 +147002,7 @@ async function functionRoutes(app) {
   });
 }
 
-// src/main/routes/routines.ts
+// web/main/routes/routines.ts
 async function routineRoutes(app) {
   app.post("/api/routines/getInformations", async (request) => {
     const params = request.body;
@@ -147035,7 +147042,7 @@ async function routineRoutes(app) {
   });
 }
 
-// src/main/routes/schedulers.ts
+// web/main/routes/schedulers.ts
 async function schedulerRoutes(app) {
   app.post("/api/schedulers/getInformations", async (request) => {
     const params = request.body;
@@ -147087,7 +147094,7 @@ async function schedulerRoutes(app) {
   });
 }
 
-// src/main/routes/schema.ts
+// web/main/routes/schema.ts
 var import_worker_threads = require("worker_threads");
 async function schemaRoutes(app) {
   let exporter = null;
@@ -153174,7 +153181,7 @@ var G55 = new er({ locale: [f73, ys, Hi] });
 // node_modules/@faker-js/faker/dist/index.js
 var dt3 = { af_ZA: A60, ar: K55, az: V43, base: Hi, bn_BD: y65, cs_CZ: A63, cy: f73, da: ae11, de: gn, de_AT: v56, de_CH: E47, dv: G50, el: ue12, en: ys, en_AU: Me7, en_AU_ocker: v50, en_BORK: u55, en_CA: k52, en_GB: T46, en_GH: x54, en_HK: F40, en_IE: g55, en_IN: D58, en_NG: O37, en_US: b43, en_ZA: L41, eo: X22, es: We5, es_MX: oa11, fa: ve8, fi: y47, fr: Oi, fr_BE: K34, fr_CA: D39, fr_CH: q28, fr_LU: L38, fr_SN: B39, he: tt3, hr: Z28, hu: la8, hy: j27, id_ID: ga5, it: q23, ja: Se4, ka_GE: J28, ko: V27, ku_ckb: x33, ku_kmr_latin: u21, lv: W12, mk: K20, nb_NO: re6, ne: j22, nl: Ca4, nl_BE: G23, pl: ka3, pt_BR: na4, pt_PT: X9, ro: ri, ro_MD: _16, ru: fe5, sk: I17, sl_SI: z19, sr_RS_latin: V15, sv: $3, ta_IN: n7, th: q6, tr: x8, uk: K8, ur: ce4, uz_UZ_latin: Z8, vi: X7, yo_NG: m2, zh_CN: Ca2, zh_TW: v7, zu_ZA: x5 };
 
-// src/common/libs/fakerCustom.ts
+// web/common/libs/fakerCustom.ts
 var import_moment2 = __toESM(require_moment());
 var fakerByLocale = /* @__PURE__ */ new Map();
 var active = f67;
@@ -153220,7 +153227,7 @@ var fakerCustom = new Proxy({}, {
   has: (_target, key) => key in _custom
 });
 
-// src/main/routes/tables.ts
+// web/main/routes/tables.ts
 var fs8 = __toESM(require("fs"));
 var import_moment3 = __toESM(require_moment());
 var path3 = __toESM(require("path"));
@@ -153671,7 +153678,7 @@ async function tableRoutes(app) {
   });
 }
 
-// src/main/routes/triggers.ts
+// web/main/routes/triggers.ts
 async function triggerRoutes(app) {
   app.post("/api/triggers/getInformations", async (request) => {
     const params = request.body;
@@ -153723,7 +153730,7 @@ async function triggerRoutes(app) {
   });
 }
 
-// src/main/routes/users.ts
+// web/main/routes/users.ts
 async function userRoutes(app) {
   app.post("/api/users/getUsers", async (request) => {
     const connections2 = getConnections();
@@ -153739,7 +153746,7 @@ async function userRoutes(app) {
   });
 }
 
-// src/main/routes/views.ts
+// web/main/routes/views.ts
 async function viewRoutes(app) {
   app.post("/api/views/getInformations", async (request) => {
     const params = request.body;
@@ -153815,7 +153822,7 @@ async function viewRoutes(app) {
   });
 }
 
-// src/main/server.ts
+// web/main/server.ts
 var DEV_MODE = process.argv.includes("--port");
 var SIDECAR_TOKEN = DEV_MODE ? "" : (0, import_crypto4.randomBytes)(32).toString("hex");
 var findFreePort = () => {

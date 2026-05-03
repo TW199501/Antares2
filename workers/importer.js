@@ -100044,10 +100044,10 @@ var require_mssql = __commonJS({
   }
 });
 
-// src/main/workers/importer.ts
+// web/main/workers/importer.ts
 var import_worker_threads = require("worker_threads");
 
-// src/common/data-types/firebird.ts
+// web/common/data-types/firebird.ts
 var firebird_default = [
   {
     group: "integer",
@@ -100183,7 +100183,7 @@ var firebird_default = [
   }
 ];
 
-// src/common/fieldTypes.ts
+// web/common/fieldTypes.ts
 var NUMBER = [
   "INT",
   "TINYINT",
@@ -100218,10 +100218,10 @@ var DATETIME = [
   "TIMESTAMP WITH TIME ZONE"
 ];
 
-// src/common/libs/sqlUtils.ts
+// web/common/libs/sqlUtils.ts
 var import_moment = __toESM(require_moment());
 
-// src/common/customizations/defaults.ts
+// web/common/customizations/defaults.ts
 var defaults = {
   // Defaults
   defaultPort: null,
@@ -100324,7 +100324,7 @@ var defaults = {
   systemSchemas: []
 };
 
-// src/common/customizations/firebird.ts
+// web/common/customizations/firebird.ts
 var customizations = {
   ...defaults,
   // Defaults
@@ -100385,7 +100385,7 @@ var customizations = {
   nullable: true
 };
 
-// src/common/data-types/mysql.ts
+// web/common/data-types/mysql.ts
 var mysql_default = [
   {
     group: "integer",
@@ -100697,7 +100697,7 @@ var mysql_default = [
   }
 ];
 
-// src/common/customizations/mysql.ts
+// web/common/customizations/mysql.ts
 var customizations2 = {
   ...defaults,
   // Defaults
@@ -100788,7 +100788,7 @@ var customizations2 = {
   readOnlyMode: true
 };
 
-// src/common/data-types/postgresql.ts
+// web/common/data-types/postgresql.ts
 var postgresql_default = [
   {
     group: "integer",
@@ -101083,7 +101083,7 @@ var postgresql_default = [
   }
 ];
 
-// src/common/customizations/postgresql.ts
+// web/common/customizations/postgresql.ts
 var customizations3 = {
   ...defaults,
   // Defaults
@@ -101170,7 +101170,7 @@ var customizations3 = {
   readOnlyMode: true
 };
 
-// src/common/data-types/sqlite.ts
+// web/common/data-types/sqlite.ts
 var sqlite_default = [
   {
     group: "integer",
@@ -101316,7 +101316,7 @@ var sqlite_default = [
   }
 ];
 
-// src/common/customizations/sqlite.ts
+// web/common/customizations/sqlite.ts
 var customizations4 = {
   ...defaults,
   dataTypes: sqlite_default,
@@ -101352,14 +101352,17 @@ var customizations4 = {
   triggerSettings: true,
   indexes: true,
   foreigns: true,
-  sortableFields: true,
+  // SQLite has no native column reorder via ALTER TABLE — reorder would
+  // require drop + recreate + copy data, which is destructive on big tables
+  // and breaks FK references. Hide the up/down buttons instead.
+  sortableFields: false,
   nullable: true,
   nullablePrimary: true,
   triggerSql: "BEGIN\r\n\r\nEND",
   readOnlyMode: true
 };
 
-// src/common/data-types/sqlserver.ts
+// web/common/data-types/sqlserver.ts
 var sqlserver_default = [
   {
     group: "integer",
@@ -101425,7 +101428,7 @@ var sqlserver_default = [
   }
 ];
 
-// src/common/customizations/sqlserver.ts
+// web/common/customizations/sqlserver.ts
 var customizations5 = {
   ...defaults,
   defaultPort: 1433,
@@ -101470,7 +101473,11 @@ var customizations5 = {
   functionSettings: true,
   indexes: true,
   foreigns: true,
-  sortableFields: true,
+  // SQL Server has no native column reorder via ALTER TABLE. SSMS exposes a
+  // drag-to-reorder UI, but the actual SQL is "drop + recreate + copy data"
+  // which locks the entire table and can break FK / constraint chains. Not
+  // worth exposing a button that does this silently. Hide it.
+  sortableFields: false,
   nullable: true,
   autoIncrement: true,
   comment: true,
@@ -101480,7 +101487,7 @@ var customizations5 = {
   functionSql: "T-SQL"
 };
 
-// src/common/libs/sqlUtils.ts
+// web/common/libs/sqlUtils.ts
 var querySplitter = (sql, dbType) => {
   const queries = [];
   let currentQuery = "";
@@ -101574,11 +101581,11 @@ var removeComments = (sql) => {
   return result;
 };
 
-// src/main/libs/clients/FirebirdSQLClient.ts
+// web/main/libs/clients/FirebirdSQLClient.ts
 var firebird = __toESM(require("node-firebird"));
 var path = __toESM(require("path"));
 
-// src/main/libs/misc/ipcLogger.ts
+// web/main/libs/misc/ipcLogger.ts
 var ipcLogger = ({ content, cUid, level }) => {
   if (level === "error") {
     console.error(`[${cUid}] ${content}`);
@@ -101588,7 +101595,7 @@ var ipcLogger = ({ content, cUid, level }) => {
   }
 };
 
-// src/main/libs/clients/BaseClient.ts
+// web/main/libs/clients/BaseClient.ts
 var BaseClient = class {
   _client;
   _cUid;
@@ -101825,7 +101832,7 @@ var BaseClient = class {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 };
 
-// src/main/libs/clients/FirebirdSQLClient.ts
+// web/main/libs/clients/FirebirdSQLClient.ts
 var FirebirdSQLClient = class extends BaseClient {
   _schema;
   _runningConnections;
@@ -102735,7 +102742,7 @@ var FirebirdSQLClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/MySQLClient.ts
+// web/main/libs/clients/MySQLClient.ts
 var import_ssh2_promise = __toESM(require("@fabio286/ssh2-promise"));
 var mysql = __toESM(require_promise());
 try {
@@ -104123,7 +104130,7 @@ var MySQLClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/PostgreSQLClient.ts
+// web/main/libs/clients/PostgreSQLClient.ts
 var import_ssh2_promise2 = __toESM(require("@fabio286/ssh2-promise"));
 
 // node_modules/pg/esm/index.mjs
@@ -104140,7 +104147,7 @@ var Result = import_lib.default.Result;
 var TypeOverrides = import_lib.default.TypeOverrides;
 var defaults2 = import_lib.default.defaults;
 
-// src/main/libs/clients/PostgreSQLClient.ts
+// web/main/libs/clients/PostgreSQLClient.ts
 var pgAst = __toESM(require_pgsql_ast_parser());
 function pgToString(value2) {
   return value2.toString();
@@ -105504,7 +105511,7 @@ var PostgreSQLClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/SQLiteClient.ts
+// web/main/libs/clients/SQLiteClient.ts
 var import_better_sqlite3 = __toESM(require("better-sqlite3"));
 var SQLiteClient = class extends BaseClient {
   _schema;
@@ -106063,7 +106070,7 @@ var SQLiteClient = class extends BaseClient {
   }
 };
 
-// src/main/libs/clients/SQLServerClient.ts
+// web/main/libs/clients/SQLServerClient.ts
 var import_ssh2_promise3 = __toESM(require("@fabio286/ssh2-promise"));
 var mssql = __toESM(require_mssql());
 var SQLServerClient = class extends BaseClient {
@@ -107307,7 +107314,7 @@ END`;
   }
 };
 
-// src/main/libs/ClientsFactory.ts
+// web/main/libs/ClientsFactory.ts
 var ClientsFactory = class {
   static getClient(args) {
     switch (args.client) {
@@ -107328,10 +107335,10 @@ var ClientsFactory = class {
   }
 };
 
-// src/main/libs/importers/sql/MSSQLImporter.ts
+// web/main/libs/importers/sql/MSSQLImporter.ts
 var fs7 = __toESM(require("fs/promises"));
 
-// src/main/libs/importers/BaseImporter.ts
+// web/main/libs/importers/BaseImporter.ts
 var import_node_events = require("node:events");
 var fs6 = __toESM(require("fs"));
 var BaseImporter = class extends import_node_events.EventEmitter {
@@ -107381,7 +107388,7 @@ var BaseImporter = class extends import_node_events.EventEmitter {
   }
 };
 
-// src/main/libs/importers/sql/MSSQLImporter.ts
+// web/main/libs/importers/sql/MSSQLImporter.ts
 var MSSQLImporter = class extends BaseImporter {
   _client;
   constructor(client, options) {
@@ -107467,10 +107474,10 @@ var MSSQLImporter = class extends BaseImporter {
   }
 };
 
-// src/main/libs/importers/sql/MySQLlImporter.ts
+// web/main/libs/importers/sql/MySQLlImporter.ts
 var fs8 = __toESM(require("fs/promises"));
 
-// src/main/libs/parsers/MySQLParser.ts
+// web/main/libs/parsers/MySQLParser.ts
 var import_stream = require("stream");
 var MySQLParser = class extends import_stream.Transform {
   _buffer;
@@ -107556,7 +107563,7 @@ var MySQLParser = class extends import_stream.Transform {
   }
 };
 
-// src/main/libs/importers/sql/MySQLlImporter.ts
+// web/main/libs/importers/sql/MySQLlImporter.ts
 var MySQLImporter = class extends BaseImporter {
   _client;
   constructor(client, options) {
@@ -107620,10 +107627,10 @@ var MySQLImporter = class extends BaseImporter {
   }
 };
 
-// src/main/libs/importers/sql/PostgreSQLImporter.ts
+// web/main/libs/importers/sql/PostgreSQLImporter.ts
 var fs9 = __toESM(require("fs/promises"));
 
-// src/main/libs/parsers/PostgreSQLParser.ts
+// web/main/libs/parsers/PostgreSQLParser.ts
 var import_stream2 = require("stream");
 var PostgreSQLParser = class extends import_stream2.Transform {
   _buffer;
@@ -107754,7 +107761,7 @@ var PostgreSQLParser = class extends import_stream2.Transform {
   }
 };
 
-// src/main/libs/importers/sql/PostgreSQLImporter.ts
+// web/main/libs/importers/sql/PostgreSQLImporter.ts
 var PostgreSQLImporter = class extends BaseImporter {
   _client;
   constructor(client, options) {
@@ -107818,7 +107825,7 @@ var PostgreSQLImporter = class extends BaseImporter {
   }
 };
 
-// src/main/workers/importer.ts
+// web/main/workers/importer.ts
 var importer = null;
 var cleanupClient = null;
 var cleanup = async () => {
