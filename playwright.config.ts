@@ -5,7 +5,11 @@ const config: PlaywrightTestConfig = {
    outputDir: './e2e-results/artifacts',
 
    use: {
-      baseURL: 'http://127.0.0.1:5555',
+      // 5173 = vite dev server (renderer HTML/JS). The sidecar API at 5555
+      // is hit by the renderer itself via httpClient, not by Playwright.
+      // Pre-existing mssql specs override via VITE_URL env var; T15 specs
+      // use page.goto('/') so they need the correct baseURL here.
+      baseURL: process.env.VITE_URL || 'http://127.0.0.1:5173',
       viewport: { width: 1920, height: 1200 },
       actionTimeout: 30_000,
       navigationTimeout: 30_000,
