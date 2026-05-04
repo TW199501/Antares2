@@ -3,20 +3,20 @@
       <div class="workspace-query-runner flex w-full flex-col">
          <div class="workspace-query-runner-footer !h-[39px] !py-[3px] !px-[10px] !text-sm">
             <div class="workspace-query-buttons flex items-center gap-2">
-               <!-- 資料 / 屬性 切換 — mode switch uses accent (NOT primary) to
-                    visually separate "mode toggle" from "primary action buttons" -->
+               <!-- 資料 / 屬性 切換 — active uses brand orange via --primary
+                    token (see docs/ui-spec.md "Active tabs" rule) -->
                <Tabs v-model="viewMode">
                   <TabsList class="h-[32px] gap-0 p-0">
                      <TabsTrigger
                         value="data"
-                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-none"
+                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiTable" :size="14" />
                         {{ t('general.data') }}
                      </TabsTrigger>
                      <TabsTrigger
                         value="props"
-                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-none"
+                        class="h-[32px] gap-1 px-3 py-0 !text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
                      >
                         <BaseIcon icon-name="mdiWrenchCog" :size="14" />
                         {{ t('general.properties') }}
@@ -24,14 +24,14 @@
                   </TabsList>
                </Tabs>
                <!-- Column header 英文名 / 中文 comment 切換 (僅 data 模式有效)
-                    — also a mode toggle, uses accent on active for consistency -->
+                    — visual language aligned with the data/props TabsTrigger -->
                <button
                   v-show="viewMode === 'data'"
                   type="button"
                   :class="[
                      'flex h-[32px] w-[32px] items-center justify-center rounded-md !text-sm font-semibold transition-colors',
                      useCommentHeader
-                        ? 'border border-sky-500 bg-sky-500 text-white'
+                        ? 'border border-primary bg-primary text-primary-foreground'
                         : 'border border-border bg-background text-muted-foreground hover:border-ring/60 hover:text-foreground'
                   ]"
                   :title="useCommentHeader ? t('database.showColumnNames') : t('database.showColumnComments')"

@@ -1,4 +1,4 @@
-# Antares2 前端單元測試導入計畫 v2 — 剩餘工作（PR3-PR7）
+寶貝# Antares2 前端單元測試導入計畫 v2 — 剩餘工作（PR3-PR7）
 
 > **承前**：[原 plan v1](./2026-05-03-frontend-unit-test-rollout.md) 已執行至 PR2 完成。本 v2 僅涵蓋**剩餘的 PR3-PR7**，把 v1 執行過程踩過的雷固化進來。
 

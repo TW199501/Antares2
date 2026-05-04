@@ -1,4 +1,4 @@
-# .NET 10 + Furion + SqlSugar 後端遷移：可執行計畫（15 Phase 版 + MCP 整合）
+# .NET 10 + Furion + SqlSugar 後端遷移：可執行計畫（v4 — Admin.NET fork 戰略）
 
 > **配套既有文件**:
 > - `docs/superpowers/plans/2026-05-03-net-sqlsugar-migration.md` — 7-phase roadmap（概念層）
@@ -78,6 +78,71 @@
 - ❌ Firebird、✅ .NET 10 LTS、✅ Furion 10、✅ SqlSugar 5
 - ✅ 沿用 `{ status, response }` envelope + 5555 + `X-Sidecar-Token`，**renderer 0 修改**
 - ✅ Workers C# rewrite、Node 僅留前端 build
+- ✅ **Admin.NET fork 戰略 path A++**（self-grant 路徑）— 詳見下節
+- ✅ **antares2 工具維持開源 MIT**（rename 評估中、命名保持中性）
+
+### Admin.NET Fork 戰略（path A++ — self-grant）
+
+#### 為什麼可行
+antares2 跟 Admin.NET（`E:/source/platfrom-admin/`）的 copyright 都歸屬於使用者本人 / ELF International Express CO., LTD.（同一持有者）。經內部授權即可把 Admin.NET 程式碼直接搬入 antares2 並維持 MIT 公開。**不需要外部協商**。
+
+#### 執行方式（一次性，Phase 0 完成）
+在 antares2 root 建立 `LICENSE-ELF-GRANT.md`：
+```markdown
+# ELF Copyright Grant for antares2
+
+ELF International Express CO., LTD., as the sole copyright holder of
+Admin.NET (proprietary, copyright © 2024-2026), hereby grants the
+antares2 project a perpetual, royalty-free, worldwide license to
+incorporate, modify, and redistribute any portion of the Admin.NET
+codebase under the antares2 project's applicable MIT license terms.
+
+Granted: 2026-05-03
+Authorized signatory: tw199501@elf.tw
+```
+之後 `LICENSE`（MIT）保留 Fabio 原作者 copyright（管 antares-sql 上游殘留部分）。Forked 進來的檔案頭部加單行註釋：
+```csharp
+// Adapted from Admin.NET (ELF, proprietary), relicensed to MIT for antares2
+// per LICENSE-ELF-GRANT.md
+```
+
+#### Fork 範圍（從 Admin.NET 直接搬，不改寫）
+| 來源 | LOC | 用在 phase | 改動量 |
+|------|-----|-----------|-------|
+| `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs` | 1282 | Phase 6, 7, 8, 9, 10 | ~30%（移除 SysTenant 多租戶邏輯，改 stateless per-request 模型） |
+| `Admin.NET.Core/Service/APIJSON/SelectTable.cs` | 974 | Phase 9（getTableData 動態 WHERE） | ~50%（移除 IdentityService 權限檢查、保留 ProcessWhere/ProcessOrder/ProcessGroup） |
+| `Admin.NET.Core/Service/APIJSON/TableMapper.cs` | 28 | Phase 9 | ~0%（直接搬） |
+| `Admin.NET.Core/SqlSugar/SqlSugarSetup.cs:67-113`（`SetDbConfig`） | ~50 | Phase 5 | ~20%（拿掉 ConfigId / SysTenant lookup，改 per-request build） |
+| `Admin.NET.Core/Service/DataBase/Dto/*.cs` | ~150 | Phase 5-10 | ~10%（命名對齊、移除 Tenant 屬性） |
+
+**估省 6-11 天**（中位 8 天）。實際下修工期 56 天 → **48-50 天**。
+
+#### 不 fork 的部分
+- `SysCodeGenService.cs` — 不同 paradigm（template-driven code 產生），用不到
+- `IdentityService` / 權限模型 — antares2 是 stateless 桌面工具，不需要登入
+- 多租戶基礎設施（`AsTenant().GetConnectionScope()`）— antares2 是「每個 HTTP 請求附帶連線參數」模型
+
+### 直接上游通道（人脈 fallback）
+
+使用者跟 **Furion + SqlSugar 作者有直接關係**，這是比 MCP 知識源更高一層的 escalation channel：
+
+| 風險項 | 原預設 fallback | 新 fallback |
+|-------|---------------|-----------|
+| R2（Renci.SshNet cipher 缺現代演算法） | 自行 fallback 到外部 ssh CLI | 先問 SSH.NET 是否計劃補；不行再退 |
+| R4（SqlSugar SQLite DbMaintenance NotSupported） | per-call try-catch + raw SQL | 直接問 SqlSugar 作者要 patch 或 PR |
+| R6（Furion result filter 跟 ProblemDetails 衝突） | 設 `Order = int.MinValue` 蓋過去 | 問 Furion 作者該 phase 的正確設計 |
+| R10（openapi-typescript 對 Furion polymorphicSchema 支援） | 退路 nswag | 問 Furion 作者建議的 codegen 工具 |
+
+對應 R2 / R4 / R6 / R10 的嚴重度從「中」全部下調為「低」。
+
+### Rename 中性原則（rename 評估中）
+工具名 antares2 將來可能改名，所以新建命名一律保持品牌中性：
+- 後端目錄 `server/`（已套用、不要 `antares-server/` 或 `src-antares/`）
+- C# class 名 `SidecarServer`、`ConnectionService`、`SchemaService`（不要 `Antares*` 前綴）
+- C# namespace 用 `Server`、`Server.Connections` 等通用名（不要 `Antares.Server`）
+- csproj 名 `Server.csproj`（從 `Antares.Server.csproj` 改）
+
+實際 rename 發生時，搜尋取代範圍最小。Tauri identifier `com.tw199501.antares2` 跟 Cargo crate `antares2` 暫不動（rename 評估完才動，影響使用者 AppData 路徑）。
 
 ### 從 Admin.NET 採用的 5 個關鍵慣例（**這版新增**）
 | Admin.NET 慣例 | antares2 採用 | 影響 phase |
@@ -119,49 +184,53 @@ Vue renderer  <─────────────────────
 
 ## Phase 總覽
 
-| # | 主題 | 工期 | LOC delta | 風險 | 驗證 gate |
-|---|-----|------|-----------|------|----------|
-| 0 | 環境 + decision freeze | 1d | 0 | — | `dotnet --list-sdks` |
-| 1 | Furion scaffold + `Configuration/` 慣例 | 2d | +500 | 低 | `/health` 回 200 |
-| 2 | IUnifyResultProvider + token middleware + READY hook | 2d | +400 | 中（R7） | curl 帶 token vs 不帶 token 各跑一次 |
-| 3 | **Swagger codegen pipeline**（消滅 R9） | 1d | +200 | 低 | 跑 codegen → diff `src/common/api-generated/` |
-| 4 | Tauri sidecar binary swap | 2d | -100 | 中（R3） | `pnpm tauri:dev` 起得來 |
-| 5 | Connection routes (5 endpoints) + SSH tunnel | 1w | +800 | 中（R2） | 4 種 DB 都連得起來 |
-| 6 | Schema discovery（list 類） | 4d | +400 | 低 | sidebar 物件樹完整 |
-| 7 | Schema metadata（collations/engines/variables/getStructure） | 3d | +300 | 低 | 各 DB 屬性面板正常 |
-| 8 | Schema DDL（create/update/delete schema） | 2d | +200 | 中 | 建 schema → drop 流程通 |
-| 9 | Tables — read endpoints（columns/data/indexes/keys/ddl…）| 1w | +900 | 高 | 4 DB 全 e2e |
-| 10 | Tables — DDL + cascade FK resolver（**最高 ROI**） | 4d | +500 | 高 | drop column with cascade 通 |
-| 11 | Views + Triggers + Routines + Functions + Schedulers | 1w | +1000 | 中 | 各物件 CRUD 通 |
-| 12 | Databases + Users + Application + AI（小尾巴） | 2d | +200 | 低 | 各小 endpoint 通 |
-| 13 | Export task service + WS 進度推送 | 4d | +600 | 高（R5） | 1MB / 100MB / 1GB 表 dump |
-| 14 | Import task service + cancel + AI translate-column | 3d | +400 | 高 | replay + 中途 cancel |
-| 15 | Node 清理 + CI swap + 最終驗收 | 3-5d | -10K | 低 | 4 平台 build + 安裝包縮 30%+ |
+> **Fork 註記**：✓ 表示該 phase 主要是 fork Admin.NET 程式碼 + 改寫；其餘 phase 是 antares2 專屬、無對應可 fork。
 
-**累計**：56 天 ≈ 8 週 full-time（與 roadmap 6-9 週估值吻合）
+| # | 主題 | 工期 | LOC delta | 風險 | Fork? | 驗證 gate |
+|---|-----|------|-----------|------|------|----------|
+| 0 | 環境 + decision freeze + `LICENSE-ELF-GRANT.md` | 1d | 0 | — | — | `dotnet --list-sdks` + grant 檔 commit |
+| 1 | Furion scaffold + `Configuration/` 慣例 | 2d | +500 | 低 | — | `/health` 回 200 |
+| 2 | IUnifyResultProvider + token middleware + READY hook | 2d | +400 | 中（R7） | — | curl 帶 token vs 不帶 token 各跑一次 |
+| 3 | **Swagger codegen pipeline**（消滅 R9） | 1d | +200 | 低 | — | 跑 codegen → diff `src/common/api-generated/` |
+| 4 | Tauri sidecar binary swap | 2d | -100 | 中（R3） | — | `pnpm tauri:dev` 起得來 |
+| 5 | Connection routes (5 endpoints) + SSH tunnel | **5d**（-2d） | +600 | **低**（R2 下調） | ✓ `SetDbConfig` | 4 種 DB 都連得起來 |
+| 6 | Schema discovery（list 類） | **3d**（-1d） | +250 | 低 | ✓ `SysDatabaseService.GetTableList/ColumnList` | sidebar 物件樹完整 |
+| 7 | Schema metadata（collations/engines/variables/getStructure） | 3d | +300 | 低 | 部分 ✓ | 各 DB 屬性面板正常 |
+| 8 | Schema DDL（create/update/delete schema） | **1d**（-1d） | +150 | 中 | ✓ `AddColumn/DeleteColumn/UpdateColumn` | 建 schema → drop 流程通 |
+| 9 | Tables — read endpoints（columns/data/indexes/keys/ddl…）| **5d**（-2d） | +650 | 中（fork 後降一級） | ✓ `QuerySelect` + `APIJSON.SelectTable` | 4 DB 全 e2e |
+| 10 | Tables — DDL + cascade FK resolver（**最高 ROI**） | **3d**（-1d） | +400 | 高 | ✓ `ExportTableSchema` patterns | drop column with cascade 通 |
+| 11 | Views + Triggers + Routines + Functions + Schedulers | 1w | +1000 | 中 | — | 各物件 CRUD 通 |
+| 12 | Databases + Users + Application + AI（小尾巴） | 2d | +200 | 低 | — | 各小 endpoint 通 |
+| 13 | Export task service + WS 進度推送 | 4d | +600 | 高（R5） | — | 1MB / 100MB / 1GB 表 dump |
+| 14 | Import task service + cancel + AI translate-column | 3d | +400 | 高 | — | replay + 中途 cancel |
+| 15 | Node 清理 + CI swap + 最終驗收 | 3-5d | -10K | 低 | — | 4 平台 build + 安裝包縮 30%+ |
+
+**累計**：**48 天 ≈ 7 週 full-time**（從 v3 的 56 天下修 8 天，主要因 Phase 5/6/8/9/10 從 Admin.NET fork）
 
 ---
 
-## Phase 0 — 環境 + decision freeze（1 天）
+## Phase 0 — 環境 + decision freeze + 法律對齊（1 天）
 
 ### Deliverables
 - 工作機 .NET 10 SDK 確認
 - **在 antares2 `.claude/settings.json` 掛 `admin-net` MCP server**（見上方「知識源整合」段）
-- 在 repo 根目錄建立空 `src-net/`（佔位）
-- 把這份 plan v3 commit 進去
+- 在 repo 根目錄建立空 `server/`（佔位）
+- **新增 `LICENSE-ELF-GRANT.md`**（self-grant 文件，見 Admin.NET Fork 戰略段）
+- 把這份 plan v4 commit 進去
 - 跟 roadmap + inventory 交叉檢核衝突項
 - commit `mcp-version-pin.txt` 記錄當下 `@elf-express/admin-net-mcp` npm version（R11 緩解）
 
 ### 動到的檔案
 - 修改：`docs/superpowers/plans/2026-05-03-net-sqlsugar-execution-plan.md`（這份）
-- 新增：`src-net/.gitkeep`
+- 新增：`server/.gitkeep`
+- 新增：**`LICENSE-ELF-GRANT.md`**（ELF → antares2 內部授權證明）
 - 修改：`.claude/settings.json`（加 mcpServers）
 - 新增：`mcp-version-pin.txt`（紀錄 MCP server npm version）
 
 ### Verification gate
 ```bash
 dotnet --list-sdks | grep -E '^10\.'
-ls src-net/
+ls server/
 # Claude Code 內 /mcp 應該看到 admin-net  ✓ connected  12 tools
 # Claude 執行：list_topics → 應回 8 主題；list_furion_docs → 應回 25+ 檔
 ```
@@ -171,7 +240,7 @@ ls src-net/
 ## Phase 1 — Furion scaffold + Configuration 慣例（2 天）
 
 ### Deliverables
-1. `src-net/Antares.Server.csproj` — Furion 10 + SqlSugar 5 + Renci.SshNet
+1. `server/Antares.Server.csproj` — Furion 10 + SqlSugar 5 + Renci.SshNet
 2. `Program.cs`（Furion `Serve.Run` 風格）
 3. `Startup.cs`（services + middleware pipeline）
 4. `Configuration/` 子資料夾自動 scan
@@ -179,7 +248,7 @@ ls src-net/
 
 ### 新增檔案
 ```
-src-net/
+server/
 ├── Antares.Server.csproj
 ├── Program.cs                          # Serve.Run(...) 入口
 ├── Startup.cs                          # IWebComponent.Load
@@ -212,7 +281,7 @@ public class HealthService : IDynamicApiController, ITransient
 
 ### Verification gate
 ```bash
-dotnet run --project src-net/Antares.Server.csproj &
+dotnet run --project server/Antares.Server.csproj &
 curl -X POST http://127.0.0.1:5555/api/health -d '{}'
 # 期待：{ "status": "success", "response": { "ok": true, "version": "..." } }
 # （envelope 在 Phase 2 才上，這裡先 raw）
@@ -230,7 +299,7 @@ curl -X POST http://127.0.0.1:5555/api/health -d '{}'
 
 ### 新增檔案
 ```
-src-net/Infrastructure/
+server/Infrastructure/
 ├── SidecarResultProvider.cs          # IUnifyResultProvider
 ├── SidecarResultModel.cs             # { status, response } DTO
 ├── SidecarTokenMiddleware.cs         # X-Sidecar-Token middleware
@@ -276,7 +345,7 @@ services.AddInjectWithUnifyResult<SidecarResultProvider>();
 ### Verification gate
 ```bash
 # 1) 帶 token：成功包封
-TOKEN=$(grep -oP 'READY:\d+:\K[a-f0-9]+' < <(dotnet run --project src-net/Antares.Server.csproj &))
+TOKEN=$(grep -oP 'READY:\d+:\K[a-f0-9]+' < <(dotnet run --project server/Antares.Server.csproj &))
 curl -X POST http://127.0.0.1:5555/api/health -H "X-Sidecar-Token: $TOKEN" -d '{}' | jq .
 # 預期：{"status":"success","response":{"ok":true,...}}
 
@@ -297,7 +366,7 @@ wscat -c "ws://127.0.0.1:5555/ws/export"
 原 plan 的 R9「沒有 API schema、type 易 drift」風險。Admin.NET 的解法是 **Swagger codegen → 自動產 TypeScript axios client + models**。我們 antares2 雖然不全套（不換 httpClient.ts），但可以**用 codegen 產 type definition** 取代手寫 `src/common/interfaces/`。
 
 ### Deliverables
-1. `src-net/` Swagger 啟用（dev mode 才掛 `app.UseSwaggerUI()`）
+1. `server/` Swagger 啟用（dev mode 才掛 `app.UseSwaggerUI()`）
 2. `scripts/codegen-api-types.mjs` — 用 `openapi-typescript` 把 swagger.json 編譯成純 TypeScript type
 3. `src/common/api-generated/` 自動產出（gitignored，CI 跑前先 generate）
 4. 至少一個 controller（`HealthService`）的 type 從 codegen 流程出來，驗證 pipeline
@@ -359,7 +428,7 @@ pnpm type-check  # generated type 不能讓 type-check 變紅
    darwin + x64 → osx-x64
    linux → linux-x64
 2. 用 Node 的 spawn (execFile 安全版) 執行：
-   dotnet publish src-net/Antares.Server.csproj
+   dotnet publish server/Antares.Server.csproj
      -c Release -r <RID> --self-contained
      -p:PublishSingleFile=true
      -o sidecar/
@@ -392,15 +461,15 @@ pnpm tauri:dev                   # 整個 app 起得來、connection panel 載�
 | `/api/connection/disconnect` | 同上 | `ConnectionService.Disconnect` |
 
 ### Deliverables
-1. **`ConnectionService : IDynamicApiController`** — 5 個 action
-2. **`ISqlSugarClient` factory** — 從 renderer 送來的 params 動態 build `ConnectionConfig`
-3. **`ConnectionRegistry`** — `ConcurrentDictionary<sessionId, ISqlSugarClient>` cache + idle timeout sweep
+1. **`ConnectionService : IDynamicApiController`** — 5 個 action（namespace `Server.Connections`，class 名不帶 Antares）
+2. **`ISqlSugarClient` factory** — **fork** `Admin.NET.Core/SqlSugar/SqlSugarSetup.cs:67-113` 的 `SetDbConfig` pattern；改寫 ~20%：拿掉 ConfigId / SysTenant lookup，改 per-request build from renderer params
+3. **`ConnectionRegistry`** — `ConcurrentDictionary<sessionId, ISqlSugarClient>` cache + idle timeout sweep（自寫，Admin.NET 是預設配置 pool 模型，跟我們不同）
 4. **`SshTunnelService`** — `Renci.SshNet` local port forward
 5. **SSL 設定**：MySQL/PG/MSSQL 的 connection string SSL options
 
 ### 新增檔案
 ```
-src-net/
+server/
 ├── Connections/
 │   ├── ConnectionService.cs            # 5 actions
 │   ├── ConnectionRegistry.cs           # 連線快取
@@ -455,7 +524,7 @@ public class ConnectionService(ConnectionRegistry registry, SshTunnelService ssh
 
 ---
 
-## Phase 6 — Schema Discovery（List 類，4 天）
+## Phase 6 — Schema Discovery（List 類，3 天，**fork ✓**）
 
 ### 對齊 endpoints
 - `/api/databases/getDatabases`
@@ -463,16 +532,23 @@ public class ConnectionService(ConnectionRegistry registry, SshTunnelService ssh
 - `/api/{tables,views,triggers,routines,functions,schedulers}/getInformations` 系列
 
 ### Deliverables
-- 各物件 list 用 SqlSugar `DbMaintenance.GetTableInfoList()` / `GetViewInfoList()` / 等
+- **fork** `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs:471` (`GetTableList`) → `SchemaService.GetTables()`
+- **fork** `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs:214` (`GetColumnList`) → `SchemaService.GetColumns()`
+- 改寫 ~30%：拿掉 `configId` 參數（改用 per-request `ISqlSugarClient`）、移除 SysTenant 查詢、保留 `db.DbMaintenance.GetTableInfoList(false)` / `GetColumnInfosByTableName(tableName)` 核心邏輯
 - 不在 SqlSugar 抽象內的（schedulers、routines metadata）→ raw SQL fallback per-DB
 
 ### 新增檔案
 ```
-src-net/Schemas/
-├── DatabaseDiscoveryService.cs        # 物件列表 — IDynamicApiController
+server/Schemas/
+├── SchemaService.cs                   # fork: SysDatabaseService 的 list 部分
 ├── ObjectListProvider.cs              # SqlSugar DbMaintenance + per-DB fallback
 └── SchemaTreeBuilder.cs               # sidebar tree shape 對齊 renderer 期望
 ```
+
+### Fork 標記
+**保留**：`db.DbMaintenance.GetTableInfoList()` / `GetViewInfoList()` 等核心查詢、entity attribute 過濾邏輯
+**移除**：SysTenant lookup、ConfigId 參數、權限檢查
+**改名**：`SysDatabaseService` → `SchemaService`（去 Sys 前綴）
 
 ### Verification gate
 - 4 DB 載入 sidebar：tables / views / triggers / routines / functions / schedulers 數量正確
@@ -494,7 +570,7 @@ src-net/Schemas/
 
 ### 新增檔案
 ```
-src-net/Schemas/
+server/Schemas/
 ├── SchemaMetadataService.cs
 ├── CollationProvider/
 │   ├── MySqlCollations.cs
@@ -511,7 +587,7 @@ src-net/Schemas/
 
 ---
 
-## Phase 8 — Schema DDL（2 天）
+## Phase 8 — Schema DDL（1 天，**fork ✓**）
 
 ### 對齊 endpoints
 - `/api/schema/createSchema`
@@ -519,7 +595,9 @@ src-net/Schemas/
 - `/api/schema/deleteSchema`
 
 ### Deliverables
-- 用 `DbMaintenance.CreateDatabase()` / `DropDatabase()` 為主、跨 DB 文法差異用 `IDdlGenerator` 介面 + per-DB 實作
+- **fork** `SysDatabaseService` 的 `AddColumn` / `DeleteColumn` / `UpdateColumn` 三個 action 的 DDL 構造邏輯
+- 改寫：把 column-level 邏輯放大到 schema-level（CREATE/DROP DATABASE）；用 `DbMaintenance.CreateDatabase()` / `DropDatabase()` 為主
+- 跨 DB 文法差異用 `IDdlGenerator` 介面 + per-DB 實作（自寫，Admin.NET 沒這層抽象）
 
 ### Verification gate
 - 4 DB 各做：建 schema → 改 collation → drop schema 流程通
@@ -531,22 +609,37 @@ src-net/Schemas/
 ### 對齊 9 個 read endpoints
 - `getColumns`、`getData`、`getCount`、`getOptions`、`getIndexes`、`getChecks`、`getDdl`、`getKeyUsage`、`searchColumns`
 
-### Deliverables
-1. **`getTableData`** — `db.Queryable<dynamic>().Where().OrderBy().ToPagedList()`
-2. **`getTableColumns`** — `DbMaintenance.GetColumnInfosByTableName()`
-3. **`getTableIndexes`** — `DbMaintenance.GetIndexList()` + per-DB fallback for SQL Server filtered indexes
+### Deliverables（**heavy fork ✓**）
+1. **`getTableData`** — **fork** `Admin.NET.Core/Service/APIJSON/SelectTable.cs` 的 `ProcessWhere:506-556`、`ProcessOrder`、`PrcessGroup`、`ProcessHaving` 完整 fluent 動態查詢樣板。改寫 ~50%：移除 `IdentityService.GetSelectRole()` 權限檢查、移除 `@ColumnAlias` 角色過濾、保留 `ConditionalModel` 構造邏輯。+ **fork** `SysDatabaseService:1124-1168` 的 `QuerySelect` 安全 SELECT 樣板
+2. **`getTableColumns`** — **fork** `SysDatabaseService:214` `GetColumnList` 邏輯（已在 Phase 6 對應，這裡共用）
+3. **`getTableIndexes`** — `DbMaintenance.GetIndexList()` + per-DB fallback for SQL Server filtered indexes（自寫）
 4. **`getTableDdl`** — `DbMaintenance.GetCreateTableSql()`（這是最大 win）
 5. **`getKeyUsage`** — **inbound + outbound FK 都要**，`DbMaintenance.GetForeignKeys()` + reverse query
 
 ### 新增檔案
 ```
-src-net/Tables/
-├── TableQueryService.cs               # data / count / search
+server/Tables/
+├── TableQueryService.cs               # fork: APIJSON SelectTable 動態查詢 + QuerySelect 安全 SELECT
 ├── TableSchemaService.cs              # columns / indexes / checks / keys
 ├── TableDdlReadService.cs             # getDdl
 ├── TableOptionsProvider.cs            # MySQL engine/charset/comment 等
-└── ForeignKeyResolver.cs              # inbound + outbound FK 探測
+├── ForeignKeyResolver.cs              # inbound + outbound FK 探測
+├── ConditionalModelBuilder.cs         # fork: APIJSON ProcessWhere ConditionalModel pattern
+└── DynamicQueryDsl.cs                 # fork: APIJSON @column / @order / @group directives
 ```
+
+### Fork 標記
+**從 `Admin.NET.Core/Service/APIJSON/SelectTable.cs` 搬**：
+- `SugarQueryable()` lines 422-454（建構 query pipeline）
+- `ProcessColumn()` lines 429-496（欄位選擇 + alias）
+- `ProcessWhere()` lines 506-556（動態 WHERE 構造，**這是核心**）
+- `ProcessOrder()`、`PrcessGroup()`、`ProcessHaving()`（排序、分組、having）
+- `TableMapper.cs` 整支 28 LOC 直接搬
+
+**改寫**：
+- 移除 `IdentityService.GetSelectRole()` 角色檢查（`SelectTable.cs:61` 整段）
+- 移除 `@MenuId` 等管理介面整合
+- SQL injection 防護片段（`SelectTable.cs:839-872`）保留並用 `SugarParameter` 包裝
 
 ### 對應 Admin.NET 參考 + MCP tool
 - 程式碼樣板：Admin.NET 是用自家 entity，沒有直接對應。但 `Queryable<dynamic>` 樣板可以參考 [Admin.NET.Core/Service/User/SysUserService.cs](E:/source/platfrom-admin/Admin.NET.Core/Service/User/SysUserService.cs)
@@ -573,7 +666,7 @@ src-net/Tables/
 
 ---
 
-## Phase 10 — Tables DDL + Cascade FK Resolver（4 天，**最高 ROI**）
+## Phase 10 — Tables DDL + Cascade FK Resolver（3 天，**最高 ROI + fork ✓**）
 
 ### 對齊 endpoints
 - `/api/tables/createTable`、`alterTable`、`dropTable`、`truncateTable`、`renameTable`、`emptyTable`、`copyTable`、`getTableOptions`、其餘 9 個
@@ -581,9 +674,21 @@ src-net/Tables/
 ### 重點：Cascade FK
 原本 5 個 client 各自寫的 cascade DDL：drop column 前必須先掃 inbound FK。**SqlSugar `DbMaintenance.GetForeignKeys()` 一行解掉**，跨 DB 一致。
 
+### Fork 標記
+**從 `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs` 搬**：
+- `AddColumn(input)`（DDL：加欄位）
+- `DeleteColumn(input)`（DDL：刪欄位 — antares2 要在這裡加 cascade FK 邏輯）
+- `UpdateColumn(input)`（DDL：改欄位定義）
+- `ExportTableSchema()` / `ExportAllTableSchema()`（DDL dump，跨 DB 抽取）
+
+**改寫**：
+- 拿掉 `configId` 參數
+- DeleteColumn 加上 `CascadeFkResolver.PrecheckInboundFks()` pre-flight 檢查
+- ExportTableSchema 對齊 antares2 既有 SQL 格式（snapshot test 必須通過 byte-for-byte）
+
 ### 新增檔案
 ```
-src-net/Tables/
+server/Tables/
 ├── TableDdlService.cs                 # CRUD + alter
 ├── CascadeFkResolver.cs               # 共用：GetForeignKeys → drop sequence
 ├── DdlGenerator/
@@ -615,7 +720,7 @@ src-net/Tables/
 
 ### 新增檔案
 ```
-src-net/
+server/
 ├── Views/
 │   ├── ViewService.cs
 │   └── MaterializedViewService.cs
@@ -666,7 +771,7 @@ src-net/
 
 ### 新增檔案
 ```
-src-net/
+server/
 ├── Workers/
 │   ├── ExportTaskService.cs
 │   ├── TaskRegistry.cs
@@ -706,7 +811,7 @@ src-net/
 
 ### 新增檔案
 ```
-src-net/
+server/
 ├── Workers/
 │   └── ImportTaskService.cs
 ├── Importers/
@@ -769,16 +874,17 @@ grep -rn "Download Node.js binary" .github/workflows/  # 必須無結果
 | ID | 風險 | 嚴重度 | 緩解 | 狀態 |
 |----|-----|-------|------|------|
 | R1 | .NET cold-start > 3s | 中 | Phase 4 量測；超標就開 ReadyToRun | 觀察中 |
-| R2 | Renci.SshNet cipher 不支援現代演算法 | 中 | Phase 5 做相容性矩陣；缺項用外部 ssh CLI | 觀察中 |
+| R2 | Renci.SshNet cipher 不支援現代演算法 | **低**（從中下調） | Phase 5 做相容性矩陣；**SSH.NET 作者通道 fallback** | 觀察中 |
 | R3 | macOS Gatekeeper 拒絕未簽 binary | 高 | CI codesign step；本機 ad-hoc sign | 已規劃 |
-| R4 | SqlSugar 在 SQLite 某些 DbMaintenance NotSupported | 低 | per-call try-catch + raw SQL | 已規劃 |
+| R4 | SqlSugar 在 SQLite 某些 DbMaintenance NotSupported | **低**（已是低，再加上游 channel） | per-call try-catch + raw SQL；**SqlSugar 作者通道 fallback** | 已規劃 |
 | R5 | DDL byte-equality 跨 DB 對齊 | 中 | snapshot test | 已規劃 |
-| R6 | Furion result filter 跟 ProblemDetails 衝突 | 低 | filter Order 設 int.MinValue | 已規劃 |
+| R6 | Furion result filter 跟 ProblemDetails 衝突 | **低**（已是低，再加上游 channel） | filter Order 設 int.MinValue；**Furion 作者通道 fallback** | 已規劃 |
 | R7 | WebSocket 漏驗 token | 高 | OnConnectedAsync 手動驗 ?token= | 已規劃（Phase 2、13、14） |
 | R8 | 8 個 CI Node-download step 漏改 | 低 | grep verify | 已規劃 |
 | ~~R9~~ | ~~沒有 API schema、type drift~~ | — | **已解決**：Phase 3 Swagger codegen | ✅ 解除 |
-| R10 | openapi-typescript 對 Furion polymorphicSchema 支援度未知 | 低 | 退路：改用 nswag | Phase 3 驗 |
+| R10 | openapi-typescript 對 Furion polymorphicSchema 支援度未知 | **低**（已是低，再加上游 channel） | 退路：改用 nswag；**Furion 作者通道 fallback** | Phase 3 驗 |
 | R11 | `admin-net` MCP server 知識跟 Admin.NET upstream drift | 低 | `mcp-version-pin.txt` 鎖 npm version；月驗 + 重新 build | 已規劃（Phase 0） |
+| R12 | **Forked Admin.NET 程式碼跟 upstream drift**（fix / 新功能不會自動 sync） | 中 | fork 時 commit message 紀錄 source SHA；每季 review 比對；上游有新 fix 時 cherry-pick 過來 | 已規劃 |
 
 ---
 
@@ -831,6 +937,7 @@ grep -rn "Download Node.js binary" .github/workflows/  # 必須無結果
 
 ## Admin.NET adoption 摘要表
 
+### 慣例採用（純模仿，0 風險）
 | 採用項目 | 影響 phase | 我們的 sidecar 慣用名 |
 |--------|----------|---------------------|
 | `IUnifyResultProvider` | Phase 2 | `SidecarResultProvider` |
@@ -838,7 +945,27 @@ grep -rn "Download Node.js binary" .github/workflows/  # 必須無結果
 | `[ApiDescriptionSettings(Name=…), HttpPost]` | 所有 service action | 客製 RPC-style routing |
 | `Configuration/*.json` 自動 scan | Phase 1 | `Configuration/Server.json` etc. |
 | Swagger codegen → frontend types | Phase 3 | `src/common/api-generated/` |
-| **`@elf-express/admin-net-mcp` 知識源** | Phase 0 起，每個 phase 都會用 | `.claude/settings.json` 掛上去，`mcp-version-pin.txt` 鎖版本 |
+
+### 知識來源
+| 來源 | 用途 |
+|------|------|
+| **`@elf-express/admin-net-mcp` MCP server** | 慣例查詢、Furion / SqlSugar 教學手冊 |
+| **Furion 作者直接通道**（人脈） | R6 / R10 升級 fallback |
+| **SqlSugar 作者直接通道**（人脈） | R4 升級 fallback |
+
+### Fork 戰略（path A++ self-grant，**新增 v4**）
+| 來源檔案 | 影響 phase | 改動量 | 估省 |
+|--------|----------|-------|-----|
+| `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs:471` (`GetTableList`) | Phase 6 | ~30% | 1 day |
+| `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs:214` (`GetColumnList`) | Phase 6, 9 | ~30% | 1 day |
+| `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs` (`AddColumn/DeleteColumn/UpdateColumn`) | Phase 8, 10 | ~30% | 1.5 days |
+| `Admin.NET.Core/Service/DataBase/SysDatabaseService.cs:1124-1168` (`QuerySelect`) | Phase 9 | ~30% | 1 day |
+| `Admin.NET.Core/Service/APIJSON/SelectTable.cs` (`ProcessWhere/Order/Group`) | Phase 9 | ~50% | 2-3 days |
+| `Admin.NET.Core/Service/APIJSON/TableMapper.cs` | Phase 9 | ~0% | 0.5 day |
+| `Admin.NET.Core/SqlSugar/SqlSugarSetup.cs:67-113` (`SetDbConfig`) | Phase 5 | ~20% | 1 day |
+| **小計** | — | — | **~8 天** |
+
+授權：`LICENSE-ELF-GRANT.md` 涵蓋（Phase 0 commit）
 
 ---
 
