@@ -120,7 +120,10 @@ describe('history store — saveHistory()', () => {
       expect(store.history.A.map(r => r.sql)).toEqual(['SELECT 1', 'SELECT 2', 'SELECT 1']);
    });
 
-   it('caps the workspace history at 1000 records', () => {
+   it('caps the workspace history at 1000 records', { timeout: 15000 }, () => {
+      // 1005 saveHistory calls spread the old array each time (O(n²)).
+      // Under parallel test load with Pinia reactivity proxy this can take
+      // ~7s on slower workers — default 5s timeout is too tight.
       const store = useHistoryStore();
       for (let i = 0; i < 1005; i++)
          store.saveHistory({ uid: 'A', query: `SELECT ${i}`, schema: 's', tabUid: 't' });
