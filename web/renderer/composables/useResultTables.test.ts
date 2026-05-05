@@ -8,8 +8,11 @@
  */
 import { mountComposable } from '@tests/helpers/mountComposable';
 import type { TableDeleteParams, TableUpdateParams } from 'common/interfaces/tableApis';
-import { createPinia, setActivePinia } from 'pinia';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import Tables from '@/ipc-api/Tables';
+
+import { useResultTables } from './useResultTables';
 
 vi.mock('@/ipc-api/Tables', () => ({
    default: {
@@ -17,21 +20,6 @@ vi.mock('@/ipc-api/Tables', () => ({
       deleteTableRows: vi.fn()
    }
 }));
-
-// useResultTables.ts evaluates `useNotificationsStore()` at module top level,
-// so a Pinia instance must be active BEFORE the dynamic import below runs.
-beforeAll(() => {
-   setActivePinia(createPinia());
-});
-
-// Top-level await: ensures Pinia is active when the composable module evaluates
-// its `const { addNotification } = useNotificationsStore()` line.
-const { useResultTables } = await (async () => {
-   setActivePinia(createPinia());
-   return import('./useResultTables');
-})();
-
-const Tables = (await import('@/ipc-api/Tables')).default;
 
 const reloadTable = vi.fn();
 

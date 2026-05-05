@@ -3,9 +3,13 @@ import { Component, Ref, ref } from 'vue';
 
 import Tables from '@/ipc-api/Tables';
 import { useNotificationsStore } from '@/stores/notifications';
-const { addNotification } = useNotificationsStore();
 
 export function useResultTables (uid: string, reloadTable: () => void) {
+   // Lazy store resolution: previously called at module top, which forced
+   // every consumer (and every test) to set up Pinia BEFORE this module
+   // was imported. Resolved per call so the composable is import-order safe.
+   const { addNotification } = useNotificationsStore();
+
    const queryTable: Ref<Component & {
       resetSort: () => void;
       resizeResults: () => void;
