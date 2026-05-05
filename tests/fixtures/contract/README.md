@@ -129,10 +129,23 @@ git commit -m "chore(fixtures): refresh contract fixtures (mysql/pg/mssql captur
 
 ## Coverage so far
 
-The initial `INVOCATIONS` list in the script is **deliberately small** — the 7 most-critical routes (connect → databases → schema → query → disconnect lifecycle). Expand the list as your dev DB schema permits:
+The `INVOCATIONS` list in the script covers **9 routes** as of 2026-05-06: full `connect → databases → schema → query → tables → disconnect` lifecycle. Output filenames match the existing 9 hand-crafted fixtures **byte-for-byte naming** so PR1 real capture overwrites cleanly:
 
-- `tables/*` — needs concrete table fixture
-- `views/*` — needs view fixture
+| # | Group.verb | Hand-crafted? | Real-captured? |
+|---|-----------|---------------|----------------|
+| 1 | `connection.connect` | ✅ | pending PR1 |
+| 2 | `databases.getDatabases` | ✅ | pending PR1 |
+| 3 | `schema.getStructure` | ✅ | pending PR1 |
+| 4 | `schema.getCollations` | ✅ | pending PR1 |
+| 5 | `schema.getVersion` | ✅ | pending PR1 |
+| 6 | `schema.rawQuery` | ✅ | pending PR1 |
+| 7 | `tables.getTableColumns` | ✅ | pending PR1 |
+| 8 | `tables.getTableData` | ✅ | pending PR1 |
+| 9 | `connection.disconnect` | ✅ | pending PR1 |
+
+Not yet captured (extend the list as your dev DB schema permits):
+
+- `views/*` — needs view fixture (the `user_orders` VIEW in seed schema covers it once added)
 - `triggers/*` / `routines/*` / `functions/*` — needs DB-side definitions
 - `users/*` — needs read-only user-management privileges
 - WS `/ws/export` and `/ws/import` — needs the `ws` Node module + frame log writer

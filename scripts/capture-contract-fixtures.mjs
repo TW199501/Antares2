@@ -114,6 +114,10 @@ const INVOCATIONS = [
       verb: 'connect',
       route: '/api/connection/connect',
       scenario: 'happy',
+      // payload aligned with hand-crafted connect fixture: 6 connection-option
+      // flags (ask/readonly/singleConnectionMode/ssl/untrustedConnection/ssh)
+      // + schema. Without these, Connection.test.ts calledWith assertions
+      // would fail post-PR3.B because real renderer always sends them.
       payloadFor: (cfg) => ({
          uid: '<UUID>',
          client: cfg.client,
@@ -125,7 +129,14 @@ const INVOCATIONS = [
                  port: cfg.port,
                  user: cfg.user,
                  password: cfg.password,
-                 database: cfg.database
+                 database: cfg.database,
+                 schema: cfg.schema,
+                 ask: false,
+                 readonly: true,
+                 singleConnectionMode: false,
+                 ssl: false,
+                 untrustedConnection: true,
+                 ssh: false
               })
       }),
       saveCtx: (ctx, _payload) => {
@@ -144,9 +155,13 @@ const INVOCATIONS = [
       verb: 'getStructure',
       route: '/api/schema/getStructure',
       scenario: 'happy',
+      // schemas: cfg.schema is per-dialect "the schema we want to inspect":
+      //   mysql: database name, pg: 'public', mssql: 'dbo', sqlite: 'main'
+      // Original `cfg.database || cfg.schema` was wrong for mssql (would send
+      // 'master' instead of 'dbo' and the sidecar returns empty structure).
       payloadFor: (cfg, ctx) => ({
          uid: ctx.uid,
-         schemas: [cfg.database || cfg.schema]
+         schemas: [cfg.schema]
       })
    },
    {
@@ -164,14 +179,54 @@ const INVOCATIONS = [
       payloadFor: (_cfg, ctx) => ({ uid: ctx.uid })
    },
    {
+      // Dialect-aware identifier quoting around the same logical query.
+      // Aligns with hand-crafted mssql fixture (real column metadata for
+      // id/name/created_at). Original `SELECT 1 AS one, 2 AS two` produced
+      // empty fields[] metadata and lost the contract's column-shape
+      // verification value.
       group: 'schema',
       verb: 'rawQuery-select',
       route: '/api/schema/rawQuery',
       scenario: 'happy',
+      payloadFor: (cfg, ctx) => {
+         const tableRef = cfg.client === 'mssql' ? '[dbo].[users]'
+            : cfg.client === 'mysql' ? '`users`'
+               : cfg.client === 'pg' ? '"users"'
+                  : 'users'; // sqlite / firebird: bare identifier
+         return {
+            uid: ctx.uid,
+            query: `SELECT id, name, created_at FROM ${tableRef} ORDER BY id`,
+            schema: cfg.schema
+         };
+      }
+   },
+   {
+      // verb name matches wrapper method `getTableColumns` (route is /getColumns).
+      // Output filename `tables.getTableColumns.<dialect>.happy.json` aligns with
+      // hand-crafted fixture so PR3.B real capture overwrites cleanly.
+      group: 'tables',
+      verb: 'getTableColumns',
+      route: '/api/tables/getColumns',
+      scenario: 'happy',
       payloadFor: (cfg, ctx) => ({
          uid: ctx.uid,
-         query: 'SELECT 1 AS one, 2 AS two',
-         schema: cfg.schema
+         schema: cfg.schema,
+         table: 'users'
+      })
+   },
+   {
+      group: 'tables',
+      verb: 'getTableData',
+      route: '/api/tables/getData',
+      scenario: 'happy',
+      payloadFor: (cfg, ctx) => ({
+         uid: ctx.uid,
+         schema: cfg.schema,
+         table: 'users',
+         limit: 100,
+         page: 1,
+         sortParams: { field: 'id', dir: 'asc' },
+         where: null
       })
    },
    {
@@ -181,7 +236,7 @@ const INVOCATIONS = [
       scenario: 'happy',
       payloadFor: (_cfg, ctx) => ({ uid: ctx.uid })
    }
-   // TODO: extend with tables/views/triggers/routines/functions/users
+   // TODO: extend with views/triggers/routines/functions/users
    // once dev DB has the corresponding schema fixtures (see README).
 ];
 
