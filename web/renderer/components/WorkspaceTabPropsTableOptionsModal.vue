@@ -86,6 +86,7 @@
 </template>
 
 <script setup lang="ts">
+import { TableOptions } from 'common/interfaces/antares';
 import { PropType, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -94,15 +95,6 @@ import BaseIcon from '@/components/BaseIcon.vue';
 import BaseSelect from '@/components/BaseSelect.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-interface TableOptions {
-   name: string;
-   comment?: string;
-   autoIncrement?: number | null;
-   engine?: string;
-   collation?: string;
-   charset?: string;
-}
 
 const { t } = useI18n();
 

@@ -196,8 +196,11 @@ const props = defineProps({
       type: Object as PropType<TableField>,
       required: true
    },
+   // Subset shape: parent passes only { name, type } per index entry — see
+   // WorkspaceTabPropsTable.vue's `editModalIndexes` computed which projects
+   // TableIndex[] down to the fields this modal actually displays.
    indexes: {
-      type: Array as PropType<TableIndex[]>,
+      type: Array as PropType<{ name: string; type: string }[]>,
       default: () => []
    },
    foreigns: {

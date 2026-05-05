@@ -78,7 +78,10 @@ export interface Workspace {
    breadcrumbs: Breadcrumb;
    loadingElements: { name: string; schema: string; type: string }[];
    loadedSchemas: Set<string>;
-   dataTypes?: { [key: string]: TypesGroup[] };
+   // Per-client data type catalog (e.g. mysqlTypes / postgresqlTypes).
+   // Was previously typed as a dict but runtime always assigns the array
+   // form returned by `clientCustomizations.dataTypes` — type now matches.
+   dataTypes?: TypesGroup[];
    indexTypes?: string[];
    customizations?: Customizations;
    version?: {

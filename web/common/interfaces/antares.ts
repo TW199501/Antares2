@@ -88,7 +88,10 @@ export interface TableInfos {
    comment: string;
    size: number | false;
    collation: string;
-   autoIncrement?: boolean;
+   // Table-level autoIncrement = next IDENTITY/AUTO_INCREMENT counter value
+   // (number, may be null when no IDENTITY column). Distinct from
+   // TableField.autoIncrement which is boolean (is this column IDENTITY?).
+   autoIncrement?: number | null;
 }
 
 export type TableOptions = Partial<TableInfos>;
