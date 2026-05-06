@@ -13,6 +13,7 @@ NOTES.md
 !docs/net-migration/renderer-audit-allowlist.txt
 *.heapsnapshot
 .claude-code-history
+.claude/scheduled_tasks.lock
 .codex-history/
 .openmcp/
 skills.json
