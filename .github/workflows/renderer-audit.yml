@@ -1,0 +1,33 @@
+name: Renderer untouched audit (.NET migration)
+
+on:
+  pull_request:
+    paths:
+      - 'web/renderer/**'
+      - 'web/common/**'
+      - 'scripts/audit-renderer-untouched.mjs'
+      - 'docs/net-migration/renderer-audit-allowlist.txt'
+      - 'docs/net-migration/baseline-tag.txt'
+      - '.github/workflows/renderer-audit.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'web/renderer/**'
+      - 'web/common/**'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: web/renderer + web/common immutability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # full history needed for git diff against baseline tag
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+
+      - name: Run audit:renderer
+        run: node scripts/audit-renderer-untouched.mjs

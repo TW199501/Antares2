@@ -1,0 +1,34 @@
+name: Preflight (.NET sidecar)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/preflight-net.mjs'
+      - '.github/workflows/preflight-net.yml'
+      - 'server/**'
+      - 'NOTICE'
+  push:
+    branches: [dev]
+    paths:
+      - 'scripts/preflight-net.mjs'
+      - '.github/workflows/preflight-net.yml'
+      - 'server/**'
+  workflow_dispatch:
+
+jobs:
+  preflight-net:
+    name: dotnet 10 + NuGet restore probe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+
+      - name: Run preflight:net
+        run: node scripts/preflight-net.mjs
