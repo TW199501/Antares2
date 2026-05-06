@@ -69,6 +69,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
       - name: Download Node.js binary for Windows x64
         shell: pwsh
         run: |
@@ -116,6 +121,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
       - name: Download Node.js binary for macOS x64
         run: |
           NODE_VERSION=20.19.0
@@ -160,6 +170,11 @@ jobs:
         with:
           targets: aarch64-apple-darwin
 
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
       - name: Download Node.js binary for macOS arm64
         run: |
           NODE_VERSION=20.19.0
@@ -201,6 +216,11 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
 
       - name: Install system dependencies
         run: |

@@ -1,5 +1,7 @@
 {
    "bundle": {
-      "resources": {}
+      "resources": {
+         "resources/antares-server.exe": "antares-server.exe"
+      }
    }
 }
