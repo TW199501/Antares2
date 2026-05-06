@@ -427,8 +427,7 @@ const clients = [
    { name: 'MariaDB', slug: 'maria' },
    { name: 'PostgreSQL', slug: 'pg' },
    { name: 'SQL Server', slug: 'mssql' },
-   { name: 'SQLite', slug: 'sqlite' },
-   { name: 'Firebird SQL', slug: 'firebird' }
+   { name: 'SQLite', slug: 'sqlite' }
 ];
 
 const inputClass = 'flex h-[34px] w-full rounded-md border border-input bg-secondary px-3 text-[13px] text-foreground transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';

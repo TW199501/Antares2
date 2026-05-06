@@ -392,8 +392,7 @@ const clients = [
    { name: 'MariaDB', slug: 'maria' },
    { name: 'PostgreSQL', slug: 'pg' },
    { name: 'SQL Server', slug: 'mssql' },
-   { name: 'SQLite', slug: 'sqlite' },
-   { name: 'Firebird SQL', slug: 'firebird' }
+   { name: 'SQLite', slug: 'sqlite' }
 ];
 
 // Shadcn-equivalent class for raw <input> (used only when a template ref to the DOM node is required)

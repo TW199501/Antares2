@@ -20,6 +20,11 @@ public static class ConnectionConfigBuilder
             "pg" => BuildPostgres(p, poolSize),
             "mssql" => BuildSqlServer(p, poolSize),
             "sqlite" => BuildSqlite(p),
+            "firebird" => throw new NotSupportedException(
+                "Firebird is not supported on the Antares2 .NET 10 sidecar (0.8.4+). " +
+                "SqlSugar 5.1.4 has no Firebird provider; rewriting the schema / query stack " +
+                "around raw FirebirdSql.Data.FirebirdClient was deemed out of scope. " +
+                "Use Antares2 0.8.3 or earlier for Firebird connections."),
             _ => throw new NotSupportedException($"unsupported client: {p.Client}")
         };
     }
