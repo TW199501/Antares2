@@ -8,7 +8,6 @@
   "scripts": {
     "vite:dev": "vite",
     "vite:build": "vite build",
-    "sidecar:dev": "tsx watch web/main/server.ts --port 5555",
     "sidecar:build": "node scripts/build-sidecar.mjs",
     "sidecar:build:net": "node scripts/build-net-sidecar.mjs",
     "replay:contract": "node scripts/replay-contract.mjs",
