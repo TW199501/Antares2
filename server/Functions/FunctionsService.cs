@@ -1,6 +1,7 @@
 using Antares.Server.Connections;
 using Antares.Server.Tables;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Functions;
@@ -32,7 +33,7 @@ public sealed class FunctionsService : IDynamicApiController
         return rows.ToList();
     }
 
-    [HttpPost("/api/functions/create")]
+    [HttpPost("/api/functions/create"), NonUnify]
     public async Task<object> Create([FromBody] FunctionDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -40,7 +41,7 @@ public sealed class FunctionsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/functions/alter")]
+    [HttpPost("/api/functions/alter"), NonUnify]
     public async Task<object> Alter([FromBody] FunctionDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -49,7 +50,7 @@ public sealed class FunctionsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/functions/drop")]
+    [HttpPost("/api/functions/drop"), NonUnify]
     public async Task<object> Drop([FromBody] FunctionDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -57,7 +58,7 @@ public sealed class FunctionsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/functions/createTriggerFunction")]
+    [HttpPost("/api/functions/createTriggerFunction"), NonUnify]
     public async Task<object> CreateTriggerFunction([FromBody] FunctionDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -66,7 +67,7 @@ public sealed class FunctionsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/functions/alterTriggerFunction")]
+    [HttpPost("/api/functions/alterTriggerFunction"), NonUnify]
     public async Task<object> AlterTriggerFunction([FromBody] FunctionDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

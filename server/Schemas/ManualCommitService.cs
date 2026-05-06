@@ -1,5 +1,6 @@
 using Antares.Server.Connections;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Schemas;
@@ -25,7 +26,7 @@ public sealed class ManualCommitService : IDynamicApiController
         _cancellers = cancellers;
     }
 
-    [HttpPost("/api/schema/commitTab")]
+    [HttpPost("/api/schema/commitTab"), NonUnify]
     public Task<object> CommitTab([FromBody] TabPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -33,7 +34,7 @@ public sealed class ManualCommitService : IDynamicApiController
         return Task.FromResult<object>(new { status = "success" });
     }
 
-    [HttpPost("/api/schema/rollbackTab")]
+    [HttpPost("/api/schema/rollbackTab"), NonUnify]
     public Task<object> RollbackTab([FromBody] TabPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -41,7 +42,7 @@ public sealed class ManualCommitService : IDynamicApiController
         return Task.FromResult<object>(new { status = "success" });
     }
 
-    [HttpPost("/api/schema/destroyConnectionToCommit")]
+    [HttpPost("/api/schema/destroyConnectionToCommit"), NonUnify]
     public Task<object> DestroyConnectionToCommit([FromBody] TabPayload p, CancellationToken ct)
     {
         // Forcibly drop the underlying connection so any hung manual-commit tx
@@ -50,7 +51,7 @@ public sealed class ManualCommitService : IDynamicApiController
         return Task.FromResult<object>(new { status = "success" });
     }
 
-    [HttpPost("/api/schema/killTabQuery")]
+    [HttpPost("/api/schema/killTabQuery"), NonUnify]
     public async Task<object> KillTabQuery([FromBody] KillTabPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

@@ -1,6 +1,7 @@
 using Antares.Server.Connections;
 using Bogus;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Tables;
@@ -30,7 +31,7 @@ public sealed class TablesWriteService : IDynamicApiController
         _logger = logger;
     }
 
-    [HttpPost("/api/tables/create")]
+    [HttpPost("/api/tables/create"), NonUnify]
     public async Task<object> Create([FromBody] CreateTablePayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -47,7 +48,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/tables/alter")]
+    [HttpPost("/api/tables/alter"), NonUnify]
     public Task<object> Alter([FromBody] AlterTablePayload p, CancellationToken _)
     {
         // ALTER TABLE: per-DB syntax matrix is broad (ADD/DROP/MODIFY/RENAME COLUMN, INDEX,
@@ -59,7 +60,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return Task.FromResult<object>(new { status = "success" });
     }
 
-    [HttpPost("/api/tables/duplicate")]
+    [HttpPost("/api/tables/duplicate"), NonUnify]
     public async Task<object> Duplicate([FromBody] DuplicateTablePayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -83,7 +84,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/tables/truncate")]
+    [HttpPost("/api/tables/truncate"), NonUnify]
     public async Task<object> Truncate([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -97,7 +98,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/tables/drop")]
+    [HttpPost("/api/tables/drop"), NonUnify]
     public async Task<object> Drop([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -106,7 +107,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/tables/updateCell")]
+    [HttpPost("/api/tables/updateCell"), NonUnify]
     public async Task<object> UpdateCell([FromBody] UpdateCellPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -131,7 +132,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/tables/deleteRows")]
+    [HttpPost("/api/tables/deleteRows"), NonUnify]
     public async Task<object> DeleteRows([FromBody] DeleteRowsPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -157,7 +158,7 @@ public sealed class TablesWriteService : IDynamicApiController
         return new { status = "success", response = affected };
     }
 
-    [HttpPost("/api/tables/insertFakeRows")]
+    [HttpPost("/api/tables/insertFakeRows"), NonUnify]
     public async Task<object> InsertFakeRows([FromBody] InsertFakeRowsPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

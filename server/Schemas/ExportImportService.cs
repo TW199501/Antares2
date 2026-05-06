@@ -1,5 +1,6 @@
 using Antares.Server.Workers;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Schemas;
@@ -19,7 +20,7 @@ public sealed class ExportImportService : IDynamicApiController
 
     public ExportImportService(TaskRegistry tasks) => _tasks = tasks;
 
-    [HttpPost("/api/schema/export")]
+    [HttpPost("/api/schema/export"), NonUnify]
     public object Export([FromBody] ExportPayload p)
     {
         var handle = _tasks.Start(TaskRegistry.TaskKind.Export);
@@ -27,21 +28,21 @@ public sealed class ExportImportService : IDynamicApiController
         return new { status = "success", response = new { taskId = handle.TaskId } };
     }
 
-    [HttpPost("/api/schema/abortExport")]
+    [HttpPost("/api/schema/abortExport"), NonUnify]
     public object AbortExport([FromBody] TaskIdPayload p)
     {
         _tasks.Cancel(p.TaskId ?? string.Empty);
         return new { status = "success" };
     }
 
-    [HttpPost("/api/schema/importSql")]
+    [HttpPost("/api/schema/importSql"), NonUnify]
     public object ImportSql([FromBody] ImportPayload p)
     {
         var handle = _tasks.Start(TaskRegistry.TaskKind.Import);
         return new { status = "success", response = new { taskId = handle.TaskId } };
     }
 
-    [HttpPost("/api/schema/abortImportSql")]
+    [HttpPost("/api/schema/abortImportSql"), NonUnify]
     public object AbortImportSql([FromBody] TaskIdPayload p)
     {
         _tasks.Cancel(p.TaskId ?? string.Empty);

@@ -1,6 +1,7 @@
 using Antares.Server.Connections;
 using Antares.Server.Tables;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Schedulers;
@@ -50,11 +51,11 @@ public sealed class SchedulersService : IDynamicApiController
         }
     }
 
-    [HttpPost("/api/schedulers/create")]
+    [HttpPost("/api/schedulers/create"), NonUnify]
     public async Task<object> Create([FromBody] SchedulerDdlPayload p, CancellationToken ct)
         => await Exec(p, ct);
 
-    [HttpPost("/api/schedulers/alter")]
+    [HttpPost("/api/schedulers/alter"), NonUnify]
     public async Task<object> Alter([FromBody] SchedulerDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -63,7 +64,7 @@ public sealed class SchedulersService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/schedulers/drop")]
+    [HttpPost("/api/schedulers/drop"), NonUnify]
     public async Task<object> Drop([FromBody] SchedulerDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -76,7 +77,7 @@ public sealed class SchedulersService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/schedulers/toggle")]
+    [HttpPost("/api/schedulers/toggle"), NonUnify]
     public async Task<object> Toggle([FromBody] SchedulerToggleDto p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

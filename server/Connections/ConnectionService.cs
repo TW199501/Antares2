@@ -1,6 +1,7 @@
 using Antares.Server.Models.Connection;
 using Antares.Server.Schemas;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
@@ -12,8 +13,15 @@ namespace Antares.Server.Connections;
 ///
 /// Routes are explicitly named via [HttpPost] to avoid Furion's pure-verb routing
 /// (which would map Test() → POST /api/connection without an action segment).
+///
+/// Class-level [NonUnify]: every action below already returns a hand-shaped
+/// `{status, response}` envelope (matching the legacy Node sidecar contract);
+/// without this attribute Furion's EnvelopeResultProvider.OnSucceeded would
+/// wrap them again, producing `{status: "success", response: {status: "...", response: ...}}`
+/// — the renderer would always read outer status="success" even when the inner
+/// status is "error", silently swallowing every connect/test failure.
 /// </summary>
-[ApiDescriptionSettings(KeepName = true)]
+[ApiDescriptionSettings(KeepName = true), NonUnify]
 public sealed class ConnectionService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;

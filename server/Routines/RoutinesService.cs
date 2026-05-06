@@ -1,6 +1,7 @@
 using Antares.Server.Connections;
 using Antares.Server.Tables;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Routines;
@@ -31,11 +32,11 @@ public sealed class RoutinesService : IDynamicApiController
         return rows.ToList();
     }
 
-    [HttpPost("/api/routines/create")]
+    [HttpPost("/api/routines/create"), NonUnify]
     public async Task<object> Create([FromBody] RoutineDdlPayload p, CancellationToken ct)
         => await ExecAsync(p, ct);
 
-    [HttpPost("/api/routines/alter")]
+    [HttpPost("/api/routines/alter"), NonUnify]
     public async Task<object> Alter([FromBody] RoutineDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -44,7 +45,7 @@ public sealed class RoutinesService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/routines/drop")]
+    [HttpPost("/api/routines/drop"), NonUnify]
     public async Task<object> Drop([FromBody] RoutineDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

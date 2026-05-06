@@ -1,4 +1,5 @@
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Application;
@@ -32,7 +33,7 @@ public sealed class ApplicationFileService : IDynamicApiController
         return File.ReadAllText(safe, System.Text.Encoding.UTF8);
     }
 
-    [HttpPost("/api/app/writeFile")]
+    [HttpPost("/api/app/writeFile"), NonUnify]
     public object WriteFile([FromBody] WriteFilePayload p)
     {
         var safe = ResolveAndGuard(p.FilePath);

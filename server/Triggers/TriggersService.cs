@@ -1,6 +1,7 @@
 using Antares.Server.Connections;
 using Antares.Server.Tables;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Triggers;
@@ -32,7 +33,7 @@ public sealed class TriggersService : IDynamicApiController
         return rows.ToList();
     }
 
-    [HttpPost("/api/triggers/create")]
+    [HttpPost("/api/triggers/create"), NonUnify]
     public async Task<object> Create([FromBody] TriggerDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -40,7 +41,7 @@ public sealed class TriggersService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/triggers/alter")]
+    [HttpPost("/api/triggers/alter"), NonUnify]
     public async Task<object> Alter([FromBody] TriggerDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -50,7 +51,7 @@ public sealed class TriggersService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/triggers/drop")]
+    [HttpPost("/api/triggers/drop"), NonUnify]
     public async Task<object> Drop([FromBody] TriggerDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -58,7 +59,7 @@ public sealed class TriggersService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/triggers/toggle")]
+    [HttpPost("/api/triggers/toggle"), NonUnify]
     public async Task<object> Toggle([FromBody] TriggerToggleDto p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

@@ -1,5 +1,6 @@
 using Antares.Server.Connections;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Schemas;
@@ -22,7 +23,7 @@ public sealed class SchemaDdlService : IDynamicApiController
 
     public SchemaDdlService(ConnectionRegistry registry) => _registry = registry;
 
-    [HttpPost("/api/schema/create")]
+    [HttpPost("/api/schema/create"), NonUnify]
     public async Task<object> Create([FromBody] SchemaDdlPayload payload, CancellationToken ct)
     {
         var entry = _registry.Require(payload.Uid);
@@ -42,7 +43,7 @@ public sealed class SchemaDdlService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/schema/update")]
+    [HttpPost("/api/schema/update"), NonUnify]
     public async Task<object> Update([FromBody] SchemaDdlPayload payload, CancellationToken ct)
     {
         var entry = _registry.Require(payload.Uid);
@@ -61,7 +62,7 @@ public sealed class SchemaDdlService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/schema/delete")]
+    [HttpPost("/api/schema/delete"), NonUnify]
     public async Task<object> Delete([FromBody] SchemaDdlPayload payload, CancellationToken ct)
     {
         var entry = _registry.Require(payload.Uid);

@@ -1,6 +1,7 @@
 using Antares.Server.Connections;
 using Antares.Server.Tables;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Views;
@@ -33,7 +34,7 @@ public sealed class ViewsService : IDynamicApiController
         return rows.ToList();
     }
 
-    [HttpPost("/api/views/create")]
+    [HttpPost("/api/views/create"), NonUnify]
     public async Task<object> Create([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -41,7 +42,7 @@ public sealed class ViewsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/views/alter")]
+    [HttpPost("/api/views/alter"), NonUnify]
     public async Task<object> Alter([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -58,7 +59,7 @@ public sealed class ViewsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/views/drop")]
+    [HttpPost("/api/views/drop"), NonUnify]
     public async Task<object> Drop([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -86,7 +87,7 @@ public sealed class ViewsService : IDynamicApiController
         return rows.ToList();
     }
 
-    [HttpPost("/api/views/createMaterialized")]
+    [HttpPost("/api/views/createMaterialized"), NonUnify]
     public async Task<object> CreateMaterialized([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -95,7 +96,7 @@ public sealed class ViewsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/views/alterMaterialized")]
+    [HttpPost("/api/views/alterMaterialized"), NonUnify]
     public async Task<object> AlterMaterialized([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
@@ -105,7 +106,7 @@ public sealed class ViewsService : IDynamicApiController
         return new { status = "success" };
     }
 
-    [HttpPost("/api/views/dropMaterialized")]
+    [HttpPost("/api/views/dropMaterialized"), NonUnify]
     public async Task<object> DropMaterialized([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);

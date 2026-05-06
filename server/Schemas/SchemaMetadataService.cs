@@ -1,5 +1,6 @@
 using Antares.Server.Connections;
 using Furion.DynamicApiController;
+using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Antares.Server.Schemas;
@@ -90,7 +91,7 @@ public sealed class SchemaMetadataService : IDynamicApiController
         return (await Task.Run(() => entry.Db.Ado.SqlQuery<VariableInfoDto>(sql), ct)).ToList();
     }
 
-    [HttpPost("/api/schema/useSchema")]
+    [HttpPost("/api/schema/useSchema"), NonUnify]
     public async Task<object> UseSchema([FromBody] UseSchemaPayload payload, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(payload.Schema)) return new { status = "success" };
@@ -124,7 +125,7 @@ public sealed class SchemaMetadataService : IDynamicApiController
         };
     }
 
-    [HttpPost("/api/schema/killProcess")]
+    [HttpPost("/api/schema/killProcess"), NonUnify]
     public async Task<object> KillProcess([FromBody] KillProcessPayload payload, CancellationToken ct)
     {
         var entry = _registry.Require(payload.Uid);

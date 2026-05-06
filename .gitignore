@@ -47,3 +47,7 @@ coverage
 **/bin/
 **/obj/
 sidecar-net/
+
+# Visual Studio per-user workspace state (auto-generated, not portable)
+.vs/
+**/Properties/launchSettings.json
