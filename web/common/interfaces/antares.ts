@@ -1,34 +1,13 @@
-import SSHConfig from '@fabio286/ssh2-promise/lib/sshConfig';
-import * as mysql from 'mysql2/promise';
-import * as pg from 'pg';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Client = any
+// 'firebird' kept in the union for backwards-compat with persisted user
+// connections from 0.8.3 — `ConnectionConfigBuilder.Build` on the .NET side
+// throws NotSupportedException for client === 'firebird' so a stale persisted
+// connection produces a clear error instead of being silently invalid.
 export type ClientCode = 'mysql' | 'maria' | 'pg' | 'sqlite' | 'firebird' | 'mssql'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Exporter = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Importer = any
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface IpcResponse<T = any> {
    status: 'success' | 'error' | 'abort';
    response?: T;
-}
-
-/**
- * Pasameters needed to create a new Antares connection to a database
- */
-export interface ClientParams {
-   client: ClientCode;
-   uid?: string;
-   params:
-      mysql.ConnectionOptions & {schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean}
-      | pg.ClientConfig & {schema: string; ssl?: mysql.SslOptions; ssh?: SSHConfig; readonly: boolean}
-      | { databasePath: string; readonly: boolean };
-   poolSize?: number;
-   logger?: () => void;
-   querySplitter?: (sql: string, clieng?: string) => string[];
 }
 
 /**

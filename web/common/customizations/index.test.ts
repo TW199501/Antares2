@@ -24,7 +24,8 @@ import { describe, expect, it } from 'vitest';
 import { defaults } from './defaults';
 import customizations from './index';
 
-const ALL_CLIENT_KEYS = ['maria', 'mysql', 'pg', 'mssql', 'sqlite', 'firebird'] as const;
+// 'firebird' was dropped in 0.8.4; the customizations index no longer registers it.
+const ALL_CLIENT_KEYS = ['maria', 'mysql', 'pg', 'mssql', 'sqlite'] as const;
 type ClientKey = (typeof ALL_CLIENT_KEYS)[number];
 
 describe('customizations index', () => {

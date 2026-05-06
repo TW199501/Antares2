@@ -2,13 +2,11 @@
   "include": [
     "./web/renderer/**/*",
     "./web/common/**/*",
-    "./web/main/**/*",
     "./vitest.config.ts",
     "./tests/**/*"
   ],
   "exclude": [
-    "./web/renderer/libs/ext-language_tools.js",
-    "./web/main/ipc-handlers/**/*"
+    "./web/renderer/libs/ext-language_tools.js"
   ],
   "compilerOptions": {
     "target": "ESNext",

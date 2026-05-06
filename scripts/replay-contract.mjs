@@ -47,13 +47,16 @@ const IGNORE_PATHS = [
 
 const args = process.argv.slice(2);
 const filterArg = args.find(a => a.startsWith('--filter='))?.split('=')[1] ?? null;
+// Legacy 'node' / 'both' targets were removed in Phase 18 (Node sidecar deletion).
+// 'net' is now the only valid target; the flag is retained for back-compat with
+// pnpm replay:contract:net.
 const targetArg = args.find(a => a.startsWith('--target='))?.split('=')[1] ?? 'net';
 const withTeardown = args.includes('--with-teardown');
 const againstRunningApp = args.includes('--against-running-app');
 const fixtureOverride = args.find(a => a.startsWith('--fixture-override='))?.split('=')[1] ?? null;
 
-if (!['node', 'net', 'both'].includes(targetArg)) {
-   console.error(`✗ invalid --target: ${targetArg} (must be node|net|both)`);
+if (targetArg !== 'net') {
+   console.error(`✗ invalid --target: ${targetArg} (only 'net' is supported after Phase 18)`);
    process.exit(1);
 }
 
@@ -256,11 +259,6 @@ async function replayOne (entry, sidecar) {
 // ---- main -----------------------------------------------------------------
 
 async function runOnce (target) {
-   if (target === 'node') {
-      console.error('✗ --target=node not implemented yet (Phase 16 dual-stack parity step)');
-      process.exit(2);
-   }
-
    let sidecar;
    try {
       sidecar = await startSidecar();
@@ -308,10 +306,5 @@ async function runOnce (target) {
    return counts.fail === 0 ? 0 : 1;
 }
 
-const targets = targetArg === 'both' ? ['net', 'node'] : [targetArg];
-let overall = 0;
-for (const t of targets) {
-   const code = await runOnce(t);
-   if (code !== 0) overall = code;
-}
-process.exit(overall);
+const code = await runOnce(targetArg);
+process.exit(code);

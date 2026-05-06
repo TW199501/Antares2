@@ -223,11 +223,16 @@ export const useWorkspacesStore = defineStore('workspaces', {
                         case 'sqlite':
                            clientCustomizations = customizations.sqlite;
                            break;
-                        case 'firebird':
-                           clientCustomizations = customizations.firebird;
-                           break;
                         case 'mssql':
                            clientCustomizations = customizations.mssql;
+                           break;
+                        case 'firebird':
+                           // Firebird dropped in 0.8.4. Stale persisted connections
+                           // hit this branch only when the user opens an old
+                           // connection saved before 0.8.4 — the .NET sidecar will
+                           // also reject the connect call. Reuse mysql customizations
+                           // so the UI doesn't crash on the way to that error.
+                           clientCustomizations = customizations.mysql;
                            break;
                      }
                      const dataTypes = clientCustomizations.dataTypes;
