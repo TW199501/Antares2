@@ -30,7 +30,8 @@ export const querySplitter =(sql: string, dbType: ClientCode): string[] => {
    // Regex patterns for BEGIN-END blocks, dollar tags in PostgreSQL, and semicolons
    const beginRegex = /\bBEGIN\b/i;
    const endRegex = /\bEND\b;/i;
-   const dollarTagRegex = /\$(\w+)?\$/; // Matches $tag$ or $$
+   // Note: dollar-tag matching now happens inline at the leading '$'
+   // (anchored regex below) so no top-level dollarTagRegex constant.
 
    // Split on semicolons, keeping semicolons attached to the lines
    const lines = sql.split(/(?<=;)/);
@@ -57,24 +58,27 @@ export const querySplitter =(sql: string, dbType: ClientCode): string[] => {
 
          currentQuery += char;
 
-         if (dbType === 'pg') {
-         // Handle dollar-quoted blocks in PostgreSQL
-            if (!insideString && line.slice(i).match(dollarTagRegex)) {
-               const match = line.slice(i).match(dollarTagRegex);
-               if (match) {
-                  const tag = match[0];
-                  if (!insideDollarTag) {
-                     insideDollarTag = true;
-                     dollarTagDelimiter = tag;
-                     currentQuery += tag;
-                     i += tag.length - 1;
-                  }
-                  else if (dollarTagDelimiter === tag) {
-                     insideDollarTag = false;
-                     dollarTagDelimiter = null;
-                     currentQuery += tag;
-                     i += tag.length - 1;
-                  }
+         // Handle dollar-quoted blocks in PostgreSQL.
+         // Anchored regex (^...) so we only match a tag *starting* at i, not
+         // anywhere in the remainder. Without the anchor every char triggered
+         // a global tag search, corrupting the body. The leading '$' is already
+         // appended via `currentQuery += char` above, so we only append the
+         // remainder of the tag here.
+         if (dbType === 'pg' && !insideString && char === '$') {
+            const match = line.slice(i).match(/^\$(\w+)?\$/);
+            if (match) {
+               const tag = match[0];
+               if (!insideDollarTag) {
+                  insideDollarTag = true;
+                  dollarTagDelimiter = tag;
+                  currentQuery += tag.slice(1);
+                  i += tag.length - 1;
+               }
+               else if (dollarTagDelimiter === tag) {
+                  insideDollarTag = false;
+                  dollarTagDelimiter = null;
+                  currentQuery += tag.slice(1);
+                  i += tag.length - 1;
                }
             }
          }
@@ -161,13 +165,24 @@ export const removeComments = (sql: string): string => {
  */
 export const sqlEscaper = (string: string): string => {
    // eslint-disable-next-line no-control-regex
-   const pattern = /[\0\x08\x09\x1a\n\r"'\\\%]/gm;
-   const regex = new RegExp(pattern);
-   return string.replace(regex, char => {
-      const m = ['\\0', '\\x08', '\\x09', '\\x1a', '\\n', '\\r', '\'', '\"', '\\', '\\\\', '%'];
-      const r = ['\\\\0', '\\\\b', '\\\\t', '\\\\z', '\\\\n', '\\\\r', '\\\'', '\\\"', '\\\\', '\\\\\\\\', '\%'];
-      return r[m.indexOf(char)] || char;
-   });
+   const pattern = /[\0\b\t\x1a\n\r"'\\%]/g;
+   // mysql escape convention (mysql2 driver compatible): NUL/BS/TAB/SUB get
+   // their named backslash sequences, LF/CR escape to \n/\r, quotes/backslash
+   // get literal backslash escape. % is matched but kept literal — wildcard
+   // semantics are caller's job (LIKE clause), not the escaper's.
+   const escapeMap: Record<string, string> = {
+      '\0': '\\0',
+      '\b': '\\b',
+      '\t': '\\t',
+      '\x1a': '\\Z',
+      '\n': '\\n',
+      '\r': '\\r',
+      '\'': '\\\'',
+      '"': '\\"',
+      '\\': '\\\\',
+      '%': '%'
+   };
+   return string.replace(pattern, char => escapeMap[char] ?? char);
 };
 
 /**

@@ -1,14 +1,15 @@
 /**
- * Characterization tests for sqlUtils.ts.
+ * Tests for sqlUtils.ts (correct-behavior assertions, not characterization).
  *
- * Locks current behavior:
  *  - querySplitter: splits on ';' but respects strings, BEGIN-END, and pg
  *    dollar-quoted blocks. Uses lookbehind so semicolons stay attached.
+ *    Dollar-tag detection is anchored to the leading '$' position; previous
+ *    unanchored regex corrupted the body.
  *  - removeComments: strips line comments (-- ...) and C-style block comments.
- *  - sqlEscaper: due to indexOf using a mismatched lookup table, only `'`, `"`,
- *    `\`, and `%` are actually replaced (escaped to \', \", \\, % respectively).
- *    NUL/BS/TAB/SUB/LF/CR are matched by the regex but NOT rewritten — they
- *    fall through unchanged via `|| char`. Locking that quirk here.
+ *  - sqlEscaper: mysql escape convention (mysql2-compatible). NUL/BS/TAB/SUB
+ *    map to \0/\b/\t/\Z, LF/CR to \n/\r, quotes/backslash get a literal
+ *    backslash escape. '%' is kept literal (caller decides LIKE wildcard
+ *    semantics). Previous lookup-table mismatch silently dropped controls.
  *  - escapeAndQuote: client-aware. mysql/maria use stringsWrapper='"';
  *    pg/mssql/sqlite/firebird use stringsWrapper='\''. Both escape the same
  *    control set; mysql adds " escape because " is also the wrapper.
@@ -63,23 +64,22 @@ describe('querySplitter', () => {
       ]);
    });
 
-   it('does not split inside a postgres dollar-quoted body (lock current concat output)', () => {
-      // QUIRK: dollar-tag matching in the inner loop mutates currentQuery
-      // every char while still inside the matched window. We lock the exact
-      // produced string. The important contract is "still 1 query, no split
-      // at the inner ;".
+   it('does not split inside a postgres dollar-quoted ($$) body', () => {
+      // Inner ; (string and dollar-quoted body) must not split. BEGIN-END
+      // segment-trim still drops the spaces between sub-statements — that's
+      // a separate quirk of the line.trim() in the outer loop, not dollar-tag.
       const sql = 'DO $$ BEGIN PERFORM \'a;b\'; PERFORM 1; END $$;';
       const result = querySplitter(sql, 'pg');
       expect(result).toHaveLength(1);
-      expect(result[0]).toBe('D$$ $$$ BEGIN PERFORM \'a;b\';PERFORM 1;E$$D$$$$$;');
+      expect(result[0]).toBe('DO $$ BEGIN PERFORM \'a;b\';PERFORM 1;END $$;');
    });
 
-   it('does not split inside a postgres dollar-tagged body (lock current concat output)', () => {
+   it('does not split inside a postgres dollar-tagged ($body$) body', () => {
       const sql = 'CREATE FUNCTION f() RETURNS void AS $body$ SELECT 1; SELECT 2; $body$ LANGUAGE sql;';
       const result = querySplitter(sql, 'pg');
       expect(result).toHaveLength(1);
       expect(result[0]).toBe(
-         'C$body$ $body$I$body$)$body$R$body$i$body$$$body$ SELECT 1;SELECT 2;$$body$ LANGUAGE sql;'
+         'CREATE FUNCTION f() RETURNS void AS $body$ SELECT 1;SELECT 2;$body$ LANGUAGE sql;'
       );
    });
 });
@@ -123,8 +123,8 @@ describe('removeComments', () => {
 });
 
 describe('sqlEscaper', () => {
-   // The implementation has a lookup-table quirk: only ' " \ % are actually rewritten.
-   // The other regex-matched chars (NUL/BS/TAB/SUB/LF/CR) fall through unchanged.
+   // mysql escape convention (mysql2-compatible). Spec aligned with
+   // escapeAndQuote() control-char set above.
 
    it('escapes single-quote \' as \\\'', () => {
       expect(sqlEscaper('O\'Brien')).toBe('O\\\'Brien');
@@ -138,22 +138,20 @@ describe('sqlEscaper', () => {
       expect(sqlEscaper('a\\b')).toBe('a\\\\b');
    });
 
-   it('leaves percent % unchanged (the lookup maps % → "%" — no-op)', () => {
-      // Locking the current behavior: pattern matches %, but the replacement
-      // string in the `r` array is just '%', so the output is unchanged.
+   it('leaves percent % unchanged (LIKE wildcard semantics is caller-side)', () => {
       expect(sqlEscaper('100%')).toBe('100%');
    });
 
-   it('leaves newlines unchanged (lookup-table miss → falls through)', () => {
-      expect(sqlEscaper('a\nb')).toBe('a\nb');
+   it('escapes newlines as \\n', () => {
+      expect(sqlEscaper('a\nb')).toBe('a\\nb');
    });
 
-   it('leaves carriage returns unchanged', () => {
-      expect(sqlEscaper('a\rb')).toBe('a\rb');
+   it('escapes carriage returns as \\r', () => {
+      expect(sqlEscaper('a\rb')).toBe('a\\rb');
    });
 
-   it('leaves NUL / BS / TAB / SUB unchanged (lookup-table miss)', () => {
-      expect(sqlEscaper('a\0b\x08c\tdaylight\x1ae')).toBe('a\0b\x08c\tdaylight\x1ae');
+   it('escapes NUL / BS / TAB / SUB to \\0 / \\b / \\t / \\Z', () => {
+      expect(sqlEscaper('a\0b\bc\tdaylight\x1ae')).toBe('a\\0b\\bc\\tdaylight\\Ze');
    });
 
    it('leaves a string with no special characters unchanged', () => {
