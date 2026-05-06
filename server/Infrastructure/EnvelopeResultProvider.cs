@@ -29,14 +29,19 @@ public sealed class EnvelopeResultProvider : IUnifyResultProvider
         var message = context.Exception?.Message
             ?? metadata.Errors?.ToString()
             ?? "internal server error";
+        // HTTP 200 + envelope `status: "error"` matches the legacy Node sidecar
+        // contract (every captured fixture in tests/fixtures/contract/ is 200).
+        // The renderer's httpClient.ts auto-reconnect logic only fires when
+        // res.ok && data.status === 'error' && response.includes('No active connection');
+        // returning 500 here would short-circuit at the `if (!res.ok) throw` line
+        // (httpClient.ts:47) and skip the reconnect handler — surfacing as the
+        // user-visible "API error 500: No active connection" toast loop instead
+        // of a quiet auto-reconnect.
         return new JsonResult(new EnvelopeResult<object?>
         {
             Status = "error",
             Response = message
-        })
-        {
-            StatusCode = (int)HttpStatusCode.InternalServerError
-        };
+        });
     }
 
     public IActionResult OnSucceeded(ActionExecutedContext context, object? data)
