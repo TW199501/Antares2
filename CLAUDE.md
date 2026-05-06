@@ -6,48 +6,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Antares2 is a cross-platform desktop SQL client, forked from [antares-sql/antares](https://github.com/antares-sql/antares) by Fabio Di Stasio (MIT licensed, original project is no longer maintained). It supports MySQL/MariaDB, PostgreSQL, SQLite, and SQL Server (Firebird support was dropped in 0.8.4 — see `Firebird` note in **Database clients** below). The app was originally Electron-based; it has been migrated to **Tauri v2** (Rust shell + Vue.js renderer). Any references to Electron elsewhere in the repo (old docs, comments) are historical — the current runtime is Tauri. Tauri identifier: `com.tw199501.antares2` (AppData at `%APPDATA%\com.tw199501.antares2\` on Windows, `~/.config/com.tw199501.antares2/` on Linux, `~/Library/Application Support/com.tw199501.antares2/` on macOS).
 
-**Sidecar runtime — current state (post Phase 17 cutover, commit `2f26bcb`, 2026-05-06).** Production builds ship a **.NET 10 self-contained single-file binary** built from `server/` (Furion 4.9.8 + SqlSugar 5.1.4 + native ADO.NET drivers — `MySqlConnector` / `Npgsql` / `Microsoft.Data.SqlClient` / `Microsoft.Data.Sqlite` / `SSH.NET`). The legacy Node.js / Fastify sidecar (`web/main/`, `sidecar/antares-server.cjs`, `workers/`) is **kept in tree as a one-line `git revert` rollback path** until Phase 18 (deferred per plan v5 `docs/superpowers/plans/2026-05-06-net-sidecar-migration-v5.md` to ≥ 2 releases after the cutover). The dev loop still runs the Node sidecar for fast iteration — only `pnpm tauri:build` (release) bundles the .NET binary. See **Process model**, **Sidecar bundle**, and **Cross-platform Tauri configuration** below for the per-mode split. If you see "Node.js sidecar" anywhere without a "(legacy / dev-only)" qualifier, treat it as historical text that has not yet been re-written.
+**Sidecar runtime.** The backend is a single **.NET 10 self-contained single-file binary** built from `server/` (Furion 4.9.8 + SqlSugar 5.1.4 + native ADO.NET drivers — `MySqlConnector` / `Npgsql` / `Microsoft.Data.SqlClient` / `Microsoft.Data.Sqlite` / `SSH.NET`). Both dev and release modes spawn the .NET sidecar — dev via `dotnet run --project server/AntaresServer.csproj` (JIT, edits in `server/` pick up on next `pnpm tauri:dev`), release via the pre-published binary at `sidecar-net/antares-server[.exe]` staged into the Tauri bundle. The 18-phase migration that produced this state (commits `eb6fa20` Firebird drop, `8d7b95e` dev flip, `03aa211` Node deletion) is documented in `docs/superpowers/plans/2026-05-06-net-sidecar-migration-v5.md`; pre-migration Antares2 used a Node.js / Fastify sidecar but that code is gone — `git log --grep "phase 18"` finds the deletion commit if you need history.
 
 ## Commands
 
 ```bash
-# Development (starts Tauri shell + Vite dev server + Node sidecar automatically on :5555)
-# Dev intentionally runs the Node sidecar via tsx for fast iteration. The .NET sidecar
-# is only built/spawned in release builds.
+# Development — starts vite (5173) + Tauri shell. The Rust shell spawns the .NET
+# sidecar via `dotnet run --project server/AntaresServer.csproj`; first cold
+# start ~25s for full build, subsequent runs ~3s incremental. The renderer
+# learns the random port + per-session token via Tauri commands.
 pnpm tauri:dev
 
-# Run the legacy Node sidecar standalone in watch mode (dev-only, port 5555)
-pnpm sidecar:dev
-
 # Build the .NET 10 self-contained sidecar binary into sidecar-net/antares-server[.exe]
-# (used by `pnpm tauri:build`; you rarely run this directly)
+# (used by `pnpm tauri:build`; you rarely run this directly).
 pnpm sidecar:build:net
 
-# Build the legacy Node sidecar bundle (kept until Phase 18; not used by production
-# builds anymore — the `tauri:build` orchestrator no longer calls it)
-pnpm sidecar:build
-
-# Build for production — runs scripts/tauri-build.mjs which now invokes
-# build-net-sidecar.mjs + stage-resources.mjs --target=net + tauri build
+# Build for production — runs scripts/tauri-build.mjs which orchestrates:
+# build-net-sidecar.mjs (dotnet publish) → stage-resources.mjs --target=net
+# (single binary copy) → tauri build (NSIS + MSI on Windows; DMG on macOS;
+# AppImage / deb / rpm on Linux). Windows-only post-step: build-msi.mjs
+# re-invokes WiX light.exe with ICE30 suppressed.
 pnpm tauri:build
 
 # .NET preflight: verifies dotnet SDK ≥ 10.0, runtime IDs, and required NuGet packages
 pnpm preflight:net
 
-# Replay captured contract fixtures against a running sidecar (=node default,
-# =net for the .NET binary, =both runs the same fixture set against both targets
-# and diffs responses — used to verify the .NET rewrite stays contract-compatible)
+# Replay captured fixtures against the live sidecar (`tests/fixtures/contract/*.json`).
+# Used during the .NET migration to verify on-the-wire compatibility; still useful
+# as a smoke test after server/ refactors.
 pnpm replay:contract
-pnpm replay:contract:net
-pnpm replay:contract:both
 
 # Lint (ESLint + Stylelint)
 pnpm lint
 pnpm lint:fix
 
-# Type-check Vue + TypeScript (4 known pre-existing errors as of 2026-05-03,
-# all in WorkspaceTabPropsTable.vue from props-table refactor — fixing requires
-# original refactor author context; new code should not add more)
+# Type-check Vue + TypeScript
 pnpm type-check
 
 # End-to-end tests (Playwright)
@@ -59,14 +52,14 @@ pnpm test:unit:run          # one-shot, exits 0 if no specs match (CI-friendly)
 pnpm test:coverage          # writes coverage/lcov.info
 pnpm test:coverage:check    # enforces hard gate; -- --report writes coverage/report.md
 
-# Capture HTTP/WS contract fixtures from the live sidecar (used by ipc-api tests)
-pnpm capture:contract
+# .NET integration tests (xunit, server-side)
+dotnet test tests/integration-net/Server.IntegrationTests.csproj
 
 # LF line-ending audit (4-layer enforcement: .gitattributes / .editorconfig / VSCode / this script)
 pnpm check:eol
 
-# Check translation completeness across all locales
-pnpm translation:check
+# Check translation completeness against en-US baseline (locale arg required)
+pnpm translation:check zh-TW
 
 # Verify no remaining Electron API references after migration
 pnpm verify:tauri-migration
@@ -82,76 +75,62 @@ pnpm release patch              # 0.8.3 -> 0.8.4
 pnpm release 0.9.0 --dry-run    # preview without writing
 ```
 
-> The Vite dev server alone (`pnpm vite:dev`) also works: `sidecarPlugin` in `vite.config.ts` auto-starts the **Node Fastify sidecar** on port 5555 (dev mode is still Node — see Process model below).
->
 > **Package manager:** Use `pnpm` only. The project has `pnpm-lock.yaml`. Delete `package-lock.json` if present.
 >
-> `pnpm tauri:build` runs `scripts/tauri-build.mjs`, which since Phase 17 orchestrates: (1) `scripts/build-net-sidecar.mjs` runs `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true` and drops `antares-server[.exe]` into `sidecar-net/`; (2) `scripts/stage-resources.mjs --target=net` copies just that single binary into `src-tauri/resources/` (no Node runtime, no `node_modules` BFS walk, no workers — the .NET binary statically links everything); (3) `tauri build` produces installers per platform. **Windows-only** post-step (4): the MSI is re-built via `scripts/build-msi.mjs` which re-invokes WiX's `light.exe` with `ICE30` suppressed. On macOS/Linux step (4) is skipped and `tauri build`'s exit status is authoritative. The legacy `scripts/build-sidecar.mjs` (esbuild) is no longer called by the orchestrator — it stays runnable for the rollback path but production never invokes it.
+> `pnpm tauri:build` runs `scripts/tauri-build.mjs`, which orchestrates: (1) `scripts/build-net-sidecar.mjs` runs `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true` and drops `antares-server[.exe]` into `sidecar-net/`; (2) `scripts/stage-resources.mjs --target=net` copies just that single binary into `src-tauri/resources/` — no Node runtime, no `node_modules`, the .NET binary statically links everything; (3) `tauri build` produces installers per platform.
 
 ## Architecture
 
 ### Process model (sidecar pattern)
 
-The Rust shell spawns a single-process sidecar and talks to it over loopback HTTP / WebSocket. **Which sidecar runs depends on build mode**, controlled by `#[cfg(debug_assertions)]` branches in `src-tauri/src/sidecar.rs`:
+The Rust shell spawns the .NET sidecar as a child process and talks to it over loopback HTTP / WebSocket. The same code path runs in dev and release, with one difference: the program invoked.
 
 ```
-                                Dev (`tauri:dev`, debug build)
-                             ┌────────────────────────────────────────┐
-                             │  Node 20 + tsx + web/main/server.ts    │
-Tauri (Rust)  ──spawns──>    │  Fastify, port 5555 (fixed)            │
-     |                       └────────────────────────────────────────┘
+                              Dev (`pnpm tauri:dev`, debug build)
+                           ┌─────────────────────────────────────────┐
+                           │  dotnet run --project server/...        │
+                           │  JIT compile + Furion startup ~3-5s     │
+Tauri (Rust)  ──spawns──>  └─────────────────────────────────────────┘
      |
-     |                              Release (`tauri:build`)
-     |                       ┌────────────────────────────────────────┐
-     |                       │  .NET 10 self-contained single file    │
-     └──spawns──>            │  Furion 4.9.8 (ASP.NET Core), random   │
-                             │  port, antares-server[.exe]            │
-                             └────────────────────────────────────────┘
-                                            ▲
+     |                            Release (`pnpm tauri:build`)
+     |                     ┌─────────────────────────────────────────┐
+     |                     │  ./antares-server[.exe]                 │
+     └────spawns────>      │  .NET 10 self-contained single file     │
+                           │  Furion 4.9.8 (ASP.NET Core)            │
+                           └─────────────────────────────────────────┘
+                                        ▲
      |  get_sidecar_port / get_sidecar_token              |
      |  (Tauri commands)                                  | HTTP POST + WS
-     v                                                    |
+     v                                                    | (random port, X-Sidecar-Token)
 Vue renderer  ─────────────────────────────────────────────┘
 (web/renderer/)
 ```
 
-The Rust layer (`src-tauri/src/sidecar.rs`) spawns the chosen sidecar as a child process and reads its stdout for a `READY:<port>:<token>` line. The port and a per-session secret token are stored in global `Mutex` values. The renderer retrieves the token via the `get_sidecar_token` Tauri command and sends it as `X-Sidecar-Token` on every HTTP request; WebSocket connections pass it as a `?token=` query parameter. All non-`/health` routes reject requests that omit the correct token. The renderer's `web/renderer/ipc-api/httpClient.ts` wraps all backend calls as HTTP POST requests.
+`src-tauri/src/sidecar.rs` reads the child's stdout for a `READY:<port>:<token>` line. The port and a per-session secret token are stored in global `Mutex` values. The renderer retrieves the token via the `get_sidecar_token` Tauri command and sends it as `X-Sidecar-Token` on every HTTP request; WebSocket connections pass it as a `?token=` query parameter. All non-`/health` routes reject requests that omit the correct token. The renderer's `web/renderer/ipc-api/httpClient.ts` wraps all backend calls as HTTP POST requests.
 
-**Both sidecars expose the identical HTTP / WebSocket contract** — same paths, same envelope shape, same `READY:` line format. The renderer cannot tell which one it's talking to; that's the whole point of the `replay:contract:both` script (replays captured fixtures against both and diffs responses).
-
-On the .NET side, the envelope unification is provided by `EnvelopeResultProvider` (`server/Infrastructure/EnvelopeResultProvider.cs`) wired in `Startup.cs` via `.AddInjectWithUnifyResult<EnvelopeResultProvider>()`. The `READY:` line is emitted by `ReadyLineHook` (an `IHostedService`). Token enforcement is `SidecarTokenMiddleware`. WebSocket export/import paths (`/ws/export`, `/ws/import`) are handled by `ExportImportHub`.
-
-In dev mode the sidecar always runs on port **5555** (and `sidecar.rs` short-circuits to reuse it if Vite's `sidecarPlugin` already started one). In production a random free port is used.
+The `READY:<port>:<token>` line, envelope unification, and token enforcement live in `server/Infrastructure/`: `ReadyLineHook` (`IHostedService` printing the READY line), `EnvelopeResultProvider` (Furion `IUnifyResultProvider` wired in `Startup.cs` via `.AddInjectWithUnifyResult<EnvelopeResultProvider>()`), `SidecarTokenMiddleware`. WebSocket export/import paths (`/ws/export`, `/ws/import`) are handled by `ExportImportHub`. The port is always picked from a random free port via `PortAllocator` — no fixed-port assumption in either mode.
 
 ### Source layout
 
 | Path | Purpose |
 |------|---------|
-| `web/common/` | Shared utilities, interfaces, and per-client customizations used by both renderer and the legacy Node sidecar |
+| `web/common/` | Shared utilities, interfaces, and per-client customizations used by the renderer |
 | `web/common/customizations/` | Per-database-client feature flags (what each DB supports) |
 | `web/renderer/` | Vue 3 frontend application |
 | `web/renderer/stores/` | Pinia stores (connections, workspaces, settings, etc.) |
 | `web/renderer/ipc-api/` | HTTP wrappers that call the sidecar — one file per resource group |
 | `web/renderer/components/` | Vue SFCs; `Base*` = reusable primitives, `The*` = single-instance layout |
-| `src-tauri/` | Rust Tauri shell; `src/lib.rs` registers plugins, `src/sidecar.rs` manages the child process (dev = Node via tsx, release = .NET binary) |
-| **`server/`** | **.NET 10 / Furion 4.9.8 sidecar (production runtime).** `Program.cs` boots Furion via `Serve.Run()`; `Startup.cs` (an `AppStartup`) registers DI + middleware. Subfolders mirror the Node route groups: `Connections/`, `Schemas/`, `Tables/`, `Views/`, `Triggers/`, `Routines/`, `Functions/`, `Schedulers/`, `Users/`, `Ai/`, `WebSockets/`, `Workers/`, `Health/`, `Echo/`, `Application/`. `Infrastructure/` holds the cross-cutting pieces: `EnvelopeResultProvider` (Furion `IUnifyResultProvider` impl), `SidecarTokenMiddleware`, `ReadyLineHook` (`IHostedService` that prints `READY:<port>:<token>`), `TokenGenerator`, `PortAllocator`. `Models/` holds DTOs. Built with `pnpm sidecar:build:net` (which calls `dotnet publish`) — output lands in `sidecar-net/antares-server[.exe]` |
+| `src-tauri/` | Rust Tauri shell; `src/lib.rs` registers plugins, `src/sidecar.rs` manages the .NET child process (dev = `dotnet run`, release = pre-published binary) |
+| `server/` | **.NET 10 / Furion 4.9.8 sidecar (the only backend).** `Program.cs` boots Furion via `Serve.Run()`; `Startup.cs` (an `AppStartup`) registers DI + middleware. Subfolders by resource: `Connections/`, `Schemas/`, `Tables/`, `Views/`, `Triggers/`, `Routines/`, `Functions/`, `Schedulers/`, `Users/`, `Ai/`, `WebSockets/`, `Workers/`, `Health/`, `Echo/`, `Application/`. `Infrastructure/` holds cross-cutting pieces: `EnvelopeResultProvider` (Furion `IUnifyResultProvider` impl), `SidecarTokenMiddleware`, `ReadyLineHook` (`IHostedService` that prints `READY:<port>:<token>`), `TokenGenerator`, `PortAllocator`. `Models/` holds DTOs. Built with `pnpm sidecar:build:net` (which calls `dotnet publish`) — output lands in `sidecar-net/antares-server[.exe]` |
 | `server/AntaresServer.csproj` | net10.0, `PublishSingleFile=true`, `SelfContained=true`, RIDs `win-x64;linux-x64;osx-x64;osx-arm64`. NuGet deps: Furion 4.9.8.57, SqlSugarCore 5.1.4.214, MySqlConnector 2.4, Npgsql 8.0.5, Microsoft.Data.SqlClient 5.2.2, Microsoft.Data.Sqlite 9.0, SSH.NET 2024.2, Bogus 35.6 |
-| `tests/integration-net/` | xUnit integration tests for the .NET sidecar (e.g. `SkeletonHealthTests.cs`). Run via `dotnet test` from that folder, **not** vitest |
+| `tests/integration-net/` | xUnit tests for the .NET sidecar — `SkeletonHealthTests.cs` (spawns the binary and probes /health), `ConnectionConfigBuilderTests.cs` (unit tests for the per-flavor switch). Run via `dotnet test`, **not** vitest |
 | `sidecar-net/` | Build output of `pnpm sidecar:build:net` — `antares-server[.exe]` (~290 MB self-contained). **Gitignored** — staged into the bundle by `stage-resources.mjs --target=net`. CI / release builds rebuild from source |
 | `scripts/build-net-sidecar.mjs` | Wraps `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true`, then runs the published binary in `--probe-mode` to mechanically verify it can boot and emit `READY:` |
 | `scripts/preflight-net.mjs` | Verifies dotnet SDK ≥ 10.0 + RID availability before a release |
-| `scripts/replay-contract.mjs` | Replays `tests/fixtures/contract/*.json` against `node` / `net` / `both` — the contract diff between the two sidecars |
-| `docs/net-migration/` | Migration artifacts: `baseline-tag.txt` (the pre-cutover SHA for revert) + `renderer-audit-allowlist.txt` |
-| `docs/superpowers/plans/2026-05-06-net-sidecar-migration-v5.md` | The 18-phase locked execution plan for the migration (Phases 0–17 done, Phase 18 = Node code deletion, deferred ≥ 2 releases) |
-| `web/main/server.ts` | **Legacy Node sidecar entry point (Fastify).** Used in dev only, kept for revert. Eventually deleted in Phase 18 |
-| `web/main/routes/` | Legacy Node sidecar route handlers — one file per resource type. Mirrors `server/<Resource>/` on the .NET side |
-| `web/main/libs/clients/` | Legacy Node DB clients extending `BaseClient`. Replaced on the .NET side by SqlSugar + per-flavor `IQueryCanceller` (see Database clients below) |
-| `web/main/libs/ClientsFactory.ts` | Legacy factory keyed on `args.client` |
-| `web/main/workers/` | Legacy Node Worker threads (`exporter.ts`, `importer.ts`). Replaced on the .NET side by `server/Workers/TaskRegistry` + `ExportImportHub` |
-| `web/main/libs/exporters/` | Legacy exporter hierarchy `BaseExporter → SqlExporter → ...`. Replaced on the .NET side by `server/Schemas/ExportImportService.cs` |
-| `workers/` | Legacy pre-built worker bundles (committed). Not staged on the .NET path |
-| `sidecar/` | Legacy pre-built `antares-server.cjs`; `node` / `node.exe` runtime binary lives here too (gitignored). Not staged on the .NET path |
-| `scripts/build-sidecar.mjs` | Legacy esbuild script. No longer called by `tauri-build.mjs`; runnable for the rollback path |
+| `scripts/replay-contract.mjs` | Replays `tests/fixtures/contract/*.json` against the live sidecar to catch on-the-wire regressions after `server/` changes |
+| `scripts/stage-resources.mjs` | Copies the .NET binary from `sidecar-net/` into `src-tauri/resources/`. `--target=net` is the only valid value (the legacy `--target=node` branch was deleted in Phase 18) |
+| `docs/net-migration/` | Migration artifacts: `baseline-tag.txt` (pre-Phase-17 commit SHA for archeology) + `renderer-audit-allowlist.txt` |
+| `docs/superpowers/plans/2026-05-06-net-sidecar-migration-v5.md` | The 18-phase execution plan for the Node→.NET migration (now fully complete) |
 | `e2e/` | Playwright e2e tests — 8 specs as of 2026-05: 3 mssql (`mssql-database-switch`, `mssql-limit-guards`, `mssql-empty-table-header`) + 5 smoke (`app-boot`, `settings-modal`, `connection-modal`, `theme-toggle`, `i18n-locale-switch`). `playwright.config.ts` sets `testDir: './e2e'` and `baseURL: http://localhost:5173` (the Vite dev server, **not** the sidecar API port — fixed in commit `0f2621e`). Use `localhost` not `127.0.0.1`: Vite on Windows binds to IPv6 `[::1]` by default, so a literal `127.0.0.1` baseURL gives `ERR_CONNECTION_REFUSED`. Override per-spec via `VITE_URL` env var (mssql specs do this). Outputs go to `e2e-results/` (gitignored) |
 | `tests/` | Shared test setup + helpers (`tests/setup.ts`, `tests/helpers/`) + IPC contract fixtures (`tests/fixtures/contract/`). Path alias `@tests/` resolves here. Unit tests themselves are **co-located** next to source as `*.test.ts` (not in this directory) |
 | `docs/ui-spec.md` | Single source for UI padding/height/font/color/radius conventions |
@@ -161,9 +140,7 @@ In dev mode the sidecar always runs on port **5555** (and `sidecar.rs` short-cir
 
 ### Database clients
 
-There are two parallel implementations, one per sidecar.
-
-**.NET side (production runtime):** `server/Connections/ConnectionService.cs` is the connection manager; per-flavor query cancellation is split into `IQueryCanceller` implementations registered as `Singleton` in `Startup.cs`:
+`server/Connections/ConnectionService.cs` is the connection manager; per-flavor query cancellation is split into `IQueryCanceller` implementations registered as `Singleton` in `Startup.cs`:
 
 | Flavor | Cancellation impl | Driver |
 |--------|-------------------|--------|
@@ -171,13 +148,11 @@ There are two parallel implementations, one per sidecar.
 | `pg` | `PgQueryCanceller` | Npgsql |
 | `mssql` | `MssqlQueryCanceller` | Microsoft.Data.SqlClient |
 | `sqlite` | `SqliteQueryCanceller` | Microsoft.Data.Sqlite |
-| `firebird` | **dropped** — `ConnectionConfigBuilder` rejects with a `NotSupportedException` referencing 0.8.3 | _(none — see Firebird note below)_ |
+| `firebird` | **dropped in 0.8.4** — `ConnectionConfigBuilder` throws `NotSupportedException` pointing users to 0.8.3 | _(none — see Firebird note below)_ |
 
 Schema reading goes through `SchemaTreeBuilder` / `SchemaDiscoveryService` / `SchemaMetadataService` / `SchemaDdlService` (`server/Schemas/`); raw SQL is `RawQueryExecutor`. Tables/Views/Triggers/Routines/Functions/Schedulers/Users each have their own service folder. SqlSugar (`SqlSugarCore 5.1.4.214`) is the ORM/query builder for everything that doesn't go through `RawQueryExecutor`. New database support means adding a flavor enum + registering its `IQueryCanceller` + extending `ConnectionConfigBuilder`, and adding a customizations file in `web/common/customizations/`.
 
-**Firebird (dropped in 0.8.4).** Upstream antares-sql/antares supported Firebird via `node-firebird`; the legacy Node sidecar still does (`web/main/libs/clients/FirebirdSQLClient.ts`, 1255 LOC). The .NET 10 sidecar does **not**: SqlSugar 5.1.4 has no native Firebird provider, the community has not published a `SqlSugar.Firebird` package, and rewriting the schema / query / exporter / import stack against raw `FirebirdSql.Data.FirebirdClient` ADO.NET (~1500 lines of branch code) was deemed out of scope for the .NET migration. `ConnectionConfigBuilder.Build` explicitly throws `NotSupportedException` for `client == "firebird"` with a message that points users to Antares2 0.8.3 or earlier. The renderer's connection wizard (`WorkspaceAddConnectionPanel.vue`, `WorkspaceEditConnectionPanel.vue`) no longer lists Firebird as a choosable client. `web/common/customizations/firebird.ts` is deliberately left in place — Phase 18 will delete it together with `web/main/libs/clients/FirebirdSQLClient.ts` and the rest of the legacy Node sidecar; killing it earlier breaks legacy dev mode (which still imports the file). If a future maintainer wants to revive Firebird support: write a SqlSugar custom provider DLL (estimate 2–4 weeks) or carry a parallel raw-ADO.NET branch through every service that touches schema metadata. Either path is a meaningful project; this paragraph plus the commit that dropped Firebird (search `git log --grep "drop Firebird"`) is the only roadmap.
-
-**Legacy Node side (dev + revert path only):** `ClientsFactory` (`web/main/libs/ClientsFactory.ts`) maps strings → client classes (`MySQLClient`, `PostgreSQLClient`, `SQLiteClient`, `FirebirdSQLClient`, `SQLServerClient`), all extending `BaseClient` (`web/main/libs/clients/BaseClient.ts`). Phase 18 will delete this hierarchy.
+**Firebird (dropped in 0.8.4).** Upstream antares-sql/antares supported Firebird via `node-firebird`; the .NET 10 sidecar does not. SqlSugar 5.1.4 has no native Firebird provider, the community has not published a `SqlSugar.Firebird` package, and rewriting the schema / query / exporter / import stack against raw `FirebirdSql.Data.FirebirdClient` ADO.NET (~1500 lines of branch code) was deemed out of scope for the .NET migration. `ConnectionConfigBuilder.Build` explicitly throws `NotSupportedException` for `client == "firebird"`. The renderer's connection wizard (`WorkspaceAddConnectionPanel.vue`, `WorkspaceEditConnectionPanel.vue`) no longer lists Firebird as a choosable client; the `'firebird'` branch of `workspaces.ts`'s switch falls through to the mysql customizations as a UI-error-path fallback (a stale 0.8.3-era persisted connection hits the .NET reject before any UI flag matters). If a future maintainer wants to revive Firebird support: write a SqlSugar custom provider DLL (estimate 2–4 weeks) or carry a parallel raw-ADO.NET branch through every service that touches schema metadata. Either path is a meaningful project; this paragraph plus the commit that dropped Firebird (search `git log --grep "drop Firebird"`) is the only roadmap.
 
 ### State management
 
@@ -200,7 +175,7 @@ The test rollout was tracked in [docs/superpowers/plans/2026-05-03-frontend-unit
 - **i18n-ally lints `t('literal')` regardless of key existence**: in test code, wrap the probe key in a variable (`const probe = '__test__'; t(probe)`) to bypass the linter without disabling the rule.
 - **happy-dom 20.x already has** `IntersectionObserver` / `ResizeObserver` / `matchMedia` / `KeyboardEvent.getModifierState` built in. `tests/setup.ts` still stubs them as defense-in-depth, but missing-API failures are not the actual risk — assertion mismatch is.
 - **Subagents that find a source bug do not fix it**: lock current behavior with a characterization test, mark the commit message with `quirk`, and let the user/owner open a dedicated fix PR.
-- **Fixture capture is user-driven**: `pnpm capture:contract` is **never** run by an agent against credentials passed through chat. Agents may produce hand-crafted fixtures by reading wrapper + route source (`tests/fixtures/contract/*.json` with `metadata.source: 'hand-crafted-from-wrapper-and-route-source'`); real-DB capture is the user's responsibility, run in their own terminal.
+- **Fixture capture is user-driven**: real-DB fixtures in `tests/fixtures/contract/*.json` are produced from a live sidecar against the user's own DB credentials — **never** run by an agent against credentials passed through chat. Agents may produce hand-crafted fixtures by reading wrapper + route source (mark them with `metadata.source: 'hand-crafted-from-wrapper-and-route-source'`); real-DB capture is the user's responsibility, run in their own terminal. The `pnpm capture:contract` script that did this for the legacy Node sidecar was removed in Phase 18; rebuild it for the .NET sidecar if/when needed.
 
 **Coverage gate (`scripts/check-coverage.mjs`) is the single source of truth — not vitest's built-in `coverage.thresholds`.** Vitest's thresholds don't support warn-only semantics, which mattered during the multi-PR buildup. The gate has two layers:
 
@@ -270,11 +245,9 @@ Do **not** import from `@tw199501/specsnap-core` directly — the wrapper transi
 
 Panel button labels are currently English-only (`Start Inspect` / `Clear` / `Copy MD` etc.) — the wrapper has no `labels` prop yet. The dormant `application.specsnap.{done,clear,copy,copied,…}` i18n keys remain in the locale files; they will reactivate when the wrapper accepts a `labels` prop upstream. Only `application.specsnap.inspector` (used as `panel-title` + sidebar tooltip) is live today.
 
-### Sidecar bundle (post Phase 17)
+### Sidecar bundle
 
-**.NET path (production):** `pnpm sidecar:build:net` runs `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true` in `server/`, producing `sidecar-net/antares-server[.exe]` (~290 MB on win-x64 — self-contained means the entire .NET 10 runtime is statically embedded). `scripts/stage-resources.mjs --target=net` then copies that single binary into `src-tauri/resources/`. **No `node_modules` BFS walk, no `workers/` staging, no separate `node` runtime to download** — those concerns disappear entirely on the .NET path. After changing anything in `server/`, run `pnpm sidecar:build:net` to verify; CI rebuilds from source on every release.
-
-**Legacy Node path (rollback only):** `sidecar/antares-server.cjs` + `workers/*.js` are esbuild outputs committed to the repo. After changing anything in `web/main/`, run `pnpm sidecar:build` and commit both the source change and the updated bundle together. Packages with dynamic `__dirname`-based requires or native addons (`@heroku/socksv5`, `better-sqlite3`, `ssh2`, `node-firebird`, etc.) are marked `external` in `scripts/build-sidecar.mjs` — they are loaded from `node_modules/` bundled as a resource. `scripts/stage-resources.mjs --target=node` does **not** maintain a hand-written package list: it starts from a 7-package seed (the externals above) and BFS-walks each package's `dependencies`, staging every reached package into `src-tauri/resources/node_modules/` (~52 packages currently). **Never** revert this to a hand-written list — pnpm hoists transitive deps (`big-integer`, `asn1`, `safer-buffer`, `ip-address`, etc.) to top-level `node_modules/`, and missing any one of them causes the sidecar to crash at startup with `Cannot find module 'X'`, surfacing as `TypeError: Failed to fetch` on every renderer API call. This rule still applies if you ever roll back via `git revert 2f26bcb`.
+`pnpm sidecar:build:net` runs `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true` in `server/`, producing `sidecar-net/antares-server[.exe]` (~290 MB on win-x64 — self-contained means the entire .NET 10 runtime is statically embedded). `scripts/stage-resources.mjs --target=net` then copies that single binary into `src-tauri/resources/`. No `node_modules`, no separate runtime to download — the .NET binary statically links everything. After changing anything in `server/`, run `pnpm sidecar:build:net` to verify; CI rebuilds from source on every release.
 
 ### Cross-platform Tauri configuration
 
@@ -301,7 +274,7 @@ Five workflow files live under `.github/workflows/`. Two drive routine builds, t
 - **`test-e2e-win.yml`** — Playwright e2e on Windows, **manual dispatch only** (the `push` trigger is commented out). Not part of the merge gate.
 - **`create-generated-sources.yml`** — upstream legacy from `antares-sql/antares`, retained but not relied on.
 
-Each build job has both an `actions/setup-dotnet@v4` step (`dotnet-version: '10.x'`, added in Phase 17.5 / commit `496a134`) so `dotnet publish` in `build-net-sidecar.mjs` has a runtime, **and** a `Download Node.js binary for <platform>` step that `curl`s the exact `nodejs.org` tarball into `sidecar/` (Windows uses PowerShell `Invoke-WebRequest`). The Node download steps were required for the legacy Node-sidecar build path because `sidecar/node*` is gitignored; **after Phase 17 they are dead weight** for the production path — `stage-resources.mjs --target=net` no longer reads `sidecar/node`. They remain in the workflows so a `git revert 2f26bcb` rollback still produces working CI without an extra workflow change. If you bump `NODE_VERSION` in the four download steps, bump it in all four (currently `20.19.0`) — but plan to delete those steps entirely once Phase 18 lands. The `dotnet-version: '10.x'` floats to the latest .NET 10 patch — pin to a specific patch only if a build break demands it.
+Each build job has an `actions/setup-dotnet@v4` step (`dotnet-version: '10.x'`) so `dotnet publish` in `build-net-sidecar.mjs` has a runtime; `actions/setup-node@v4` is also present because the build orchestration (`scripts/tauri-build.mjs`, `stage-resources.mjs`, etc.) is Node. The `dotnet-version: '10.x'` floats to the latest .NET 10 patch — pin to a specific patch only if a build break demands it.
 
 ### Release process
 
@@ -358,4 +331,4 @@ What IS already in place (does no harm without activation):
 
 ### Cross-platform Rust caveat
 
-`src-tauri/src/sidecar.rs` has `#[cfg(windows)]` and `#[cfg(not(windows))]` branches (the latter calls `libc::kill` to terminate the sidecar child — applies to both the Node and .NET sidecars; the kill path is sidecar-agnostic). On a Windows dev machine, `cargo check` / `cargo build` **does not compile** the `cfg(not(windows))` branch — so missing crates referenced only there will pass locally and only fail on macOS / Linux CI. Such crates must be declared under `[target.'cfg(unix)'.dependencies]` in `Cargo.toml` (currently: `libc = "0.2"`). The same trap applies to the `#[cfg(debug_assertions)]` (dev = Node) vs `#[cfg(not(debug_assertions))]` (release = .NET) branches in `spawn_server`: a `cargo check` of a debug build does not type-check the release path, and vice versa. When adding any platform-conditional or build-mode-conditional Rust code, push to `dev` and watch the CI run on a release build before assuming it works.
+`src-tauri/src/sidecar.rs` has `#[cfg(windows)]` and `#[cfg(not(windows))]` branches (the latter calls `libc::kill` to terminate the sidecar child). On a Windows dev machine, `cargo check` / `cargo build` **does not compile** the `cfg(not(windows))` branch — so missing crates referenced only there will pass locally and only fail on macOS / Linux CI. Such crates must be declared under `[target.'cfg(unix)'.dependencies]` in `Cargo.toml` (currently: `libc = "0.2"`). The same trap applies to the `#[cfg(debug_assertions)]` (dev = `dotnet run`) vs `#[cfg(not(debug_assertions))]` (release = pre-built binary) branches in `spawn_server`: a `cargo check` of a debug build does not type-check the release path, and vice versa. When adding any platform-conditional or build-mode-conditional Rust code, push to `dev` and watch the CI run on a release build before assuming it works.
