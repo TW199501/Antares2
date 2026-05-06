@@ -64,26 +64,26 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         ("node".to_string(), vec![tsx_cli.to_string_lossy().to_string(), server_ts.to_string_lossy().to_string()], node_modules)
     };
 
-    // Release build: use the bundled node.exe and pre-built .cjs bundle.
+    // Release build: spawn the .NET 10 self-contained single-file sidecar binary.
+    // Phase 17 cutover (plan v5): replaced `sidecar/antares-server.cjs` + bundled
+    // node runtime with a single `antares-server[.exe]` produced by `pnpm sidecar:build:net`.
+    // To roll back to the Node sidecar, `git revert` the Phase-17 commit — the Node
+    // build script (scripts/build-sidecar.mjs) and bundle remain in the tree until Phase 18.
     #[cfg(not(debug_assertions))]
     let (node_bin, server_arg, node_modules) = {
-        let server_js = exe_dir.join("sidecar").join("antares-server.cjs");
-        if !server_js.exists() {
-            return Err(format!("Server bundle not found at {:?}", server_js).into());
+        #[cfg(windows)]
+        let bin_name = "antares-server.exe";
+        #[cfg(not(windows))]
+        let bin_name = "antares-server";
+
+        let server_bin = exe_dir.join(bin_name);
+        if !server_bin.exists() {
+            return Err(format!(".NET sidecar binary not found at {:?}", server_bin).into());
         }
-
-        let node_exe  = exe_dir.join("sidecar").join("node.exe"); // Windows
-        let node_unix = exe_dir.join("sidecar").join("node");     // macOS / Linux
-        let node_bin = if node_exe.exists() {
-            node_exe.to_string_lossy().to_string()
-        } else if node_unix.exists() {
-            node_unix.to_string_lossy().to_string()
-        } else {
-            "node".to_string() // last resort: system node
-        };
-
-        let node_modules = exe_dir.join("node_modules");
-        (node_bin, vec![server_js.to_string_lossy().to_string()], node_modules)
+        // node_modules is unused in the .NET path; keep the binding for the shared
+        // command-build code below (NODE_PATH env var is harmless for the .NET binary).
+        let node_modules = exe_dir.clone();
+        (server_bin.to_string_lossy().to_string(), Vec::<String>::new(), node_modules)
     };
 
     #[allow(unused_mut)]

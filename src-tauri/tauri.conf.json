@@ -12,9 +12,7 @@
       "active": true,
       "targets": ["nsis", "msi"],
       "resources": {
-         "resources/sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
-         "resources/workers": "workers",
-         "resources/node_modules": "node_modules"
+         "resources/antares-server.exe": "antares-server.exe"
       },
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico", "icons/icon.icns"]
    },
