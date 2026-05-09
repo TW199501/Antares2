@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 
 const logsSize = 1000;
 
-export type LogType = 'query' | 'debug'
+export type LogType = 'query' | 'debug' | 'processes'
 export interface QueryLog {
    cUid: string;
    sql: string;
@@ -61,6 +61,16 @@ export const useConsoleStore = defineStore('console', {
             this.closeConsole();
          else
             this.openConsole();
+      },
+      openProcessesTab () {
+         // mdiMemory icon (Workspace.vue tab strip) calls this instead of
+         // showProcessesModal — opens the bottom console + switches to the
+         // processes tab. ModalProcessesList renders inline inside that tab.
+         if (!this.isConsoleOpen) {
+            this.isConsoleOpen = true;
+            this.consoleHeight = 320;
+         }
+         this.selectedTab = 'processes';
       }
    }
 });

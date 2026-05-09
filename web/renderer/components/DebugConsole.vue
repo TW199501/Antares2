@@ -37,6 +37,18 @@
                   >
                      {{ t('application.debugConsole') }}
                   </TabsTrigger>
+                  <TabsTrigger
+                     v-if="processesConnection"
+                     value="processes"
+                     class="!text-xs !px-2 !py-0.5 !h-6 data-[state=active]:!bg-muted data-[state=active]:!shadow-none"
+                  >
+                     <BaseIcon
+                        icon-name="mdiMemory"
+                        :size="14"
+                        class="mr-1"
+                     />
+                     {{ t('database.processesList') }}
+                  </TabsTrigger>
                </TabsList>
                <div class="flex items-center gap-1 pr-1">
                   <Button
@@ -94,6 +106,19 @@
                   </ContextMenu>
                </div>
             </TabsContent>
+            <TabsContent value="processes" class="flex-1 min-h-0 !mt-0">
+               <!--
+                  Inline processes panel — shares ModalProcessesList state but
+                  renders without the Dialog wrapper (inline=true). The mdiMemory
+                  button in Workspace.vue's tab strip calls
+                  consoleStore.openProcessesTab() to open this tab.
+               -->
+               <ModalProcessesList
+                  v-if="processesConnection"
+                  :connection="processesConnection"
+                  :inline="true"
+               />
+            </TabsContent>
             <TabsContent value="debug" class="flex-1 min-h-0 !mt-0">
                <div ref="logConsoleBody" class="console-body">
                   <ContextMenu
@@ -131,11 +156,14 @@ import { computed, nextTick, onMounted, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
+import ModalProcessesList from '@/components/ModalProcessesList.vue';
 import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { copyText } from '@/libs/copyText';
+import { useConnectionsStore } from '@/stores/connections';
 import { type LogType, useConsoleStore } from '@/stores/console';
+import { useWorkspacesStore } from '@/stores/workspaces';
 
 const { t } = useI18n();
 
@@ -188,6 +216,24 @@ const resize = (e: MouseEvent) => {
 
 const workspaceQueryLogs = computed(() => {
    return getLogsByWorkspace(props.uid);
+});
+
+// processesConnection feeds <ModalProcessesList :inline> in the processes tab.
+// Resolved via the same path Workspace.vue uses for showProcessesModal:
+// current selected workspace -> its connection params. Null when no
+// workspace selected (tab also hidden via v-if in TabsList).
+const workspacesStore = useWorkspacesStore();
+const connectionsStore = useConnectionsStore();
+const processesConnection = computed(() => {
+   const wsUid = props.uid || workspacesStore.getSelected;
+   if (!wsUid) return null;
+   const conn = connectionsStore.getConnectionByUid(wsUid);
+   if (!conn) return null;
+   const ws = workspacesStore.getWorkspace(wsUid);
+   // Only expose when the workspace's connection supports processesList
+   // (mysql/maria/pg/mssql do; sqlite doesn't).
+   if (!ws?.customizations?.processesList) return null;
+   return conn;
 });
 
 const stopResize = () => {

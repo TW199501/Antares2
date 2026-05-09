@@ -412,7 +412,7 @@
                            class="tab-add"
                            tabindex="0"
                            :title="t('database.processesList')"
-                           @click="showProcessesModal"
+                           @click="openProcessesTab"
                         >
                            <BaseIcon icon-name="mdiMemory" :size="22" />
                         </a>
@@ -684,7 +684,7 @@ const {
 const consoleStore = useConsoleStore();
 
 const { isConsoleOpen } = storeToRefs(consoleStore);
-const { toggleConsole } = consoleStore;
+const { toggleConsole, openProcessesTab } = consoleStore;
 
 const props = defineProps({
    connection: Object as Prop<ConnectionParams>
