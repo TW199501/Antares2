@@ -18,6 +18,9 @@
                <BaseIcon icon-name="mdiMemory" :size="20" />
                <span class="cut-text">{{ t('database.processesList') }}: {{ connectionName }}</span>
             </DialogTitle>
+            <DialogDescription class="sr-only">
+               {{ t('database.processesList') }}: {{ connectionName }}
+            </DialogDescription>
             <Button
                variant="ghost"
                size="icon"
@@ -203,7 +206,7 @@ import BaseVirtualScroll from '@/components/BaseVirtualScroll.vue';
 import ModalProcessesListContext from '@/components/ModalProcessesListContext.vue';
 import ModalProcessesListRow from '@/components/ModalProcessesListRow.vue';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Schema from '@/ipc-api/Schema';
 import { copyText } from '@/libs/copyText';
