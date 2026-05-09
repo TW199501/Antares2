@@ -15,7 +15,7 @@ public sealed class DatabasesService : IDynamicApiController
     public DatabasesService(ConnectionRegistry registry) => _registry = registry;
 
     [HttpPost("/api/databases/getDatabases")]
-    public async Task<List<DatabaseInfoDto>> GetDatabases([FromBody] ConnectionService.UidPayload payload, CancellationToken ct)
+    public async Task<List<string>> GetDatabases([FromBody] ConnectionService.UidPayload payload, CancellationToken ct)
     {
         var entry = _registry.Require(payload.Uid);
         var sql = entry.Client switch
@@ -27,7 +27,7 @@ public sealed class DatabasesService : IDynamicApiController
             _ => "SELECT '' AS name WHERE 1=0"
         };
         var rows = await Task.Run(() => entry.Db.Ado.SqlQuery<string>(sql), ct);
-        return rows.Select(n => new DatabaseInfoDto { Database = n }).ToList();
+        return rows.ToList();
     }
 
     [HttpPost("/api/databases/getDatabaseComment")]
@@ -36,10 +36,5 @@ public sealed class DatabasesService : IDynamicApiController
         // Database-level comments aren't standardized across DBs; Node side returns
         // empty string on any failure (web/main/routes/databases.ts L29). We do same.
         return Task.FromResult(string.Empty);
-    }
-
-    public sealed class DatabaseInfoDto
-    {
-        public string Database { get; set; } = string.Empty;
     }
 }

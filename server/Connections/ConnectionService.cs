@@ -86,6 +86,51 @@ public sealed class ConnectionService : IDynamicApiController
         }
     }
 
+    /// <summary>
+    /// Ephemeral connect → list databases → disconnect. Used by the Add/Edit
+    /// connection panel's database dropdown so users pick from a real list
+    /// before saving the connection (and before it lives in the registry).
+    /// Same connect/dispose pattern as Test() above.
+    /// </summary>
+    [HttpPost("/api/connection/listDatabases")]
+    public async Task<object> ListDatabases([FromBody] ConnectionParamsDto p, CancellationToken ct)
+    {
+        uint? sshLocalPort = null;
+        ISqlSugarClient? db = null;
+        try
+        {
+            sshLocalPort = _ssh.Open(p.Uid, p);
+            var paramsForBuild = sshLocalPort.HasValue ? RewriteForSshLocal(p, sshLocalPort.Value) : p;
+
+            var config = ConnectionConfigBuilder.Build(paramsForBuild, poolSize: 1);
+            db = new SqlSugarScope(config);
+
+            var sql = p.Client switch
+            {
+                "mssql" => "SELECT name FROM sys.databases ORDER BY name",
+                "mysql" or "maria" => "SELECT SCHEMA_NAME AS name FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY SCHEMA_NAME",
+                "pg" => "SELECT datname AS name FROM pg_database WHERE datistemplate = false ORDER BY datname",
+                "sqlite" => "SELECT 'main' AS name",
+                _ => null
+            };
+            if (sql is null)
+                return new { status = "error", response = $"Unsupported client: {p.Client}" };
+
+            var rows = await Task.Run(() => db.Ado.SqlQuery<string>(sql), ct);
+            return new { status = "success", response = rows };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "List databases failed for client={Client}", p.Client);
+            return new { status = "error", response = ex.Message };
+        }
+        finally
+        {
+            try { (db as IDisposable)?.Dispose(); } catch { /* ignore */ }
+            if (sshLocalPort.HasValue) _ssh.Close(p.Uid);
+        }
+    }
+
     [HttpPost("/api/connection/connect")]
     public async Task<object> Connect([FromBody] ConnectionParamsDto p, CancellationToken ct)
     {
