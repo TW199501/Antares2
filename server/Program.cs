@@ -8,11 +8,19 @@ if (Array.Exists(args, a => a == "--probe-mode"))
     _ = Task.Delay(3000).ContinueWith(_ => Environment.Exit(0));
 }
 
-// Bind to a random free loopback port. Without this Furion's Serve.Run() defaults
-// to ASP.NET Core's `http://localhost:5000`, which means a second sidecar instance
-// (e.g. another open Antares2 window, or a CI probe overlapping a dev run) gets
-// `address already in use` and the entire build / startup fails. The Tauri Rust
-// shell reads the actual port from ReadyLineHook's `READY:<port>:<token>` line,
-// so the renderer always learns the real port — no fixed-port assumption.
-var port = PortAllocator.GetPort(development: false);
+// Port selection:
+//   • Dev mode (ASPNETCORE_ENVIRONMENT=Development OR DOTNET_ENVIRONMENT=Development,
+//     which `dotnet run` sets by default) → fixed PortAllocator.DevPort (5555).
+//     The renderer's httpClient.ts:33 falls back to 5555 when running in a plain
+//     browser (no Tauri runtime, e.g. Playwright at localhost:5173), so this match
+//     is required for `pnpm vite:dev` + `dotnet run` workflows to work without Tauri.
+//   • Release mode → random free loopback port. The Tauri Rust shell reads it from
+//     ReadyLineHook's `READY:<port>:<token>` line so two installed instances don't
+//     collide on a fixed port.
+var isDev = string.Equals(
+    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+        ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"),
+    "Development",
+    StringComparison.OrdinalIgnoreCase);
+var port = PortAllocator.GetPort(development: isDev);
 Serve.Run(urls: $"http://127.0.0.1:{port}");
