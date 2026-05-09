@@ -255,6 +255,7 @@
       "queryDuration": "Query duration",
       "setNull": "Set NULL",
       "processesList": "Processes list",
+      "systemDatabases": "System DBs",
       "processInfo": "Process info",
       "manageUsers": "Manage users",
       "createNewSchema": "Create new schema",

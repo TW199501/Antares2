@@ -1,6 +1,6 @@
 <template>
-   <div class="connection-panel">
-      <div class="mx-auto mb-5 flex w-[520px] items-center gap-3 px-1 text-foreground">
+   <div class="connection-panel flex min-h-full flex-col items-center justify-center py-6">
+      <div class="mb-5 flex w-[440px] items-center gap-3 px-1 text-foreground">
          <div class="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
             <BaseIcon icon-name="mdiDatabase" :size="26" />
          </div>
@@ -13,7 +13,7 @@
             </div>
          </div>
       </div>
-      <div class="mx-auto w-[520px] rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)]">
+      <div class="w-[440px] rounded-lg border border-border/60 bg-card/90 p-6 text-card-foreground shadow-[0_10px_28px_-2px_rgb(0_0_0_/_0.15)]">
          <Tabs v-model="selectedTab">
             <TabsList class="mb-5 w-full bg-muted/60">
                <TabsTrigger value="general" class="flex-1">
@@ -36,39 +36,32 @@
             </TabsList>
             <TabsContent value="general">
                <fieldset class="m-0 flex flex-col gap-[16px] p-0" :disabled="isBusy">
-                  <FormField v-slot="{ id }" :label="t('connection.connectionName')">
-                     <input
-                        :id="id"
-                        ref="firstInput"
-                        v-model="localConnection.name"
-                        type="text"
-                        :class="inputClass"
+                  <!-- Row 1: 連線名稱 (左) + 資料庫類型 (右) -->
+                  <div class="flex gap-3">
+                     <FormField
+                        v-slot="{ id }"
+                        class="flex-1"
+                        :label="t('connection.connectionName')"
                      >
-                  </FormField>
+                        <input
+                           :id="id"
+                           ref="firstInput"
+                           v-model="localConnection.name"
+                           type="text"
+                           :class="inputClass"
+                        >
+                     </FormField>
+                     <FormField class="flex-1" :label="t('connection.client')">
+                        <BaseSelect
+                           v-model="localConnection.client"
+                           :options="clients"
+                           option-track-by="slug"
+                           option-label="name"
+                        />
+                     </FormField>
+                  </div>
 
-                  <FormField :label="t('connection.client')">
-                     <BaseSelect
-                        v-model="localConnection.client"
-                        :options="clients"
-                        option-track-by="slug"
-                        option-label="name"
-                     />
-                  </FormField>
-
-                  <FormField
-                     v-if="localConnection.client === 'pg'"
-                     v-slot="{ id }"
-                     :label="t('connection.connectionString')"
-                  >
-                     <input
-                        :id="id"
-                        ref="pgString"
-                        v-model="localConnection.connString"
-                        type="text"
-                        :class="inputClass"
-                     >
-                  </FormField>
-
+                  <!-- Row 2: 主機名/IP + 連線埠 (existing layout, unchanged for non-file clients) -->
                   <div v-if="!clientCustomizations.fileConnection" class="flex gap-3">
                      <FormField
                         v-slot="{ id }"
@@ -98,6 +91,7 @@
                      </FormField>
                   </div>
 
+                  <!-- File-connection (sqlite): database file path replaces host/user/etc. -->
                   <FormField
                      v-if="clientCustomizations.fileConnection"
                      :label="t('database.database')"
@@ -110,20 +104,7 @@
                      />
                   </FormField>
 
-                  <FormField
-                     v-if="clientCustomizations.database"
-                     v-slot="{ id }"
-                     :label="t('database.database')"
-                  >
-                     <input
-                        :id="id"
-                        v-model="localConnection.database"
-                        type="text"
-                        :placeholder="clientCustomizations.defaultDatabase"
-                        :class="inputClass"
-                     >
-                  </FormField>
-
+                  <!-- Row 3: 使用者 + 密碼 (existing layout, unchanged) -->
                   <div v-if="!clientCustomizations.fileConnection" class="flex gap-3">
                      <FormField
                         v-slot="{ id }"
@@ -153,6 +134,42 @@
                      </FormField>
                   </div>
 
+                  <!-- Row 4: 資料庫 dropdown (左) + 系統庫 checkbox (右) -->
+                  <div v-if="clientCustomizations.database" class="flex items-end gap-3">
+                     <FormField class="flex-1" :label="t('database.database')">
+                        <div class="flex gap-2">
+                           <div class="flex-1 min-w-0">
+                              <BaseSelect
+                                 v-model="localConnection.database"
+                                 :options="filteredDatabases"
+                                 :placeholder="clientCustomizations.defaultDatabase || ''"
+                                 :searchable="true"
+                              />
+                           </div>
+                           <Button
+                              type="button"
+                              variant="secondary"
+                              size="icon"
+                              class="!h-[34px] !w-[34px] shrink-0"
+                              :disabled="isLoadingDbs"
+                              :title="t('general.refresh')"
+                              @click="refreshDatabaseList"
+                           >
+                              <BaseIcon
+                                 icon-name="mdiRefresh"
+                                 :size="16"
+                                 :class="{ 'animate-spin': isLoadingDbs }"
+                              />
+                           </Button>
+                        </div>
+                     </FormField>
+                     <label class="flex shrink-0 cursor-pointer items-center gap-2 pb-2.5 text-sm">
+                        <Checkbox v-model:checked="includeSystemDb" />
+                        {{ t('database.systemDatabases') }}
+                     </label>
+                  </div>
+
+                  <!-- Schema (clients that need it, e.g. pg) -->
                   <FormField
                      v-if="clientCustomizations.connectionSchema"
                      v-slot="{ id }"
@@ -163,6 +180,16 @@
                         v-model="localConnection.schema"
                         type="text"
                         :placeholder="t('general.all')"
+                        :class="inputClass"
+                     >
+                  </FormField>
+
+                  <!-- Row 5: 連線字串 (all clients) -->
+                  <FormField v-slot="{ id }" :label="t('connection.connectionString')">
+                     <input
+                        :id="id"
+                        v-model="localConnection.connString"
+                        type="text"
                         :class="inputClass"
                      >
                   </FormField>
@@ -441,6 +468,48 @@ const showTestCancel = ref(false);
 const showConnectCancel = ref(false);
 const abortController: Ref<AbortController> = ref(new AbortController());
 const selectedTab = ref('general');
+
+// Database dropdown state. Populated lazily via the new
+// /api/connection/listDatabases endpoint (ephemeral connect → list →
+// disconnect) so users can pick a real database before saving the
+// connection. `includeSystemDb` is a client-side filter — server returns the
+// full list and we hide system DBs by default to avoid accidentally connecting
+// to master/template/etc. which is rarely what users want.
+const dbList = ref<string[]>([]);
+const isLoadingDbs = ref(false);
+const includeSystemDb = ref(false);
+
+const SYSTEM_DBS: Record<string, string[]> = {
+   mssql: ['master', 'model', 'msdb', 'tempdb', 'distribution', 'reportserver', 'reportservertempdb'],
+   mysql: ['mysql', 'information_schema', 'performance_schema', 'sys'],
+   maria: ['mysql', 'information_schema', 'performance_schema', 'sys'],
+   pg: ['postgres', 'template0', 'template1'],
+   sqlite: []
+};
+
+const filteredDatabases = computed(() => {
+   if (includeSystemDb.value) return dbList.value;
+   const sys = SYSTEM_DBS[localConnection.value?.client] ?? [];
+   return dbList.value.filter(d => !sys.includes(d.toLowerCase()));
+});
+
+const refreshDatabaseList = async () => {
+   if (isLoadingDbs.value) return;
+   isLoadingDbs.value = true;
+   try {
+      const { status, response } = await Connection.listDatabases(localConnection.value);
+      if (status === 'success' && Array.isArray(response))
+         dbList.value = response;
+      else
+         addNotification({ status: 'error', message: typeof response === 'string' ? response : 'listDatabases failed' });
+   }
+   catch (err) {
+      addNotification({ status: 'error', message: (err as Error).message ?? String(err) });
+   }
+   finally {
+      isLoadingDbs.value = false;
+   }
+};
 
 const clientCustomizations = computed(() => {
    return customizations[localConnection.value.client];

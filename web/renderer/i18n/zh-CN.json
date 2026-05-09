@@ -255,6 +255,7 @@
       "queryDuration": "查询持续时间",
       "setNull": "设置 NULL",
       "processesList": "进程列表",
+      "systemDatabases": "系统库",
       "processInfo": "进程信息",
       "manageUsers": "管理用户",
       "createNewSchema": "创建新模式(schema)",

@@ -11,6 +11,10 @@ export default class {
       return apiCall('/api/connection/connect', params);
    }
 
+   static listDatabases (params: ConnectionParams & { connString?: string }): Promise<IpcResponse<string[]>> {
+      return apiCall('/api/connection/listDatabases', params);
+   }
+
    static abortConnection (uid: string): void {
       apiCall('/api/connection/abort', { uid });
    }

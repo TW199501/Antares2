@@ -255,6 +255,7 @@
       "queryDuration": "クエリ実行時間",
       "setNull": "NULL の設定",
       "processesList": "プロセス一覧",
+      "systemDatabases": "システム DB",
       "processInfo": "プロセス情報",
       "manageUsers": "ユーザーの管理",
       "createNewSchema": "新規スキーマの作成",

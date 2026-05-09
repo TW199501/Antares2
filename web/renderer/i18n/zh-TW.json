@@ -248,6 +248,7 @@
       "queryDuration": "查詢持續時間",
       "setNull": "設定 NULL",
       "processesList": "進程列表",
+      "systemDatabases": "系統庫",
       "processInfo": "進程信息",
       "manageUsers": "管理使用者",
       "createNewSchema": "建立新模式(schema)",

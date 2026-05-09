@@ -254,6 +254,7 @@
       "queryDuration": "쿼리 시간",
       "setNull": "NULL 설정",
       "processesList": "프로세스 목록",
+      "systemDatabases": "시스템 DB",
       "processInfo": "프로세스 정보",
       "manageUsers": "사용자 관리",
       "createNewSchema": "새 스키마 생성",
