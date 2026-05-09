@@ -45,6 +45,12 @@ export async function apiCall<T = unknown> (path: string, params?: unknown): Pro
 
    if (!res.ok) {
       const text = await res.text();
+      console.error('[antares2] API call failed', {
+         path,
+         status: res.status,
+         requestBody: params,
+         responseText: text
+      });
       throw new Error(`API error ${res.status}: ${text}`);
    }
 

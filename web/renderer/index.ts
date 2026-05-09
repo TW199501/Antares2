@@ -82,6 +82,13 @@ const pinia = createPinia();
 
 async function mountApp () {
    const app = createApp(App);
+   app.config.errorHandler = (err, instance, info) => {
+      const componentName = instance?.$options?.name ??
+         instance?.$options?.__name ??
+         instance?.$?.type?.__name ??
+         '<anonymous>';
+      console.error(`[antares2] ${info} in <${componentName}>:`, err);
+   };
    app.directive('mask', vMaskV3);
    app.use(pinia);
    app.use(i18n);
