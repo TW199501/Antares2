@@ -189,7 +189,7 @@ const props = withDefaults(defineProps<{
    dropdownOffsets: () => ({ top: 10, left: 0 }),
    disabled: false,
    maxVisibleOptions: 100,
-   dropdownMatchParent: false,
+   dropdownMatchParent: true,
    placeholder: ''
 });
 
