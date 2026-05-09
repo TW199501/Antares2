@@ -406,67 +406,21 @@
                   <template #header>
                      <li
                         v-if="workspace.customizations.processesList"
-                        class="ws-tab-cell ws-tab-tools"
+                        class="ws-tab-cell"
                      >
-                        <DropdownMenu>
-                           <DropdownMenuTrigger as-child>
-                              <a
-                                 class="workspace-tools-link"
-                                 tabindex="0"
-                                 :title="t('general.tools')"
-                              >
-                                 <BaseIcon icon-name="mdiTools" :size="24" />
-                              </a>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent v-if="hasTools" align="start">
-                              <DropdownMenuItem @select="showProcessesModal">
-                                 <BaseIcon
-                                    icon-name="mdiMemory"
-                                    :size="18"
-                                    class="mr-1"
-                                 />
-                                 <span>{{ t('database.processesList') }}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem @select="toggleConsole">
-                                 <BaseIcon
-                                    icon-name="mdiConsoleLine"
-                                    :size="18"
-                                    class="mr-1"
-                                 />
-                                 <span>{{ t('application.console') }}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                 v-if="workspace.customizations.variables"
-                                 disabled
-                                 title="Coming..."
-                              >
-                                 <BaseIcon
-                                    icon-name="mdiShape"
-                                    :size="18"
-                                    class="mr-1"
-                                 />
-                                 <span>{{ t('database.variables') }}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                 v-if="workspace.customizations.usersManagement"
-                                 disabled
-                                 title="Coming..."
-                              >
-                                 <BaseIcon
-                                    icon-name="mdiAccountGroup"
-                                    :size="18"
-                                    class="mr-1"
-                                 />
-                                 <span>{{ t('database.manageUsers') }}</span>
-                              </DropdownMenuItem>
-                           </DropdownMenuContent>
-                        </DropdownMenu>
+                        <a
+                           class="tab-add"
+                           tabindex="0"
+                           :title="t('database.processesList')"
+                           @click="showProcessesModal"
+                        >
+                           <BaseIcon icon-name="mdiMemory" :size="22" />
+                        </a>
                      </li>
-                  </template>
-                  <template #footer>
                      <li class="ws-tab-cell">
                         <a
                            class="tab-add"
+                           tabindex="0"
                            :title="t('database.queryBuilder')"
                            @click="addQueryTab"
                         >
@@ -680,7 +634,6 @@ import DebugConsole from '@/components/DebugConsole.vue';
 import ModalDiscardChanges from '@/components/ModalDiscardChanges.vue';
 import ModalProcessesList from '@/components/ModalProcessesList.vue';
 import ModalQueryBuilder from '@/components/ModalQueryBuilder.vue';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceEditConnectionPanel from '@/components/WorkspaceEditConnectionPanel.vue';
 import WorkspaceEmptyState from '@/components/WorkspaceEmptyState.vue';
 import WorkspaceExploreBar from '@/components/WorkspaceExploreBar.vue';
@@ -788,15 +741,6 @@ const queryTabs = computed(() => {
    return workspace.value ? workspace.value.tabs.filter(tab => tab.type === 'query') : [];
 });
 
-const hasTools = computed(() => {
-   if (!workspace.value.customizations) return false;
-   else {
-      return workspace.value.customizations.processesList ||
-      workspace.value.customizations.usersManagement ||
-      workspace.value.customizations.variables;
-   }
-});
-
 watch(queryTabs, (newVal, oldVal) => {
    if (newVal.length > oldVal.length) {
       setTimeout(() => {
@@ -891,6 +835,13 @@ const showProcessesModal = () => {
 
 const hideProcessesModal = () => {
    isProcessesModal.value = false;
+};
+
+// Dispatched to WorkspaceExploreBar which owns the ModalNewSchema instance +
+// post-create refresh. Same `antares:<event>` CustomEvent pattern as
+// useShortcutDispatcher (see CLAUDE.md "Keyboard shortcuts").
+const dispatchNewSchema = () => {
+   window.dispatchEvent(new CustomEvent('antares:new-schema'));
 };
 
 const addWheelEvent = () => {

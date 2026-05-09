@@ -218,7 +218,10 @@ const { addNotification } = useNotificationsStore();
 const { getConnectionName } = useConnectionsStore();
 
 const props = defineProps({
-   connection: Object as Prop<ConnectionParams>
+   connection: Object as Prop<ConnectionParams>,
+   // inline=true → render as a bottom-docked panel (no Dialog wrapper);
+   // inline=false (default) → original modal behavior, untouched.
+   inline: { type: Boolean, default: false }
 });
 
 const emit = defineEmits<{

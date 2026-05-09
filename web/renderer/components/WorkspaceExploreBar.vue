@@ -97,17 +97,9 @@
                   :placeholder="t('database.searchForElements')"
                >
                <BaseIcon
-                  v-if="!searchTerm"
                   icon-name="mdiMagnify"
                   :size="14"
                   class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
-               />
-               <BaseIcon
-                  v-else
-                  icon-name="mdiBackspace"
-                  :size="14"
-                  class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
-                  @click="searchTerm = ''"
                />
             </div>
             <div class="relative flex-[1_1_45%]">
@@ -120,17 +112,9 @@
                   @keydown.stop=""
                >
                <BaseIcon
-                  v-if="!columnSearchTerm"
                   icon-name="mdiTableColumn"
                   :size="14"
                   class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/70"
-               />
-               <BaseIcon
-                  v-else
-                  icon-name="mdiBackspace"
-                  :size="14"
-                  class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/70 hover:text-foreground"
-                  @click="columnSearchTerm = ''"
                />
             </div>
          </div>
@@ -171,7 +155,7 @@
 <script setup lang="ts">
 import { ConnectionParams } from 'common/interfaces/antares';
 import { storeToRefs } from 'pinia';
-import { Component, computed, onMounted, Prop, Ref, ref, watch } from 'vue';
+import { Component, computed, onBeforeUnmount, onMounted, Prop, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import BaseIcon from '@/components/BaseIcon.vue';
@@ -282,7 +266,16 @@ watch(selectedDatabase, async () => {
 
 localWidth.value = explorebarSize.value;
 
+// Workspace.vue's tab-strip mdiDatabasePlus button dispatches this event
+// (instead of duplicating ModalNewSchema there). Same pattern as
+// useShortcutDispatcher's `antares:<event>` CustomEvents.
+const onNewSchemaRequest = () => {
+   if (customizations.value.schemas) showNewDBModal();
+};
+
 onMounted(async () => {
+   window.addEventListener('antares:new-schema', onNewSchemaRequest);
+
    resizer.value.addEventListener('mousedown', (e: MouseEvent) => {
       e.preventDefault();
 
@@ -315,6 +308,10 @@ onMounted(async () => {
          addNotification({ status: 'error', message: err.stack });
       }
    }
+});
+
+onBeforeUnmount(() => {
+   window.removeEventListener('antares:new-schema', onNewSchemaRequest);
 });
 
 const refresh = async () => {
