@@ -30,7 +30,7 @@ public sealed class ReadyLineHook : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private static int ParsePort(string? address)
+    internal static int ParsePort(string? address)
     {
         if (string.IsNullOrEmpty(address)) return 0;
         var normalized = address.Replace("[::]", "127.0.0.1").Replace("0.0.0.0", "127.0.0.1");
