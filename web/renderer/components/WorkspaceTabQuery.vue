@@ -879,7 +879,7 @@ onBeforeUnmount(() => {
         border: 1px solid var(--border);
         background: var(--secondary);
 
-        :deep(.select-base) {
+        .select-base {
           border: none;
           background: transparent;
           height: 28px;

@@ -50,7 +50,9 @@ const sortedNotes = computed(() => {
 });
 </script>
 
-<style lang="scss">
+<style>
+@reference "@/assets/tailwind.css";
+
 #changelog {
   h1 { @apply text-[18px] font-semibold mb-2 pb-2 border-b border-border/60; }
   h2 { @apply text-[15px] font-semibold mt-4 mb-1.5; }
