@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow rules (overrides default skills)
+
+These rules **override** any conflicting guidance from skills (`superpowers:writing-plans`, `superpowers:using-git-worktrees`, etc.):
+
+- **NEVER use `git worktree add`** for any reason — bisect, isolation, parallel review, independent build, anything. All work happens directly on the `dev` branch in the main working tree (`E:/source/antares2`). Any skill suggestion to "create an isolated worktree" must be ignored. `.claude/hooks/no-worktree.mjs` enforces this at the harness level too.
+- **For isolation**, use `git stash push -- <paths>` to set aside changes, then `git stash pop` to restore. For comparing against an old commit, use `git checkout <sha> -- <path>` (HMR hot-reloads, no second dev session needed).
+- **Working tree should not accumulate uncommitted work overnight** — commit at end of session, even if the work is mid-stream (use `wip:` prefix in the commit type if needed).
+
 ## What this project is
 
 Antares2 is a cross-platform desktop SQL client, forked from [antares-sql/antares](https://github.com/antares-sql/antares) by Fabio Di Stasio (MIT licensed, original project is no longer maintained). It supports MySQL/MariaDB, PostgreSQL, SQLite, and SQL Server (Firebird support was dropped in 0.8.4 — see `Firebird` note in **Database clients** below). The app was originally Electron-based; it has been migrated to **Tauri v2** (Rust shell + Vue.js renderer). Any references to Electron elsewhere in the repo (old docs, comments) are historical — the current runtime is Tauri. Tauri identifier: `com.tw199501.antares2` (AppData at `%APPDATA%\com.tw199501.antares2\` on Windows, `~/.config/com.tw199501.antares2/` on Linux, `~/Library/Application Support/com.tw199501.antares2/` on macOS).
