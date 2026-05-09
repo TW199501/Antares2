@@ -32,14 +32,59 @@ public sealed class TablesReadService : IDynamicApiController
     public async Task<List<TableColumnDto>> GetColumns([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
+
+        // MSSQL: bypass SqlSugar.DbMaintenance because it generates unquoted
+        // `SELECT ... FROM <table>` internally and breaks on reserved-word
+        // table names like User/Order/Group. Direct sys.* catalog query with
+        // t.name = @t parameterized, same pattern as GetIndexes / GetChecks.
+        if (entry.Client == "mssql")
+        {
+            // ROW_NUMBER() over column_id keeps Order sequential 1..N even when
+            // tables have dropped columns (column_id has gaps in that case but
+            // the renderer's 序號 column expects a clean 1-based ordinal).
+            const string sql = @"
+SELECT
+   CAST(ROW_NUMBER() OVER (ORDER BY c.column_id) AS INT) AS [Order],
+   c.name                                AS [Name],
+   tp.name                               AS [Type],
+   CAST(c.max_length AS INT)             AS [Length],
+   CAST(c.precision  AS INT)             AS [NumPrecision],
+   c.is_nullable                         AS [Nullable],
+   ISNULL(dc.definition, '')             AS [Default],
+   c.is_identity                         AS [AutoIncrement],
+   CAST(CASE WHEN pk.column_id IS NULL THEN 0 ELSE 1 END AS BIT) AS [IsPrimary],
+   ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS [Comment]
+FROM sys.columns c
+JOIN sys.tables  t  ON c.object_id = t.object_id
+JOIN sys.schemas s  ON t.schema_id = s.schema_id
+JOIN sys.types   tp ON c.user_type_id = tp.user_type_id
+LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
+LEFT JOIN sys.extended_properties ep
+       ON ep.major_id = c.object_id
+      AND ep.minor_id = c.column_id
+      AND ep.class    = 1
+      AND ep.name     = 'MS_Description'
+LEFT JOIN (
+   SELECT ic.object_id, ic.column_id
+   FROM sys.indexes i
+   JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+   WHERE i.is_primary_key = 1
+) pk ON pk.object_id = c.object_id AND pk.column_id = c.column_id
+WHERE s.name = @sc AND t.name = @t
+ORDER BY c.column_id";
+            var rows = await Task.Run(() => entry.Db.Ado.SqlQuery<TableColumnDto>(sql, new { sc = p.Schema, t = p.Table }), ct);
+            return rows.ToList();
+        }
+
         var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
         var infos = await Task.Run(() =>
         {
             try { return entry.Db.DbMaintenance.GetColumnInfosByTableName(qualified, false); }
             catch { return entry.Db.DbMaintenance.GetColumnInfosByTableName(p.Table ?? string.Empty, false); }
         }, ct);
-        return infos.Select(c => new TableColumnDto
+        return infos.Select((c, idx) => new TableColumnDto
         {
+            Order = idx + 1,
             Name = c.DbColumnName ?? string.Empty,
             Type = c.DataType ?? string.Empty,
             Length = c.Length,
@@ -134,6 +179,41 @@ public sealed class TablesReadService : IDynamicApiController
                     opts.AutoIncrement = Convert.ToInt64(dt.Rows[0]["AutoIncrement"] ?? 0L);
                 }
             }
+            else if (entry.Client is "mssql")
+            {
+                // SQL Server table-level Comment lives in sys.extended_properties
+                // with class=1 (object), minor_id=0 (the table itself, not a column).
+                // AutoIncrement counter = next IDENTITY value via IDENT_CURRENT (+ seed step);
+                // returns NULL if the table has no IDENTITY column, hence the COALESCE+0.
+                // Engine/Collation aren't MSSQL concepts — leave them empty.
+                var dt = await Task.Run(() => entry.Db.Ado.GetDataTable(@"
+SELECT
+   ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS Comment,
+   ISNULL(CAST(IDENT_CURRENT(QUOTENAME(@sc) + '.' + QUOTENAME(@t)) AS BIGINT), 0) AS AutoIncrement
+FROM sys.tables t
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+LEFT JOIN sys.extended_properties ep
+       ON ep.major_id = t.object_id
+      AND ep.minor_id = 0
+      AND ep.class    = 1
+      AND ep.name     = 'MS_Description'
+WHERE s.name = @sc AND t.name = @t",
+                    new { sc = p.Schema, t = p.Table }), ct);
+                if (dt.Rows.Count > 0)
+                {
+                    opts.Comment = dt.Rows[0]["Comment"]?.ToString() ?? string.Empty;
+                    opts.AutoIncrement = Convert.ToInt64(dt.Rows[0]["AutoIncrement"] ?? 0L);
+                }
+            }
+            else if (entry.Client is "pg")
+            {
+                // PostgreSQL: comment via obj_description on the regclass.
+                var dt = await Task.Run(() => entry.Db.Ado.GetDataTable(@"
+SELECT COALESCE(obj_description((quote_ident(@sc) || '.' || quote_ident(@t))::regclass, 'pg_class'), '') AS ""Comment""",
+                    new { sc = p.Schema, t = p.Table }), ct);
+                if (dt.Rows.Count > 0)
+                    opts.Comment = dt.Rows[0]["Comment"]?.ToString() ?? string.Empty;
+            }
         }
         catch (Exception ex) { _logger.LogDebug(ex, "getOptions per-DB enrich failed"); }
         return opts;
@@ -193,13 +273,13 @@ public sealed class TablesReadService : IDynamicApiController
     }
 
     [HttpPost("/api/tables/getKeyUsage")]
-    public async Task<TableKeyUsageDto> GetKeyUsage([FromBody] TableTargetPayload p, CancellationToken ct)
+    public async Task<List<ForeignKeyDto>> GetKeyUsage([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // Renderer (WorkspaceTabPropsTable.vue) calls response.map() on this —
+        // contract is a flat array of outbound foreign keys for the given table,
+        // not an { inbound, outbound } envelope.
         var entry = _registry.Require(p.Uid);
-        var inbound = new List<ForeignKeyDto>();
         var outbound = new List<ForeignKeyDto>();
-        // Per-DB FK queries are large; place reasonable defaults and let Phase 10 ForeignKeyResolver
-        // (separate file) carry the full queries when DB testing surfaces gaps.
         try
         {
             if (entry.Client is "mssql")
@@ -218,33 +298,15 @@ JOIN sys.schemas sc2 ON t2.schema_id = sc2.schema_id
 JOIN sys.columns c2 ON fkc.referenced_object_id = c2.object_id AND fkc.referenced_column_id = c2.column_id
 WHERE sc1.name = @sc AND t1.name = @t", new { sc = p.Schema, t = p.Table }), ct);
                 outbound.AddRange(outRows);
-
-                var inRows = await Task.Run(() => entry.Db.Ado.SqlQuery<ForeignKeyDto>(@"
-SELECT fk.name AS Name,
-       sc1.name AS Schema_, t1.name AS Table_, c1.name AS Column_,
-       sc2.name AS RefSchema, t2.name AS RefTable, c2.name AS RefColumn
-FROM sys.foreign_keys fk
-JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
-JOIN sys.tables t1 ON fkc.parent_object_id = t1.object_id
-JOIN sys.schemas sc1 ON t1.schema_id = sc1.schema_id
-JOIN sys.columns c1 ON fkc.parent_object_id = c1.object_id AND fkc.parent_column_id = c1.column_id
-JOIN sys.tables t2 ON fkc.referenced_object_id = t2.object_id
-JOIN sys.schemas sc2 ON t2.schema_id = sc2.schema_id
-JOIN sys.columns c2 ON fkc.referenced_object_id = c2.object_id AND fkc.referenced_column_id = c2.column_id
-WHERE sc2.name = @sc AND t2.name = @t", new { sc = p.Schema, t = p.Table }), ct);
-                inbound.AddRange(inRows);
             }
         }
         catch (Exception ex) { _logger.LogDebug(ex, "getKeyUsage failed"); }
-        return new TableKeyUsageDto { Inbound = inbound, Outbound = outbound };
+        return outbound;
     }
 
     [HttpPost("/api/tables/getForeignList")]
     public async Task<List<ForeignKeyDto>> GetForeignList([FromBody] TableTargetPayload p, CancellationToken ct)
-    {
-        var ku = await GetKeyUsage(p, ct);
-        return ku.Outbound;
-    }
+        => await GetKeyUsage(p, ct);
 
     // ------------------------------------------------------------------
     // helpers
@@ -313,6 +375,7 @@ public sealed class RawFieldDto
 
 public sealed class TableColumnDto
 {
+    public int Order { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public int Length { get; set; }
@@ -345,12 +408,6 @@ public sealed class TableCheckDto
 {
     public string Name { get; set; } = string.Empty;
     public string Clause { get; set; } = string.Empty;
-}
-
-public sealed class TableKeyUsageDto
-{
-    public List<ForeignKeyDto> Inbound { get; set; } = new();
-    public List<ForeignKeyDto> Outbound { get; set; } = new();
 }
 
 public sealed class ForeignKeyDto
