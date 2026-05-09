@@ -39,6 +39,8 @@ current-snap.yml
 e2e-results/
 coverage
 .claude-code-history
+sidecar-stdout.log
+sidecar-stderr.log
 
 # Local DB credentials for preflight:dbs / capture:contract — never commit
 .env.test
