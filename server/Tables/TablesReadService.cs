@@ -138,8 +138,26 @@ ORDER BY c.column_id";
         };
 
         var dt = await Task.Run(() => entry.Db.Ado.GetDataTable(sql, paramObj), ct);
+
+        // Column comments are needed by the renderer's "中" header toggle
+        // (WorkspaceTabQueryTable.headerLabel uses field.comment when
+        // useCommentHeader=true; see feedback_column_comment_no_fallback memory
+        // — empty comments stay empty, no English fallback, intentional).
+        // ADO.NET's DataColumn metadata doesn't carry SQL Server extended
+        // properties or MySQL/PG column comments, so we fetch them separately
+        // and merge into fields.
+        var commentMap = await GetColumnCommentsAsync(entry, p.Schema, p.Table, ct);
+
         var fields = new List<RawFieldDto>();
-        foreach (DataColumn col in dt.Columns) fields.Add(new RawFieldDto { Name = col.ColumnName, Type = col.DataType.Name });
+        foreach (DataColumn col in dt.Columns)
+        {
+            fields.Add(new RawFieldDto
+            {
+                Name = col.ColumnName,
+                Type = col.DataType.Name,
+                Comment = commentMap.TryGetValue(col.ColumnName, out var c) ? c : string.Empty
+            });
+        }
 
         var rows = new List<Dictionary<string, object?>>(dt.Rows.Count);
         foreach (DataRow r in dt.Rows)
@@ -334,6 +352,66 @@ WHERE sc1.name = @sc AND t1.name = @t", new { sc = p.Schema, t = p.Table }), ct)
     };
 
     private static string Sanitize(string s) => s.Replace("[", "").Replace("]", "").Replace("`", "").Replace("\"", "").Replace(";", "").Replace("--", "");
+
+    /// <summary>
+    /// Build a {columnName -> comment} map for a given table. Used by GetData
+    /// so the renderer can render Chinese column-comment headers when the user
+    /// flips the "中" toggle. ADO.NET column metadata doesn't carry comments,
+    /// so per-flavor catalog query is required.
+    /// </summary>
+    private static async Task<Dictionary<string, string>> GetColumnCommentsAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return new Dictionary<string, string>(StringComparer.Ordinal);
+
+        switch (entry.Client)
+        {
+            case "mssql":
+            {
+                const string sql = @"
+SELECT c.name AS [Name], ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS [Comment]
+FROM sys.columns c
+JOIN sys.tables  t ON c.object_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+LEFT JOIN sys.extended_properties ep
+       ON ep.major_id = c.object_id
+      AND ep.minor_id = c.column_id
+      AND ep.class    = 1
+      AND ep.name     = 'MS_Description'
+WHERE s.name = @sc AND t.name = @t";
+                var rows = await Task.Run(() => entry.Db.Ado.SqlQuery<NameCommentRow>(sql, new { sc = schema, t = table }), ct);
+                return rows.ToDictionary(r => r.Name, r => r.Comment, StringComparer.Ordinal);
+            }
+            case "mysql":
+            case "maria":
+            {
+                const string sql = @"SELECT COLUMN_NAME AS Name, IFNULL(COLUMN_COMMENT, '') AS Comment
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = @sc AND TABLE_NAME = @t";
+                var rows = await Task.Run(() => entry.Db.Ado.SqlQuery<NameCommentRow>(sql, new { sc = schema, t = table }), ct);
+                return rows.ToDictionary(r => r.Name, r => r.Comment, StringComparer.Ordinal);
+            }
+            case "pg":
+            {
+                const string sql = @"SELECT a.attname AS ""Name"", COALESCE(pgd.description, '') AS ""Comment""
+FROM pg_attribute a
+JOIN pg_class c ON c.oid = a.attrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+LEFT JOIN pg_description pgd ON pgd.objoid = a.attrelid AND pgd.objsubid = a.attnum
+WHERE n.nspname = @sc AND c.relname = @t AND a.attnum > 0 AND NOT a.attisdropped";
+                var rows = await Task.Run(() => entry.Db.Ado.SqlQuery<NameCommentRow>(sql, new { sc = schema ?? "public", t = table }), ct);
+                return rows.ToDictionary(r => r.Name, r => r.Comment, StringComparer.Ordinal);
+            }
+            default:
+                return new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+    }
+
+    private sealed class NameCommentRow
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Comment { get; set; } = string.Empty;
+    }
 }
 
 // ----- DTOs -----------------------------------------------------------------
@@ -371,6 +449,7 @@ public sealed class RawFieldDto
 {
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
+    public string Comment { get; set; } = string.Empty;
 }
 
 public sealed class TableColumnDto
