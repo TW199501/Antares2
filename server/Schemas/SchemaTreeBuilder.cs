@@ -49,16 +49,29 @@ public sealed class SchemaTreeBuilder
                 // table-level Chinese descriptions (mirrors the column-level comment fix
                 // in TablesReadService.GetData / GetColumnCommentsAsync).
                 // sys.objects (type 'U'=table / 'V'=view) covers both, joined by
-                // schema_id + name to prevent duplicate matches when the same table
-                // name exists in multiple schemas. Drives off sys.objects directly
-                // (rather than INFORMATION_SCHEMA.TABLES → sys.tables) so the comment
-                // join is one-to-one and view comments are returned alongside table ones.
+                // schema_id + name to prevent duplicate matches. TableMeta CTE
+                // aggregates partition rows + allocated pages for the heap or
+                // clustered index (index_id IN 0,1) → multiplied by 8KB page size
+                // for the byte total. Views naturally LEFT JOIN to NULL → 0.
                 var tables = await Task.Run(() => db.Ado.SqlQuery<MssqlTableRow>(@"
+WITH TableMeta AS (
+    SELECT t.object_id,
+           SUM(p.rows)              AS [Rows],
+           SUM(a.total_pages) * 8 * 1024 AS [Size]
+    FROM sys.tables t
+    JOIN sys.indexes      i ON i.object_id = t.object_id AND i.index_id IN (0, 1)
+    JOIN sys.partitions   p ON p.object_id = i.object_id AND p.index_id = i.index_id
+    JOIN sys.allocation_units a ON a.container_id = p.partition_id
+    GROUP BY t.object_id
+)
 SELECT so.name AS [Name],
        CASE so.type WHEN 'V' THEN 'VIEW' ELSE 'BASE TABLE' END AS [Type],
-       ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS [Comment]
+       ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS [Comment],
+       CAST(ISNULL(tm.[Rows], 0) AS BIGINT) AS [Rows],
+       CAST(ISNULL(tm.[Size], 0) AS BIGINT) AS [Size]
 FROM sys.objects so
 JOIN sys.schemas ss ON ss.schema_id = so.schema_id
+LEFT JOIN TableMeta tm ON tm.object_id = so.object_id
 LEFT JOIN sys.extended_properties ep
        ON ep.major_id = so.object_id
       AND ep.minor_id = 0
@@ -72,7 +85,9 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
                     {
                         Name = t.Name,
                         Type = t.Type == "VIEW" ? "view" : "table",
-                        Comment = t.Comment
+                        Comment = t.Comment,
+                        Rows = t.Rows,
+                        Size = t.Size
                     });
                 }
             }
@@ -80,6 +95,9 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
             {
                 _logger.LogWarning(ex, "MSSQL schema {Schema} table enumeration failed", schemaName);
             }
+            // Roll up table sizes into the schema/database total so the renderer's
+            // db-level pie indicator (WorkspaceExploreBarSchema.vue:32 `v-if="database.size"`) renders.
+            info.Size = info.Tables.Sum(t => t.Size);
             schemas.Add(info);
         }
         return schemas;
@@ -98,8 +116,19 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
-                var tables = await Task.Run(() => db.Ado.SqlQuery<MysqlTableRow>(
-                    "SELECT TABLE_NAME AS Name, TABLE_TYPE AS Type, IFNULL(TABLE_COMMENT,'') AS Comment, IFNULL(ENGINE,'') AS Engine FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = @schema",
+                // TABLE_ROWS for InnoDB is an estimate (use SHOW TABLE STATUS / ANALYZE
+                // to refresh stats). DATA_LENGTH+INDEX_LENGTH gives the on-disk byte
+                // total. TABLE_COLLATION is per-table (separate from per-column).
+                var tables = await Task.Run(() => db.Ado.SqlQuery<MysqlTableRow>(@"
+SELECT TABLE_NAME                        AS Name,
+       TABLE_TYPE                        AS Type,
+       IFNULL(TABLE_COMMENT, '')         AS Comment,
+       IFNULL(ENGINE, '')                AS Engine,
+       IFNULL(TABLE_ROWS, 0)             AS `Rows`,
+       IFNULL(DATA_LENGTH + INDEX_LENGTH, 0) AS `Size`,
+       IFNULL(TABLE_COLLATION, '')       AS Collation
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA = @schema",
                     new { schema = schemaName }), ct);
                 foreach (var t in tables)
                 {
@@ -108,7 +137,10 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
                         Name = t.Name,
                         Type = t.Type == "VIEW" ? "view" : "table",
                         Comment = t.Comment,
-                        Engine = t.Engine
+                        Engine = t.Engine,
+                        Rows = t.Rows,
+                        Size = t.Size,
+                        Collation = t.Collation
                     });
                 }
             }
@@ -116,6 +148,9 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
             {
                 _logger.LogWarning(ex, "MySQL schema {Schema} table enumeration failed", schemaName);
             }
+            // Roll up table sizes into the schema/database total so the renderer's
+            // db-level pie indicator (WorkspaceExploreBarSchema.vue:32 `v-if="database.size"`) renders.
+            info.Size = info.Tables.Sum(t => t.Size);
             schemas.Add(info);
         }
         return schemas;
@@ -134,16 +169,20 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
-                // pg_description with objsubid=0 carries the table-level COMMENT.
-                // Cast oid via to_regclass for parameterized table-name lookup.
+                // pg_stat_user_tables.n_live_tup is the planner's row estimate (cheap,
+                // refreshed by ANALYZE). pg_total_relation_size includes table + indexes
+                // + TOAST in bytes. Views: LEFT JOINs naturally yield 0/empty.
                 var tables = await Task.Run(() => db.Ado.SqlQuery<PgTableRow>(@"
 SELECT t.table_name AS ""Name"",
        t.table_type AS ""Type"",
-       COALESCE(pgd.description, '') AS ""Comment""
+       COALESCE(pgd.description, '') AS ""Comment"",
+       COALESCE(s.n_live_tup, 0)::BIGINT AS ""Rows"",
+       COALESCE(pg_total_relation_size(c.oid), 0)::BIGINT AS ""Size""
 FROM information_schema.tables t
 LEFT JOIN pg_class      c   ON c.relname  = t.table_name
 LEFT JOIN pg_namespace  ns  ON ns.oid     = c.relnamespace AND ns.nspname = t.table_schema
 LEFT JOIN pg_description pgd ON pgd.objoid = c.oid AND pgd.objsubid = 0
+LEFT JOIN pg_stat_user_tables s ON s.schemaname = t.table_schema AND s.relname = t.table_name
 WHERE t.table_schema = @schema",
                     new { schema = schemaName }), ct);
                 foreach (var t in tables)
@@ -152,7 +191,9 @@ WHERE t.table_schema = @schema",
                     {
                         Name = t.Name,
                         Type = t.Type == "VIEW" ? "view" : "table",
-                        Comment = t.Comment
+                        Comment = t.Comment,
+                        Rows = t.Rows,
+                        Size = t.Size
                     });
                 }
             }
@@ -160,6 +201,9 @@ WHERE t.table_schema = @schema",
             {
                 _logger.LogWarning(ex, "PG schema {Schema} table enumeration failed", schemaName);
             }
+            // Roll up table sizes into the schema/database total so the renderer's
+            // db-level pie indicator (WorkspaceExploreBarSchema.vue:32 `v-if="database.size"`) renders.
+            info.Size = info.Tables.Sum(t => t.Size);
             schemas.Add(info);
         }
         return schemas;
@@ -188,8 +232,8 @@ WHERE t.table_schema = @schema",
         return new List<SchemaInfoDto> { info };
     }
 
-    private sealed class MssqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; }
-    private sealed class MysqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; public string Engine { get; set; } = ""; }
-    private sealed class PgTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; }
+    private sealed class MssqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; public long Rows { get; set; } public long Size { get; set; } }
+    private sealed class MysqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; public string Engine { get; set; } = ""; public long Rows { get; set; } public long Size { get; set; } public string Collation { get; set; } = ""; }
+    private sealed class PgTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; public long Rows { get; set; } public long Size { get; set; } }
     private sealed class SqliteTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; }
 }

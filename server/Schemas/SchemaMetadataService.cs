@@ -115,10 +115,13 @@ public sealed class SchemaMetadataService : IDynamicApiController
         var entry = _registry.Require(payload.Uid);
         return entry.Client switch
         {
+            // [User] bracketed because USER is a MSSQL reserved word — unbracketed
+            // alias triggers the same `Incorrect syntax near keyword 'User'` regression
+            // documented in CLAUDE.md `### .NET sidecar gotchas`.
             "mssql" => (await Task.Run(() => entry.Db.Ado.SqlQuery<ProcessInfoDto>(
-                "SELECT session_id AS Id, login_name AS User, host_name AS Host, ISNULL(database_id, 0) AS DbId, status AS State, ISNULL(CAST(total_elapsed_time AS NVARCHAR(MAX)),'') AS Time, '' AS Info FROM sys.dm_exec_sessions WHERE is_user_process = 1"), ct)).ToList(),
+                "SELECT session_id AS Id, login_name AS [User], host_name AS Host, ISNULL(database_id, 0) AS DbId, status AS State, ISNULL(CAST(total_elapsed_time AS NVARCHAR(MAX)),'') AS Time, '' AS Info FROM sys.dm_exec_sessions WHERE is_user_process = 1"), ct)).ToList(),
             "mysql" or "maria" => (await Task.Run(() => entry.Db.Ado.SqlQuery<ProcessInfoDto>(
-                "SELECT ID AS Id, IFNULL(USER,'') AS User, IFNULL(HOST,'') AS Host, 0 AS DbId, IFNULL(STATE,'') AS State, IFNULL(CAST(`TIME` AS CHAR),'') AS Time, IFNULL(INFO,'') AS Info FROM INFORMATION_SCHEMA.PROCESSLIST"), ct)).ToList(),
+                "SELECT ID AS Id, IFNULL(USER,'') AS `User`, IFNULL(HOST,'') AS Host, 0 AS DbId, IFNULL(STATE,'') AS State, IFNULL(CAST(`TIME` AS CHAR),'') AS Time, IFNULL(INFO,'') AS Info FROM INFORMATION_SCHEMA.PROCESSLIST"), ct)).ToList(),
             "pg" => (await Task.Run(() => entry.Db.Ado.SqlQuery<ProcessInfoDto>(
                 "SELECT pid AS \"Id\", COALESCE(usename,'') AS \"User\", COALESCE(client_hostname,'') AS \"Host\", 0 AS \"DbId\", COALESCE(state,'') AS \"State\", COALESCE(state_change::text,'') AS \"Time\", COALESCE(query,'') AS \"Info\" FROM pg_stat_activity"), ct)).ToList(),
             _ => new List<ProcessInfoDto>()
