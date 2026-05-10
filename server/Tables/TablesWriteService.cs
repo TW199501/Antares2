@@ -301,7 +301,7 @@ ELSE
         }
     }
 
-    private static string RenderAddIndexSql(string client, string qualified, IndexDto idx)
+    internal static string RenderAddIndexSql(string client, string qualified, IndexDto idx)
     {
         var fields = string.Join(",", idx.Fields.Select(f => QuoteIdent(client, f)));
         return client switch
@@ -487,7 +487,7 @@ EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'C
     ///   pg:     ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
     ///   sqlite: ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
     /// </summary>
-    private static string RenderAddColumnClause(string client, FieldDto f)
+    internal static string RenderAddColumnClause(string client, FieldDto f)
     {
         var name = QuoteIdent(client, f.Name);
         var typeUpper = f.Type.ToUpperInvariant();
@@ -526,7 +526,7 @@ EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'C
     /// 從 FieldDto 拼長度修飾,例如 `(255)`、`(10,2)`、`('a','b')` for ENUM.
     /// 渲染端會根據 dataType 決定填到 numLength / charLength / datePrecision 哪一個,我們三選一取非空.
     /// </summary>
-    private static string BuildLengthSpec(FieldDto f)
+    internal static string BuildLengthSpec(FieldDto f)
     {
         // ENUM/SET 的 enumValues 是 'a','b','c' 字串
         if (!string.IsNullOrEmpty(f.EnumValues))
@@ -543,7 +543,7 @@ EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'C
     /// `defaultType === 'expression'` 不加引號,否則 raw 字串值會交由 SqlSugar 處理(這裡直接 inline,
     /// 因為 ALTER TABLE 不能 parameterize column defaults).
     /// </summary>
-    private static string RenderDefault(FieldDto f)
+    internal static string RenderDefault(FieldDto f)
     {
         if (f.Default is null) return string.Empty;
         if (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase))
