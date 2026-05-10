@@ -265,6 +265,206 @@ describe('Tables.alterTable', () => {
       expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', payload);
       expect(result).toEqual(mocked);
    });
+
+   // T3 path — table-level comment diff (properties tab 表描述編輯).
+   it('passes through options.comment for table-level metadata edit', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'users',
+         additions: [],
+         changes: [],
+         deletions: [],
+         indexChanges: { additions: [], changes: [], deletions: [] },
+         foreignChanges: { additions: [], changes: [], deletions: [] },
+         options: { comment: '使用者主表 — 系統登入帳號' }
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         options: { comment: '使用者主表 — 系統登入帳號' }
+      }));
+   });
+
+   // T4 path — additions[] (新增欄位).
+   it('passes through additions with full TableField shape', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'users',
+         additions: [
+            { name: 'avatar_url', type: 'NVARCHAR', length: 500, nullable: true, default: null, comment: '頭像 URL' },
+            { name: 'is_admin', type: 'BIT', nullable: false, default: '0' }
+         ],
+         changes: [],
+         deletions: [],
+         indexChanges: { additions: [], changes: [], deletions: [] },
+         foreignChanges: { additions: [], changes: [], deletions: [] },
+         options: {}
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         additions: expect.arrayContaining([
+            expect.objectContaining({ name: 'avatar_url', type: 'NVARCHAR' }),
+            expect.objectContaining({ name: 'is_admin', nullable: false })
+         ])
+      }));
+   });
+
+   // T5 path — deletions[] (DROP COLUMN).
+   it('passes through deletions for DROP COLUMN', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'users',
+         additions: [],
+         changes: [],
+         deletions: [{ name: 'legacy_field', type: 'NVARCHAR' }],
+         indexChanges: { additions: [], changes: [], deletions: [] },
+         foreignChanges: { additions: [], changes: [], deletions: [] },
+         options: {}
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         deletions: [expect.objectContaining({ name: 'legacy_field' })]
+      }));
+   });
+
+   // T5 path — changes[] (CHANGE COLUMN with rename via orgName).
+   it('passes through changes with orgName for rename + alter', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'users',
+         additions: [],
+         changes: [
+            { name: 'email_address', orgName: 'email', type: 'NVARCHAR', length: 320, nullable: false }
+         ],
+         deletions: [],
+         indexChanges: { additions: [], changes: [], deletions: [] },
+         foreignChanges: { additions: [], changes: [], deletions: [] },
+         options: {}
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         changes: [expect.objectContaining({ name: 'email_address', orgName: 'email' })]
+      }));
+   });
+
+   // T5 path — indexChanges (PRIMARY/UNIQUE/INDEX add+drop).
+   it('passes through indexChanges with PRIMARY / UNIQUE / INDEX types', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'users',
+         additions: [],
+         changes: [],
+         deletions: [],
+         indexChanges: {
+            additions: [
+               { name: 'PK_users', fields: ['id'], type: 'PRIMARY' },
+               { name: 'UQ_email', fields: ['email'], type: 'UNIQUE' },
+               { name: 'IX_created', fields: ['created_at'], type: 'INDEX' }
+            ],
+            changes: [],
+            deletions: [{ name: 'IX_old', fields: [], type: 'INDEX' }]
+         },
+         foreignChanges: { additions: [], changes: [], deletions: [] },
+         options: {}
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         indexChanges: expect.objectContaining({
+            additions: expect.arrayContaining([
+               expect.objectContaining({ type: 'PRIMARY' }),
+               expect.objectContaining({ type: 'UNIQUE' }),
+               expect.objectContaining({ type: 'INDEX' })
+            ]),
+            deletions: [expect.objectContaining({ name: 'IX_old' })]
+         })
+      }));
+   });
+
+   // T5 path — foreignChanges with onUpdate/onDelete + change-as-rename.
+   it('passes through foreignChanges including onUpdate/onDelete actions', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'orders',
+         additions: [],
+         changes: [],
+         deletions: [],
+         indexChanges: { additions: [], changes: [], deletions: [] },
+         foreignChanges: {
+            additions: [{
+               constraintName: 'FK_orders_user',
+               field: 'user_id',
+               refTable: 'users',
+               refField: 'id',
+               refSchema: 'dbo',
+               onUpdate: 'CASCADE',
+               onDelete: 'RESTRICT'
+            }],
+            changes: [],
+            deletions: [{ constraintName: 'FK_orders_legacy', field: '', refTable: '', refField: '' }]
+         },
+         options: {}
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         foreignChanges: expect.objectContaining({
+            additions: [expect.objectContaining({
+               constraintName: 'FK_orders_user', onUpdate: 'CASCADE', onDelete: 'RESTRICT'
+            })]
+         })
+      }));
+   });
+
+   // T5 path — checkChanges (added in dev branch — payload may pass through optionally).
+   it('passes through checkChanges when provided', async () => {
+      vi.mocked(apiCall).mockResolvedValueOnce({ status: 'success', response: null });
+      const payload = {
+         uid: 'u',
+         schema: 'dbo',
+         table: 'orders',
+         additions: [],
+         changes: [],
+         deletions: [],
+         indexChanges: { additions: [], changes: [], deletions: [] },
+         foreignChanges: { additions: [], changes: [], deletions: [] },
+         checkChanges: {
+            additions: [{ name: 'CK_amount_pos', clause: 'amount > 0' }],
+            changes: [],
+            deletions: [{ name: 'CK_old', clause: '' }]
+         },
+         options: {}
+      } as unknown as Parameters<typeof Tables.alterTable>[0];
+
+      await Tables.alterTable(payload);
+
+      expect(apiCall).toHaveBeenCalledWith('/api/tables/alter', expect.objectContaining({
+         checkChanges: expect.objectContaining({
+            additions: [expect.objectContaining({ name: 'CK_amount_pos', clause: 'amount > 0' })]
+         })
+      }));
+   });
 });
 
 describe('Tables.duplicateTable', () => {
