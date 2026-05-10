@@ -119,6 +119,7 @@ ORDER BY c.column_id";
     [HttpPost("/api/tables/getData")]
     public async Task<TableDataDto> GetData([FromBody] GetTableDataPayload p, CancellationToken ct)
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         var entry = _registry.Require(p.Uid);
         var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
         var page = Math.Max(1, p.Page);
@@ -166,7 +167,7 @@ ORDER BY c.column_id";
             foreach (DataColumn c in dt.Columns) d[c.ColumnName] = r[c] == DBNull.Value ? null : r[c];
             rows.Add(d);
         }
-        return new TableDataDto { Rows = rows, Fields = fields, Page = page, PageSize = pageSize };
+        return new TableDataDto { Rows = rows, Fields = fields, Page = page, PageSize = pageSize, Duration = sw.ElapsedMilliseconds };
     }
 
     [HttpPost("/api/tables/getCount")]
@@ -443,6 +444,8 @@ public sealed class TableDataDto
     public List<RawFieldDto> Fields { get; set; } = new();
     public int Page { get; set; }
     public int PageSize { get; set; }
+    /// <summary>Server-side query duration in milliseconds (excludes network roundtrip).</summary>
+    public long Duration { get; set; }
 }
 
 public sealed class RawFieldDto
