@@ -523,9 +523,21 @@ const hasChanges = computed(() => {
    return JSON.stringify(props.connection) !== JSON.stringify(localConnection.value);
 });
 
+// Auto-sync `includeSystemDb` checkbox to whether the currently-selected
+// database is a system DB for this client. Without this, opening a saved
+// connection that has e.g. `database: "master"` shows the system-DB checkbox
+// unchecked while the field displays a system DB — internally inconsistent.
+const isSelectedDbSystem = (): boolean => {
+   const c = localConnection.value;
+   if (!c?.database) return false;
+   const sys = SYSTEM_DBS[c.client] ?? [];
+   return sys.includes(c.database.toLowerCase());
+};
+
 watch(() => props.connection, () => {
    localConnection.value = JSON.parse(JSON.stringify(props.connection));
-});
+   includeSystemDb.value = isSelectedDbSystem();
+}, { immediate: true });
 
 const startConnection = async (): Promise<void> => {
    await saveConnection();
@@ -539,6 +551,46 @@ const startConnection = async (): Promise<void> => {
    }
 };
 
+// Mirror backend `server/Connections/ConnectionConfigBuilder.cs` so the user
+// can see / copy the actual connection string after a successful test. The
+// field is read-only metadata on the backend (ConnString is stored but never
+// re-parsed; the real connection always derives from individual fields), so
+// this is purely for display / sharing purposes.
+const buildConnString = (c: { client: string; host?: string; port?: number; database?: string; user?: string; password?: string; ssl?: boolean; untrustedConnection?: boolean; databasePath?: string }): string => {
+   const parts: string[] = [];
+   const pwd = c.password ? '***' : '';
+   switch (c.client) {
+      case 'mssql':
+         parts.push(`Server=${c.host},${c.port}`);
+         if (c.database) parts.push(`Database=${c.database}`);
+         parts.push(`User Id=${c.user}`, `Password=${pwd}`);
+         if (c.ssl) {
+            parts.push('Encrypt=true');
+            if (c.untrustedConnection) parts.push('TrustServerCertificate=true');
+         }
+         else parts.push('Encrypt=false', 'TrustServerCertificate=true');
+         parts.push('Application Name=Antares2');
+         return parts.join(';') + ';';
+      case 'mysql':
+      case 'maria':
+         parts.push(`Server=${c.host}`, `Port=${c.port}`);
+         if (c.database) parts.push(`Database=${c.database}`);
+         parts.push(`Uid=${c.user}`, `Pwd=${pwd}`, 'ConnectionTimeout=10');
+         parts.push(c.ssl ? 'SslMode=Required' : 'SslMode=None');
+         return parts.join(';') + ';';
+      case 'pg':
+         parts.push(`Host=${c.host}`, `Port=${c.port}`);
+         if (c.database) parts.push(`Database=${c.database}`);
+         parts.push(`Username=${c.user}`, `Password=${pwd}`, 'Application Name=Antares2');
+         if (c.ssl) parts.push('SSL Mode=Require');
+         return parts.join(';') + ';';
+      case 'sqlite':
+         return `Data Source=${c.databasePath || c.database || ''};`;
+      default:
+         return '';
+   }
+};
+
 const startTest = async () => {
    isTesting.value = true;
 
@@ -549,8 +601,12 @@ const startTest = async () => {
          const res = await Connection.makeTest(localConnection.value);
          if (res.status === 'error')
             addNotification({ status: 'error', message: res.response.message || res.response.toString() });
-         else if (res.status === 'success')
+         else if (res.status === 'success') {
             addNotification({ status: 'success', message: t('connection.connectionSuccessfullyMade') });
+            // Populate the displayable connection string after a verified test
+            // so the user can copy it. Password is masked as `***`.
+            localConnection.value.connString = buildConnString(localConnection.value);
+         }
       }
       catch (err) {
          addNotification({ status: 'error', message: err.stack });
