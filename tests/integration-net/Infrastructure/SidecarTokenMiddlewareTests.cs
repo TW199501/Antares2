@@ -2,6 +2,8 @@ using System.Net;
 using Antares.Server.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace Antares.Server.IntegrationTests.Infrastructure;
@@ -134,7 +136,7 @@ public sealed class SidecarTokenMiddlewareTests
             return Task.CompletedTask;
         };
 
-        var mw = new SidecarTokenMiddleware(next, new StaticTokenSource(Token));
+        var mw = new SidecarTokenMiddleware(next, new StaticTokenSource(Token), new FakeProductionEnv());
         await mw.InvokeAsync(ctx);
         return (ctx, nextCalled);
     }
@@ -143,6 +145,20 @@ public sealed class SidecarTokenMiddlewareTests
     {
         public StaticTokenSource(string token) => Token = token;
         public string Token { get; }
+    }
+
+    /// <summary>
+    /// 測試固定走 production 路徑驗證 token enforcement.
+    /// e85fd10 加了 dev-mode skip 後,middleware 在 IsDevelopment 時直接放行 — 那條
+    /// 路徑不是這個 file 要驗的(那是「dev 不擋」的契約,跟 token 邏輯無關),所以
+    /// 全部測試強制走 prod env.
+    /// </summary>
+    private sealed class FakeProductionEnv : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = Environments.Production;
+        public string ApplicationName { get; set; } = "Antares.Server.Tests";
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+        public IFileProvider ContentRootFileProvider { get; set; } = null!;
     }
 
     private sealed class MutableBool { public bool Value { get; set; } }
