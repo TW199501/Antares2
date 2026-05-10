@@ -294,7 +294,7 @@
             ref="tableWrapperInline"
             class="vscroll h-full"
          >
-            <div class="table table-hover text-xs [&_.th]:!py-1 [&_.th]:!px-2 [&_.th]:!text-xs [&_.th]:!font-semibold [&_.td]:!py-1 [&_.td]:!px-2 [&_.td]:!text-xs">
+            <div class="table table-hover text-xs">
                <div class="thead">
                   <div class="tr">
                      <div

@@ -91,7 +91,26 @@ option:checked {
   }
 }
 
-/* Custom result-table styling — fake-table layout (.table .th .td) */
+/* ─────────────────────────────────────────────────────────────────
+   Universal fake-table row sizing — every .table .th / .td across the app:
+   屬性 view、資料 view、進程列表、未來新增的任何 .table 結構,都吃這條.
+   1 張規則,1 個 single source of truth. 不再 per-component 堆 scoped style.
+   ───────────────────────────────────────────────────────────────── */
+.table {
+  .th, .td {
+    // outer 29 = content 28 + bottom border 1 (Tailwind preflight 設 box-sizing
+    // border-box,所以 height 必須是 29 才能讓 content 留 28).
+    height: 29px;
+    line-height: 28px;
+    vertical-align: middle;
+    border: none;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+  }
+}
+
+/* Workspace query result-table specifics (sticky header, font/padding,
+   ellipsis truncation) — sizing 已由上面的 .table .th/.td 覆蓋. */
 .workspace-query-results {
   overflow: auto;
   white-space: nowrap;
@@ -103,29 +122,18 @@ option:checked {
     .th {
       position: sticky;
       top: 0;
-      border: 2px solid;
-      border-left: none;
-      border-bottom-width: 2px;
       padding: 0;
       font-weight: 700;
       font-size: 0.7rem;
       z-index: 1;
 
       > div {
-        padding: 0.1rem 0.2rem;
+        padding: 0 0.2rem;
         min-width: -webkit-fill-available;
       }
     }
 
     .td {
-      // CRITICAL: keep display: table-cell. The parent .table has
-      // display: table, .tr has display: table-row — they require
-      // children to be table-cell or the columns collapse into a
-      // single column. Use vertical-align: middle (table-cell native)
-      // for vertical centering instead of flex.
-      vertical-align: middle;
-      border-right: 2px solid;
-      border-bottom: 2px solid;
       padding: 0 0.2rem;
       text-overflow: ellipsis;
       max-width: 200px;

@@ -46,7 +46,7 @@
                <div
                   v-for="(field, index) in filteredFields"
                   :key="index"
-                  class="th cursor-pointer !h-[32px] !py-0 !align-middle !bg-primary !text-primary-foreground"
+                  class="th cursor-pointer !bg-primary !text-primary-foreground"
                   :title="`${field.type} ${fieldLength(field) ? `(${fieldLength(field)})` : ''}`"
                >
                   <div ref="columnResize" class="column-resizable">
@@ -303,7 +303,7 @@ const selectedRows = ref([]);
 const currentSort: Ref<{field: string; dir: 'asc' | 'desc'}[]> = ref([]);
 const resultsetIndex = ref(0);
 const scrollElement = ref(null);
-const rowHeight = ref(23);
+const rowHeight = ref(28);
 const selectedField = ref(null);
 const isEditingRow = ref(false);
 const chunkModalRequest: Ref<false | string> = ref(false);
