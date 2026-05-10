@@ -24,11 +24,9 @@
                      {{ t('database.order') }}
                   </div>
                </div>
-               <div class="th">
-                  <div class="column-resizable min-200">
-                     <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
-                        {{ t('database.fieldName') }}
-                     </div>
+               <div class="th th-name">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.fieldName') }}
                   </div>
                </div>
                <div class="th">
@@ -75,11 +73,9 @@
                      </div>
                   </div>
                </div>
-               <div v-if="customizations.comment" class="th">
-                  <div class="column-resizable min-200">
-                     <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
-                        {{ t('database.comment') }}
-                     </div>
+               <div v-if="customizations.comment" class="th th-comment">
+                  <div class="table-column-title !text-xs !font-medium !text-muted-foreground !uppercase tracking-wide">
+                     {{ t('database.comment') }}
                   </div>
                </div>
                <div class="th th-ops">
@@ -297,6 +293,18 @@ defineExpose({ tableWrapper });
   width: 55px;
   min-width: 55px;
   max-width: 55px;
+}
+
+.th-name {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+}
+
+.th-comment {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
 }
 
 .th-chip {
