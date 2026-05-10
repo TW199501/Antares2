@@ -3,7 +3,7 @@
       <!-- Read-only summary of table options. Editing happens via Edit modal
            (Edit button at end of this row). All mutations are autocommit on
            modal confirm — there's no draft/Save flow anymore. -->
-      <div class="px-4 pt-2 pb-3">
+      <div class="px-4 py-1.5">
          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <div class="flex items-center gap-2">
                <Label class="!text-sm !text-muted-foreground !font-normal !m-0 whitespace-nowrap">{{ t('general.name') }}</Label>
