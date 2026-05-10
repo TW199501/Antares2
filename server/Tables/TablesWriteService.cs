@@ -49,15 +49,101 @@ public sealed class TablesWriteService : IDynamicApiController
     }
 
     [HttpPost("/api/tables/alter"), NonUnify]
-    public Task<object> Alter([FromBody] AlterTablePayload p, CancellationToken _)
+    public async Task<object> Alter([FromBody] AlterTablePayload p, CancellationToken ct)
     {
-        // ALTER TABLE: per-DB syntax matrix is broad (ADD/DROP/MODIFY/RENAME COLUMN, INDEX,
-        // CONSTRAINT, etc.). The renderer sends a structured diff in p.Changes; we apply
-        // each one. Cascade-FK pre-scan (CascadeFkResolver, plan §592) is a Phase 11 follow-up
-        // that will pre-DROP FKs before DROP COLUMN. For now ALTER comes through verbatim and
-        // the DB rejects unsafe drops, surfacing the error to the renderer.
-        _logger.LogInformation("ALTER TABLE {Table} requested with {Count} change(s) — Phase 11 stub passthrough", p.Table, p.Changes?.Count ?? 0);
-        return Task.FromResult<object>(new { status = "success" });
+        // 漸進式實作 — per plan T3-T5:
+        //   T3 (本 commit): Options.Comment / Options.Name 路徑 (table-level metadata)
+        //   T4 (next):       Additions[] (ADD COLUMN)
+        //   T5 (last):       Deletions / Changes / IndexChanges / ForeignChanges / CheckChanges
+        // 未實作的操作維持 stub 行為 (return success 不動 DB) — 等後續 commit 補.
+        var entry = _registry.Require(p.Uid);
+
+        if (p.Options is not null && p.Options.Count > 0)
+        {
+            await ApplyTableOptionsAsync(entry, p.Schema, p.Table, p.Options, ct);
+        }
+
+        _logger.LogInformation(
+            "ALTER TABLE {Table} — options={OptCount}, additions={Adds}, changes={Chg}, deletions={Del}",
+            p.Table,
+            p.Options?.Count ?? 0,
+            p.Additions?.Count ?? 0,
+            p.Changes?.Count ?? 0,
+            p.Deletions?.Count ?? 0);
+
+        return new { status = "success" };
+    }
+
+    /// <summary>
+    /// 套用表級選項 diff (rename / comment / collation / engine / autoIncrement).
+    /// T3 階段實作 MSSQL comment 路徑;其他 client / 其他 option 之後補.
+    /// </summary>
+    private static async Task ApplyTableOptionsAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        Dictionary<string, object?> options, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+
+        if (options.TryGetValue("comment", out var commentObj))
+        {
+            var comment = commentObj?.ToString() ?? string.Empty;
+            await SetTableCommentAsync(entry, schema, table, comment, ct);
+        }
+        // TODO T5: rename / collation / engine / autoIncrement
+    }
+
+    /// <summary>
+    /// 設定 / 更新表級註解,per-flavor:
+    ///   mssql: sys.extended_properties (MS_Description, class=1, minor_id=0)
+    ///   mysql: ALTER TABLE ... COMMENT='...'
+    ///   pg:    COMMENT ON TABLE ... IS '...'
+    ///   sqlite: 無 native 註解,無動作.
+    /// </summary>
+    private static async Task SetTableCommentAsync(
+        ConnectionRegistry.Entry entry, string? schema, string table,
+        string comment, CancellationToken ct)
+    {
+        switch (entry.Client)
+        {
+            case "mssql":
+            {
+                // 用 IF EXISTS / ELSE 兩條 stored proc 切換 add / update.
+                // sp_updateextendedproperty 在 description 不存在時會 raise error,
+                // 所以必須先確認再選分支. minor_id=0 表「table 自己」(非 column).
+                const string sql = @"
+IF EXISTS (
+    SELECT 1 FROM sys.extended_properties ep
+    JOIN sys.tables t ON ep.major_id = t.object_id
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    WHERE s.name = @sc AND t.name = @t
+      AND ep.minor_id = 0 AND ep.class = 1 AND ep.name = 'MS_Description'
+)
+    EXEC sp_updateextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t;
+ELSE
+    EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t;";
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql,
+                    new { sc = schema, t = table, v = comment }), ct);
+                break;
+            }
+            case "mysql":
+            case "maria":
+            {
+                var qualifiedTable = QualifyTable(entry.Client, schema, table);
+                var escapedComment = comment.Replace("'", "''");
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(
+                    $"ALTER TABLE {qualifiedTable} COMMENT='{escapedComment}'"), ct);
+                break;
+            }
+            case "pg":
+            {
+                var qualifiedTable = QualifyTable(entry.Client, schema, table);
+                var escapedComment = comment.Replace("'", "''");
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(
+                    $"COMMENT ON TABLE {qualifiedTable} IS '{escapedComment}'"), ct);
+                break;
+            }
+            // sqlite: 無 native 表級註解,無動作.
+        }
     }
 
     [HttpPost("/api/tables/duplicate"), NonUnify]
@@ -267,7 +353,45 @@ public sealed class NewColumnDef
 
 public sealed class AlterTablePayload : TableTargetPayload
 {
+    /// <summary>渲染端送的完整 diff payload — 對應 WorkspaceTabPropsTable.vue saveChanges() params.</summary>
+    public TableStructureDto? TableStructure { get; set; }
+    public List<Dictionary<string, object?>>? Additions { get; set; }
     public List<Dictionary<string, object?>>? Changes { get; set; }
+    public List<Dictionary<string, object?>>? Deletions { get; set; }
+    public IndexChangesDto? IndexChanges { get; set; }
+    public ForeignChangesDto? ForeignChanges { get; set; }
+    public CheckChangesDto? CheckChanges { get; set; }
+    /// <summary>表級選項 diff,key 包含 `comment`/`name`/`collation`/`engine`/`autoIncrement` 等.</summary>
+    public Dictionary<string, object?>? Options { get; set; }
+}
+
+public sealed class TableStructureDto
+{
+    public string? Name { get; set; }
+    public List<Dictionary<string, object?>>? Fields { get; set; }
+    public List<Dictionary<string, object?>>? Foreigns { get; set; }
+    public List<Dictionary<string, object?>>? Indexes { get; set; }
+}
+
+public sealed class IndexChangesDto
+{
+    public List<Dictionary<string, object?>>? Additions { get; set; }
+    public List<Dictionary<string, object?>>? Changes { get; set; }
+    public List<Dictionary<string, object?>>? Deletions { get; set; }
+}
+
+public sealed class ForeignChangesDto
+{
+    public List<Dictionary<string, object?>>? Additions { get; set; }
+    public List<Dictionary<string, object?>>? Changes { get; set; }
+    public List<Dictionary<string, object?>>? Deletions { get; set; }
+}
+
+public sealed class CheckChangesDto
+{
+    public List<Dictionary<string, object?>>? Additions { get; set; }
+    public List<Dictionary<string, object?>>? Changes { get; set; }
+    public List<Dictionary<string, object?>>? Deletions { get; set; }
 }
 
 public sealed class DuplicateTablePayload
