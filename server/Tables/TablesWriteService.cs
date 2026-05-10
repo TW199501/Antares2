@@ -854,11 +854,17 @@ public sealed class FieldDto
     public bool? Zerofill { get; set; }
     public bool? AutoIncrement { get; set; }
     public bool? IsArray { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
     public int? Length { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
     public int? NumLength { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
     public int? CharLength { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
     public int? DatePrecision { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
     public int? NumPrecision { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
     public int? NumScale { get; set; }
     public string? Default { get; set; }
     public string? DefaultType { get; set; }
@@ -866,6 +872,7 @@ public sealed class FieldDto
     public string? Collation { get; set; }
     public string? Charset { get; set; }
     public string? OnUpdate { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrStringConverter))]
     public string? After { get; set; }
     public string? EnumValues { get; set; }
     public string? Key { get; set; }
@@ -962,4 +969,70 @@ public sealed class FakeColumnDto
     public string Name { get; set; } = string.Empty;
     public string? DataType { get; set; }
     public string? Semantic { get; set; }
+}
+
+/// <summary>
+/// Renderer 的 TableField interface 對 length / numLength / charLength 等欄位的型別是
+/// `number | false` — `false` 是「沒有長度」的 sentinel(antares.ts:78-110).Plain
+/// `int?` 反序列化會拒絕 bool,造成 400 model-binding error.這個 converter 接受
+/// number/null/false 三種輸入,後兩者都映射為 null.
+/// </summary>
+internal sealed class BoolOrIntConverter : System.Text.Json.Serialization.JsonConverter<int?>
+{
+    public override int? Read(ref System.Text.Json.Utf8JsonReader reader,
+        Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+    {
+        switch (reader.TokenType)
+        {
+            case System.Text.Json.JsonTokenType.Null:
+            case System.Text.Json.JsonTokenType.False:
+            case System.Text.Json.JsonTokenType.True:
+                return null;
+            case System.Text.Json.JsonTokenType.Number:
+                return reader.TryGetInt32(out var v) ? v : (int?)null;
+            case System.Text.Json.JsonTokenType.String:
+                // 部分 sentinel 值會以字串形式出現(空字串).
+                var s = reader.GetString();
+                return int.TryParse(s, out var n) ? n : (int?)null;
+            default:
+                throw new System.Text.Json.JsonException(
+                    $"BoolOrIntConverter cannot read TokenType={reader.TokenType}");
+        }
+    }
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, int? value,
+        System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value.HasValue) writer.WriteNumberValue(value.Value);
+        else writer.WriteNullValue();
+    }
+}
+
+/// <summary>
+/// Renderer 的 TableField.after 是 `string | false` 型別 — `false` 表「插在最前」(FIRST).
+/// `string?` 反序列化會拒絕 bool,造成 400.這個 converter 接受 string/null/bool,後二者
+/// 映射為 null(代表「沒有 after,放在最前」由 ApplyAdditionsAsync 自行決定).
+/// </summary>
+internal sealed class BoolOrStringConverter : System.Text.Json.Serialization.JsonConverter<string?>
+{
+    public override string? Read(ref System.Text.Json.Utf8JsonReader reader,
+        Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+    {
+        return reader.TokenType switch
+        {
+            System.Text.Json.JsonTokenType.Null => null,
+            System.Text.Json.JsonTokenType.False => null,
+            System.Text.Json.JsonTokenType.True => null,
+            System.Text.Json.JsonTokenType.String => reader.GetString(),
+            System.Text.Json.JsonTokenType.Number => reader.TryGetInt64(out var n) ? n.ToString() : null,
+            _ => throw new System.Text.Json.JsonException($"BoolOrStringConverter cannot read TokenType={reader.TokenType}")
+        };
+    }
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, string? value,
+        System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value is null) writer.WriteNullValue();
+        else writer.WriteStringValue(value);
+    }
 }
