@@ -116,6 +116,10 @@ const mountModal = (
             DialogContent: { template: '<div class="dialog-content-stub"><slot /></div>' },
             DialogHeader: { template: '<div class="dialog-header-stub"><slot /></div>' },
             DialogTitle: { template: '<div class="dialog-title-stub"><slot /></div>' },
+            // DialogDescription added to component in commit 8cd8ea6 for a11y;
+            // without a stub the real Reka primitive looks up DialogRootContext
+            // (which the Dialog stub doesn't provide) and throws on mount.
+            DialogDescription: { template: '<p class="dialog-description-stub"><slot /></p>' },
             Popover: { template: '<div class="popover-stub"><slot /></div>' },
             PopoverTrigger: { template: '<div class="popover-trigger-stub"><slot /></div>' },
             PopoverContent: { template: '<div class="popover-content-stub"><slot /></div>' },

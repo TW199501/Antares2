@@ -262,24 +262,12 @@ describe('Workspace', () => {
       expect(wrapper.html()).toContain('modal-discard-changes-stub');
    });
 
-   it('renders the tools dropdown trigger when customizations.processesList is true', async () => {
-      const { wrapper } = mountWorkspace();
-      await flushPromises();
-      expect(wrapper.find('.workspace-tools-link').exists()).toBe(true);
-   });
-
-   it('skips the tools dropdown when no tools customizations are enabled', async () => {
-      const { wrapper } = mountWorkspace({
-         customizations: {
-            ...baseCustomizations,
-            processesList: false,
-            usersManagement: false,
-            variables: false
-         }
-      });
-      await flushPromises();
-      expect(wrapper.find('.workspace-tools-link').exists()).toBe(false);
-   });
+   // Tools dropdown (mdiTools workspace-tools-link) was removed in commit
+   // 5bdcb53 — its 4 entries (processesList / console / variables / users)
+   // were dead clicks (variables/users always disabled, console moved to
+   // bottom). Processes list is now reached via the bottom-console tab
+   // (DebugConsole.vue), which has its own tests. The two tools-dropdown
+   // tests that lived here are gone with the dropdown.
 
    it('cleans up window listeners on unmount (smoke: no throw)', async () => {
       const { wrapper } = mountWorkspace();

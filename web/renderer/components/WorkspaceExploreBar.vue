@@ -284,8 +284,14 @@ onMounted(async () => {
    });
 
    if (workspace.value.structure.length === 1 && schema.value?.[0]) { // Auto-open if just one schema
-      schema.value[0].selectSchema(workspace.value.structure[0].name);
-      schema.value[0].openSchemaAccordion();
+      // Optional-chain the method calls — when this component is mounted in a
+      // unit test, schema.value[0] is a stub of WorkspaceExploreBarSchema that
+      // doesn't expose selectSchema / openSchemaAccordion (test stubs are
+      // intentionally minimal). Without ?., onMounted throws an unhandled
+      // rejection that vitest counts as an error → ELIFECYCLE exit 1 even
+      // though all assertions pass.
+      schema.value[0].selectSchema?.(workspace.value.structure[0].name);
+      schema.value[0].openSchemaAccordion?.();
    }
 
    if (customizations.value.database) {

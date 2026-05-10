@@ -23,7 +23,12 @@ import { computed, PropType } from 'vue';
 
 import { useConnectionsStore } from '@/stores/connections';
 
-const { getIconByUid } = useConnectionsStore();
+// Defer store access to inside `iconPath` computed — only `type === 'custom'`
+// actually needs `getIconByUid`, and computeds run in reactive scope where the
+// store is reachable. Calling useConnectionsStore() at module top-level threw
+// 38× "getActivePinia() not active" warnings under any test that mounted a
+// BaseIcon-using component without a Pinia instance attached (DialogContent,
+// Tooltip, etc. — anything not using mountWithPinia helper).
 
 const props = defineProps({
    iconName: {
@@ -52,7 +57,7 @@ const iconPath = computed(() => {
    if (props.type === 'mdi')
       return (Icons as {[k:string]: string})[props.iconName];
    else if (props.type === 'custom') {
-      const base64 = getIconByUid(props.iconName)?.base64;
+      const base64 = useConnectionsStore().getIconByUid(props.iconName)?.base64;
       const svgString = Buffer
          .from(base64, 'base64')
          .toString('utf-8');

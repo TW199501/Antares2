@@ -168,12 +168,15 @@ describe('WorkspaceEditConnectionPanel', () => {
       expect(triggers).not.toContain('ssh');
    });
 
-   it('renders the connection-string field only when client === pg', async () => {
+   it('renders the connection-string field for all server-based clients (mysql/pg/mssql)', async () => {
+      // Renamed + assertion-flipped from "only when client === pg" — the component
+      // now exposes the displayable connection string for every server-based client
+      // (commit 46d1620 added buildConnString + auto-populate after a successful Test).
+      // Sqlite still hides the field (uses databasePath instead, not a connection string).
       const wrapperMysql = mountPanel();
       await flushPromises();
-      // Find by data-label containing "connectionString" (i18n identity)
       const mysqlFields = wrapperMysql.findAll('.form-field-stub').map(f => f.attributes('data-label'));
-      expect(mysqlFields).not.toContain('connection.connectionString');
+      expect(mysqlFields).toContain('connection.connectionString');
 
       const wrapperPg = mountPanel({ ...baseConnection, client: 'pg' });
       await flushPromises();
