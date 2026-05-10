@@ -38,6 +38,11 @@ public sealed class AntaresStartup : AppStartup
         app.UseCorsAccessor();
         app.UseWebSockets();
         app.UseRouting();
+        // Furion Swagger UI — default routePrefix "api" mounts UI at /api/index.html,
+        // OpenAPI doc at /api/{group}/swagger.json. Mounted BEFORE SidecarTokenMiddleware
+        // so internal API browsing during dev/debug doesn't need a token header. Sidecar
+        // binds 127.0.0.1 only so this is loopback-private regardless.
+        app.UseInject();
         app.UseMiddleware<SidecarTokenMiddleware>();
         app.UseEndpoints(endpoints =>
         {

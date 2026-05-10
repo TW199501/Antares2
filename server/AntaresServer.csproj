@@ -9,6 +9,15 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
+    <!-- Microsoft.Data.SqlClient ships native SNI bits as runtime "content" (not
+         just managed native libraries). Without IncludeAllContentForSelfExtract,
+         single-file publish leaves Microsoft.Data.SqlClient.SNI.x64.dll out of
+         the bundle → first call to TdsParser throws "type initializer threw an
+         exception" on the user's machine.
+         IncludeNativeLibrariesForSelfExtract is the standard companion that lets
+         the bootloader extract the native libs to a temp dir before main runs. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
