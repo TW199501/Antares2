@@ -20,6 +20,7 @@ namespace Antares.Server.Tables;
 /// gaps (Phase 11 Plan §602).
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class TablesWriteService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;
