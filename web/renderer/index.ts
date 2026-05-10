@@ -12,7 +12,7 @@ import { createApp } from 'vue';
 
 import App from '@/App.vue';
 import { i18n } from '@/i18n';
-import { setNoConnectionHandler, setSidecarPort } from '@/ipc-api/httpClient';
+import { clearSidecarToken, setNoConnectionHandler, setSidecarPort } from '@/ipc-api/httpClient';
 import { initTauriFs } from '@/libs/persistStore';
 import { useConnectionsStore } from '@/stores/connections';
 import { useSettingsStore } from '@/stores/settings';
@@ -34,6 +34,10 @@ async function initSidecar () {
       // Listen for future sidecar-ready events (also fires on sidecar restart)
       await listen<number>('sidecar-ready', async (event) => {
          setSidecarPort(event.payload);
+         // Sidecar respawn produces a new per-session token. Drop the cached
+         // value so the next apiCall re-fetches via `get_sidecar_token`,
+         // otherwise every request hits 401 until the page is reloaded.
+         clearSidecarToken();
 
          // Skip the very first ready event (handled by existingPort above)
          if (isFirstSidecarReady) {

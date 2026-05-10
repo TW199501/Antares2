@@ -13,6 +13,17 @@ export function getSidecarPort (): number {
    return sidecarPort.value;
 }
 
+/**
+ * Clear the cached sidecar token so the next API call re-fetches it via the
+ * Tauri `get_sidecar_token` command. Must be called whenever the sidecar
+ * restarts (Rust shell auto-respawns on crash) — otherwise renderer keeps
+ * sending the stale token to the new sidecar and gets 401 forever until
+ * page reload.
+ */
+export function clearSidecarToken () {
+   sidecarToken.value = '';
+}
+
 export function setNoConnectionHandler (handler: (uid: string) => void) {
    noConnectionHandler = handler;
 }

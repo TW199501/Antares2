@@ -44,15 +44,35 @@ public sealed class SchemaTreeBuilder
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
-                var tables = await Task.Run(() => db.Ado.SqlQuery<MssqlTableRow>(
-                    "SELECT TABLE_NAME AS [Name], TABLE_TYPE AS [Type] FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = @schema",
+                // LEFT JOIN sys.extended_properties (class=1 = object, minor_id=0 = the
+                // table itself) for MS_Description so the renderer's table list shows
+                // table-level Chinese descriptions (mirrors the column-level comment fix
+                // in TablesReadService.GetData / GetColumnCommentsAsync).
+                // sys.objects (type 'U'=table / 'V'=view) covers both, joined by
+                // schema_id + name to prevent duplicate matches when the same table
+                // name exists in multiple schemas. Drives off sys.objects directly
+                // (rather than INFORMATION_SCHEMA.TABLES → sys.tables) so the comment
+                // join is one-to-one and view comments are returned alongside table ones.
+                var tables = await Task.Run(() => db.Ado.SqlQuery<MssqlTableRow>(@"
+SELECT so.name AS [Name],
+       CASE so.type WHEN 'V' THEN 'VIEW' ELSE 'BASE TABLE' END AS [Type],
+       ISNULL(CAST(ep.value AS NVARCHAR(MAX)), '') AS [Comment]
+FROM sys.objects so
+JOIN sys.schemas ss ON ss.schema_id = so.schema_id
+LEFT JOIN sys.extended_properties ep
+       ON ep.major_id = so.object_id
+      AND ep.minor_id = 0
+      AND ep.class    = 1
+      AND ep.name     = 'MS_Description'
+WHERE so.type IN ('U','V') AND ss.name = @schema",
                     new { schema = schemaName }), ct);
                 foreach (var t in tables)
                 {
                     info.Tables.Add(new TableSummaryDto
                     {
                         Name = t.Name,
-                        Type = t.Type == "VIEW" ? "view" : "table"
+                        Type = t.Type == "VIEW" ? "view" : "table",
+                        Comment = t.Comment
                     });
                 }
             }
@@ -114,15 +134,25 @@ public sealed class SchemaTreeBuilder
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
-                var tables = await Task.Run(() => db.Ado.SqlQuery<PgTableRow>(
-                    "SELECT table_name AS \"Name\", table_type AS \"Type\" FROM information_schema.tables WHERE table_schema = @schema",
+                // pg_description with objsubid=0 carries the table-level COMMENT.
+                // Cast oid via to_regclass for parameterized table-name lookup.
+                var tables = await Task.Run(() => db.Ado.SqlQuery<PgTableRow>(@"
+SELECT t.table_name AS ""Name"",
+       t.table_type AS ""Type"",
+       COALESCE(pgd.description, '') AS ""Comment""
+FROM information_schema.tables t
+LEFT JOIN pg_class      c   ON c.relname  = t.table_name
+LEFT JOIN pg_namespace  ns  ON ns.oid     = c.relnamespace AND ns.nspname = t.table_schema
+LEFT JOIN pg_description pgd ON pgd.objoid = c.oid AND pgd.objsubid = 0
+WHERE t.table_schema = @schema",
                     new { schema = schemaName }), ct);
                 foreach (var t in tables)
                 {
                     info.Tables.Add(new TableSummaryDto
                     {
                         Name = t.Name,
-                        Type = t.Type == "VIEW" ? "view" : "table"
+                        Type = t.Type == "VIEW" ? "view" : "table",
+                        Comment = t.Comment
                     });
                 }
             }
@@ -158,8 +188,8 @@ public sealed class SchemaTreeBuilder
         return new List<SchemaInfoDto> { info };
     }
 
-    private sealed class MssqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; }
+    private sealed class MssqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; }
     private sealed class MysqlTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; public string Engine { get; set; } = ""; }
-    private sealed class PgTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; }
+    private sealed class PgTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; public string Comment { get; set; } = ""; }
     private sealed class SqliteTableRow { public string Name { get; set; } = ""; public string Type { get; set; } = ""; }
 }
