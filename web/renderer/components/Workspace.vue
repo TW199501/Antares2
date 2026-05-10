@@ -404,19 +404,6 @@
                      </li>
                   </template>
                   <template #header>
-                     <li
-                        v-if="workspace.customizations.processesList"
-                        class="ws-tab-cell"
-                     >
-                        <a
-                           class="tab-add"
-                           tabindex="0"
-                           :title="t('database.processesList')"
-                           @click="openProcessesTab"
-                        >
-                           <BaseIcon icon-name="mdiMemory" :size="22" />
-                        </a>
-                     </li>
                      <li class="ws-tab-cell">
                         <a
                            class="tab-add"
@@ -594,12 +581,6 @@
          </div>
          <DebugConsole v-if="isConsoleOpen" :uid="workspace.uid" />
       </div>
-      <ModalProcessesList
-         v-if="isProcessesModal"
-         :connection="connection"
-         @close="hideProcessesModal"
-      />
-
       <ModalDiscardChanges
          v-if="unsavedTab"
          @confirm="closeTab(unsavedTab, true)"
@@ -632,7 +613,6 @@ import * as Draggable from 'vuedraggable';
 import BaseIcon from '@/components/BaseIcon.vue';
 import DebugConsole from '@/components/DebugConsole.vue';
 import ModalDiscardChanges from '@/components/ModalDiscardChanges.vue';
-import ModalProcessesList from '@/components/ModalProcessesList.vue';
 import ModalQueryBuilder from '@/components/ModalQueryBuilder.vue';
 import WorkspaceEditConnectionPanel from '@/components/WorkspaceEditConnectionPanel.vue';
 import WorkspaceEmptyState from '@/components/WorkspaceEmptyState.vue';
@@ -691,7 +671,6 @@ const props = defineProps({
 });
 
 const hasWheelEvent = ref(false);
-const isProcessesModal = ref(false);
 const isQueryBuilderModalOpen = ref(false);
 const unsavedTab = ref(null);
 const tabWrap = ref(null);
@@ -827,14 +806,6 @@ const closeTabsToRight = () => {
 
    for (const tab of leftTabs)
       removeTab({ uid: props.connection.uid, tab: tab.uid });
-};
-
-const showProcessesModal = () => {
-   isProcessesModal.value = true;
-};
-
-const hideProcessesModal = () => {
-   isProcessesModal.value = false;
 };
 
 // Dispatched to WorkspaceExploreBar which owns the ModalNewSchema instance +

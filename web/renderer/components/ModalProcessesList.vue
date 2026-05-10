@@ -294,7 +294,7 @@
             ref="tableWrapperInline"
             class="vscroll h-full"
          >
-            <div class="table table-hover">
+            <div class="table table-hover text-xs [&_.th]:!py-1 [&_.th]:!px-2 [&_.th]:!text-xs [&_.th]:!font-semibold [&_.td]:!py-1 [&_.td]:!px-2 [&_.td]:!text-xs">
                <div class="thead">
                   <div class="tr">
                      <div
@@ -390,8 +390,18 @@ const emit = defineEmits<{
 }>();
 
 const tableWrapper: Ref<HTMLDivElement> = ref(null);
+// Inline (console-tab) variant has a separate <div ref="tableWrapperInline">
+// in the template — must be declared here too or Vue's template ref binding
+// silently drops them. Without these, scrollElement stays null in inline
+// mode → BaseVirtualScroll computes scrollTop=undefined → NaN visibleItemsCount
+// → empty rows even though `sortedResults.length` correctly reports the count.
+const tableWrapperInline: Ref<HTMLDivElement> = ref(null);
 const table: Ref<HTMLDivElement> = ref(null);
 const resultTable: Ref<Component & {updateWindow: () => void}> = ref(null);
+const resultTableInline: Ref<Component & {updateWindow: () => void}> = ref(null);
+// Active wrapper depends on which template branch is rendered (props.inline).
+const activeTableWrapper = computed(() => props.inline ? tableWrapperInline.value : tableWrapper.value);
+const activeResultTable = computed(() => props.inline ? resultTableInline.value : resultTable.value);
 const resultsSize = ref(1000);
 const isQuering = ref(false);
 const isContext = ref(false);
@@ -461,14 +471,16 @@ const clearRefresh = () => {
 };
 
 const resizeResults = () => {
-   if (resultTable.value) {
-      const el = tableWrapper.value.parentElement;
+   const rt = activeResultTable.value;
+   const tw = activeTableWrapper.value;
+   if (rt) {
+      const el = tw?.parentElement;
 
       if (el) {
          const size = el.offsetHeight;
          resultsSize.value = size;
       }
-      resultTable.value.updateWindow();
+      rt.updateWindow();
    }
 };
 
@@ -570,8 +582,8 @@ onMounted(() => {
 onUpdated(() => {
    if (table.value)
       refreshScroller();
-   if (tableWrapper.value)
-      scrollElement.value = tableWrapper.value;
+   if (activeTableWrapper.value)
+      scrollElement.value = activeTableWrapper.value;
 });
 
 onBeforeUnmount(() => {
