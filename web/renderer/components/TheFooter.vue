@@ -6,7 +6,11 @@
    >
       <div class="footer-left-elements">
          <ul class="footer-elements">
-            <li class="footer-element">
+            <li
+               v-if="versionString"
+               class="footer-element"
+               :title="versionString"
+            >
                <BaseIcon
                   icon-name="mdiServer"
                   class="mr-1"
@@ -41,58 +45,66 @@
          </ul>
       </div>
 
-      <div v-if="activePager" class="footer-center-elements">
-         <button
-            type="button"
-            class="footer-pager-chip"
-            :disabled="!activePager.hasPrev"
-            :title="t('application.previousResultsPage')"
-            @click="activePager.onPrev()"
-         >
-            <BaseIcon icon-name="mdiSkipPrevious" :size="18" />
-         </button>
-         <span class="footer-pager-page">{{ activePager.page }}</span>
-         <button
-            type="button"
-            class="footer-pager-chip"
-            :disabled="!activePager.hasNext"
-            :title="t('application.nextResultsPage')"
-            @click="activePager.onNext()"
-         >
-            <BaseIcon icon-name="mdiSkipNext" :size="18" />
-         </button>
-         <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-               <button
-                  type="button"
-                  class="footer-pager-chip footer-pager-export"
-                  :disabled="activePager.isQuering"
-                  :title="t('database.export')"
-               >
-                  <BaseIcon icon-name="mdiFileExport" :size="18" />
-                  <span>{{ t('database.export') }}</span>
-                  <BaseIcon icon-name="mdiMenuDown" :size="14" />
-               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" side="top">
-               <DropdownMenuItem @select="activePager.onExport('json')">
-                  JSON
-               </DropdownMenuItem>
-               <DropdownMenuItem @select="activePager.onExport('csv')">
-                  CSV
-               </DropdownMenuItem>
-               <DropdownMenuItem @select="activePager.onExport('php')">
-                  {{ t('application.phpArray') }}
-               </DropdownMenuItem>
-               <DropdownMenuItem @select="activePager.onExport('sql')">
-                  SQL INSERT
-               </DropdownMenuItem>
-            </DropdownMenuContent>
-         </DropdownMenu>
-      </div>
-
       <div class="footer-right-elements">
          <ul class="footer-elements">
+            <!-- Pager + export — moved from former center-elements; sits in the
+                 empty zone between the long version string and the right icon
+                 group (per user request). Only renders when a table view
+                 exposes a pager via tablePagerStore. -->
+            <li v-if="activePager" class="footer-element footer-pager-group min-w-[150px] gap-1.5 text-sm">
+               <button
+                  type="button"
+                  class="footer-pager-chip"
+                  :disabled="!activePager.hasPrev"
+                  :title="t('application.previousResultsPage')"
+                  @click="activePager.onPrev()"
+               >
+                  <BaseIcon icon-name="mdiSkipPrevious" :size="16" />
+               </button>
+               <span class="footer-pager-page text-sm">{{ activePager.page }}</span>
+               <button
+                  type="button"
+                  class="footer-pager-chip"
+                  :disabled="!activePager.hasNext"
+                  :title="t('application.nextResultsPage')"
+                  @click="activePager.onNext()"
+               >
+                  <BaseIcon icon-name="mdiSkipNext" :size="16" />
+               </button>
+               <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                     <button
+                        type="button"
+                        class="footer-pager-chip footer-pager-export text-sm"
+                        :disabled="activePager.isQuering"
+                        :title="t('database.export')"
+                     >
+                        <BaseIcon icon-name="mdiFileExport" :size="16" />
+                        <span>{{ t('database.export') }}</span>
+                        <BaseIcon icon-name="mdiMenuDown" :size="14" />
+                     </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                     align="end"
+                     side="top"
+                     :side-offset="8"
+                     class="!min-w-[220px] !p-1"
+                  >
+                     <DropdownMenuItem class="!py-2 !px-3 !text-sm" @select="activePager.onExport('json')">
+                        JSON
+                     </DropdownMenuItem>
+                     <DropdownMenuItem class="!py-2 !px-3 !text-sm" @select="activePager.onExport('csv')">
+                        CSV
+                     </DropdownMenuItem>
+                     <DropdownMenuItem class="!py-2 !px-3 !text-sm" @select="activePager.onExport('php')">
+                        {{ t('application.phpArray') }}
+                     </DropdownMenuItem>
+                     <DropdownMenuItem class="!py-2 !px-3 !text-sm" @select="activePager.onExport('sql')">
+                        SQL INSERT
+                     </DropdownMenuItem>
+                  </DropdownMenuContent>
+               </DropdownMenu>
+            </li>
             <li class="footer-element footer-link" @click="toggleConsole()">
                <BaseIcon
                   icon-name="mdiConsoleLine"

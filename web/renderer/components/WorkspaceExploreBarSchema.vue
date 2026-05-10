@@ -28,17 +28,20 @@
                      />
                      <div class="">
                         <span v-html="highlightWord(database.name, 'schemas')" />
-                        <div
-                           v-if="database.size"
-                           class="schema-size tooltip tooltip-left mr-1"
-                           :data-tooltip="formatBytes(database.size)"
-                        >
-                           <BaseIcon
-                              class="mr-2"
-                              icon-name="mdiInformationOutline"
-                              :size="18"
-                           />
-                        </div>
+                        <Tooltip v-if="database.size">
+                           <TooltipTrigger as-child>
+                              <div class="schema-size mr-1">
+                                 <BaseIcon
+                                    class="mr-2"
+                                    icon-name="mdiInformationOutline"
+                                    :size="18"
+                                 />
+                              </div>
+                           </TooltipTrigger>
+                           <TooltipContent side="left">
+                              {{ formatBytes(database.size) }}
+                           </TooltipContent>
+                        </Tooltip>
                      </div>
                   </AccordionTriggerPrimitive>
                </AccordionHeader>
@@ -82,13 +85,16 @@
                               <span v-html="highlightWord(table.name)" />
                               <span v-if="table.comment" class="table-comment">{{ table.comment }}</span>
                            </a>
-                           <div
-                              v-if="table.type === 'table' && table.size !== false && !isNaN(table.size)"
-                              class="table-size  tooltip tooltip-left mr-1"
-                              :data-tooltip="formatBytes(table.size)"
-                           >
-                              <div class="pie" :style="piePercentage(table.size)" />
-                           </div>
+                           <Tooltip v-if="table.type === 'table' && table.size !== false && !isNaN(table.size)">
+                              <TooltipTrigger as-child>
+                                 <div class="table-size mr-1">
+                                    <div class="pie" :style="piePercentage(table.size)" />
+                                 </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left">
+                                 {{ formatBytes(table.size) }}
+                              </TooltipContent>
+                           </Tooltip>
                         </li>
                      </ContextMenuTrigger>
                      <TableContext
@@ -334,17 +340,20 @@
                                           />
                                           <span v-html="highlightWord(trigger.name)" />
                                        </a>
-                                       <div
-                                          v-if="trigger.enabled === false"
-                                          class="tooltip tooltip-left disabled-indicator"
-                                          :data-tooltip="t('general.disabled')"
-                                       >
-                                          <BaseIcon
-                                             class="table-icon mr-1"
-                                             icon-name="mdiPause"
-                                             :size="18"
-                                          />
-                                       </div>
+                                       <Tooltip v-if="trigger.enabled === false">
+                                          <TooltipTrigger as-child>
+                                             <div class="disabled-indicator">
+                                                <BaseIcon
+                                                   class="table-icon mr-1"
+                                                   icon-name="mdiPause"
+                                                   :size="18"
+                                                />
+                                             </div>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="left">
+                                             {{ t('general.disabled') }}
+                                          </TooltipContent>
+                                       </Tooltip>
                                     </li>
                                  </ContextMenuTrigger>
                                  <MiscContext
@@ -662,17 +671,20 @@
                                           />
                                           <span v-html="highlightWord(scheduler.name)" />
                                        </a>
-                                       <div
-                                          v-if="scheduler.enabled === false"
-                                          class="tooltip tooltip-left disabled-indicator"
-                                          :data-tooltip="t('general.disabled')"
-                                       >
-                                          <BaseIcon
-                                             class="misc-icon mr-1"
-                                             icon-name="mdiPause"
-                                             :size="18"
-                                          />
-                                       </div>
+                                       <Tooltip v-if="scheduler.enabled === false">
+                                          <TooltipTrigger as-child>
+                                             <div class="disabled-indicator">
+                                                <BaseIcon
+                                                   class="misc-icon mr-1"
+                                                   icon-name="mdiPause"
+                                                   :size="18"
+                                                />
+                                             </div>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="left">
+                                             {{ t('general.disabled') }}
+                                          </TooltipContent>
+                                       </Tooltip>
                                     </li>
                                  </ContextMenuTrigger>
                                  <MiscContext
@@ -703,6 +715,7 @@ import { useI18n } from 'vue-i18n';
 import BaseIcon from '@/components/BaseIcon.vue';
 import { Accordion, AccordionContent, AccordionItem } from '@/components/ui/accordion';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import MiscContext from '@/components/WorkspaceExploreBarMiscContext.vue';
 import MiscFolderContext from '@/components/WorkspaceExploreBarMiscFolderContext.vue';
 import DatabaseContext from '@/components/WorkspaceExploreBarSchemaContext.vue';
