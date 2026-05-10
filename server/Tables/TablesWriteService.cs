@@ -52,15 +52,19 @@ public sealed class TablesWriteService : IDynamicApiController
     public async Task<object> Alter([FromBody] AlterTablePayload p, CancellationToken ct)
     {
         // 漸進式實作 — per plan T3-T5:
-        //   T3 (本 commit): Options.Comment / Options.Name 路徑 (table-level metadata)
-        //   T4 (next):       Additions[] (ADD COLUMN)
-        //   T5 (last):       Deletions / Changes / IndexChanges / ForeignChanges / CheckChanges
-        // 未實作的操作維持 stub 行為 (return success 不動 DB) — 等後續 commit 補.
+        //   T3 (done): Options.Comment 路徑
+        //   T4 (本 commit): Additions[] (ADD COLUMN per-flavor)
+        //   T5 (next): Deletions / Changes / IndexChanges / ForeignChanges / CheckChanges
         var entry = _registry.Require(p.Uid);
 
         if (p.Options is not null && p.Options.Count > 0)
         {
             await ApplyTableOptionsAsync(entry, p.Schema, p.Table, p.Options, ct);
+        }
+
+        if (p.Additions is not null && p.Additions.Count > 0)
+        {
+            await ApplyAdditionsAsync(entry, p.Schema, p.Table, p.Additions, ct);
         }
 
         _logger.LogInformation(
@@ -72,6 +76,151 @@ public sealed class TablesWriteService : IDynamicApiController
             p.Deletions?.Count ?? 0);
 
         return new { status = "success" };
+    }
+
+    /// <summary>
+    /// 套用 ADD COLUMN per-flavor.
+    ///
+    /// MySQL / Maria 支援單一 `ALTER TABLE x ADD COLUMN ..., ADD COLUMN ...` 多欄一次性;
+    /// MSSQL `ALTER TABLE x ADD col1 def1, col2 def2`(沒有 COLUMN 關鍵字);
+    /// PG 支援 `ALTER TABLE x ADD COLUMN ..., ADD COLUMN ...`;
+    /// SQLite 必須 **每欄一條 ALTER TABLE**(不支援多 ADD COLUMN 串接).
+    ///
+    /// MSSQL 欄級註解必須 ALTER 跑完之後才執行 sp_addextendedproperty — 收進 postSqls.
+    /// PG 欄級註解走 `COMMENT ON COLUMN ...` 也是 post-step.
+    /// </summary>
+    private static async Task ApplyAdditionsAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        List<FieldDto> additions, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table) || additions.Count == 0) return;
+
+        var qualified = QualifyTable(entry.Client, schema, table);
+        var addClauses = new List<string>();
+        var postSqls = new List<(string Sql, object? Params)>();
+
+        foreach (var f in additions)
+        {
+            if (string.IsNullOrEmpty(f.Name) || string.IsNullOrEmpty(f.Type)) continue;
+            addClauses.Add(RenderAddColumnClause(entry.Client, f));
+
+            // post-step: column-level comment for mssql / pg
+            if (!string.IsNullOrEmpty(f.Comment))
+            {
+                if (entry.Client == "mssql")
+                {
+                    postSqls.Add((@"
+EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;",
+                        new { sc = schema, t = table, c = f.Name, v = f.Comment }));
+                }
+                else if (entry.Client == "pg")
+                {
+                    var col = QuoteIdent(entry.Client, f.Name);
+                    var esc = f.Comment.Replace("'", "''");
+                    postSqls.Add(($"COMMENT ON COLUMN {qualified}.{col} IS '{esc}'", null));
+                }
+            }
+        }
+
+        if (addClauses.Count == 0) return;
+
+        switch (entry.Client)
+        {
+            case "sqlite":
+                // SQLite 不支援多 ADD COLUMN 串接,逐條跑.
+                foreach (var clause in addClauses)
+                {
+                    var sql = $"ALTER TABLE {qualified} {clause}";
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+                }
+                break;
+            default:
+            {
+                var sql = $"ALTER TABLE {qualified} {string.Join(", ", addClauses)}";
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+                break;
+            }
+        }
+
+        foreach (var (sql, paramsObj) in postSqls)
+        {
+            await Task.Run(() => paramsObj is null
+                ? entry.Db.Ado.ExecuteCommand(sql)
+                : entry.Db.Ado.ExecuteCommand(sql, paramsObj), ct);
+        }
+    }
+
+    /// <summary>
+    /// 渲染單一 ADD COLUMN clause(無 leading `ALTER TABLE x` 前綴).
+    /// 各 flavor 的 keyword / 順序 / 修飾字差異:
+    ///   mssql:  ADD [name] TYPE(len)        IDENTITY(1,1) NULL|NOT NULL DEFAULT v
+    ///   mysql:  ADD COLUMN `name` TYPE(len) UNSIGNED ZEROFILL NULL|NOT NULL AUTO_INCREMENT DEFAULT v COMMENT '...' COLLATE x AFTER `c`
+    ///   pg:     ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
+    ///   sqlite: ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
+    /// </summary>
+    private static string RenderAddColumnClause(string client, FieldDto f)
+    {
+        var name = QuoteIdent(client, f.Name);
+        var typeUpper = f.Type.ToUpperInvariant();
+        var lengthSpec = BuildLengthSpec(f);
+
+        return client switch
+        {
+            "mssql" => $"ADD {name} {typeUpper}{lengthSpec}"
+                + (f.AutoIncrement == true ? " IDENTITY(1,1)" : string.Empty)
+                + (f.Nullable == false ? " NOT NULL" : " NULL")
+                + RenderDefault(f),
+
+            "mysql" or "maria" => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
+                + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
+                + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
+                + (f.Nullable == false ? " NOT NULL" : " NULL")
+                + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
+                + RenderDefault(f)
+                + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
+                + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
+                + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty)
+                + (!string.IsNullOrEmpty(f.After) ? $" AFTER `{Sanitize(f.After)}`" : string.Empty),
+
+            "pg" => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
+                + (f.IsArray == true ? "[]" : string.Empty)
+                + (f.Nullable == false ? " NOT NULL" : string.Empty)
+                + RenderDefault(f),
+
+            _ => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
+                + (f.Nullable == false ? " NOT NULL" : string.Empty)
+                + RenderDefault(f),
+        };
+    }
+
+    /// <summary>
+    /// 從 FieldDto 拼長度修飾,例如 `(255)`、`(10,2)`、`('a','b')` for ENUM.
+    /// 渲染端會根據 dataType 決定填到 numLength / charLength / datePrecision 哪一個,我們三選一取非空.
+    /// </summary>
+    private static string BuildLengthSpec(FieldDto f)
+    {
+        // ENUM/SET 的 enumValues 是 'a','b','c' 字串
+        if (!string.IsNullOrEmpty(f.EnumValues))
+            return $"({f.EnumValues})";
+
+        var len = f.NumLength ?? f.CharLength ?? f.DatePrecision ?? f.Length;
+        if (len is null || len <= 0) return string.Empty;
+
+        return f.NumScale is > 0 ? $"({len},{f.NumScale})" : $"({len})";
+    }
+
+    /// <summary>
+    /// 渲染 DEFAULT 子句.遵循 Node baseline 的「`null` 視為不寫 DEFAULT,空字串視為 DEFAULT ''」邏輯.
+    /// `defaultType === 'expression'` 不加引號,否則 raw 字串值會交由 SqlSugar 處理(這裡直接 inline,
+    /// 因為 ALTER TABLE 不能 parameterize column defaults).
+    /// </summary>
+    private static string RenderDefault(FieldDto f)
+    {
+        if (f.Default is null) return string.Empty;
+        if (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase))
+            return $" DEFAULT {f.Default}";
+        var esc = f.Default.Replace("'", "''");
+        return $" DEFAULT '{esc}'";
     }
 
     /// <summary>
@@ -355,9 +504,9 @@ public sealed class AlterTablePayload : TableTargetPayload
 {
     /// <summary>渲染端送的完整 diff payload — 對應 WorkspaceTabPropsTable.vue saveChanges() params.</summary>
     public TableStructureDto? TableStructure { get; set; }
-    public List<Dictionary<string, object?>>? Additions { get; set; }
-    public List<Dictionary<string, object?>>? Changes { get; set; }
-    public List<Dictionary<string, object?>>? Deletions { get; set; }
+    public List<FieldDto>? Additions { get; set; }
+    public List<FieldDto>? Changes { get; set; }
+    public List<FieldDto>? Deletions { get; set; }
     public IndexChangesDto? IndexChanges { get; set; }
     public ForeignChangesDto? ForeignChanges { get; set; }
     public CheckChangesDto? CheckChanges { get; set; }
@@ -365,10 +514,38 @@ public sealed class AlterTablePayload : TableTargetPayload
     public Dictionary<string, object?>? Options { get; set; }
 }
 
+/// <summary>對應 web/common/interfaces/antares.ts TableField — renderer 送的欄位 shape.</summary>
+public sealed class FieldDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string? OrgName { get; set; }
+    public bool? Nullable { get; set; }
+    public bool? Unsigned { get; set; }
+    public bool? Zerofill { get; set; }
+    public bool? AutoIncrement { get; set; }
+    public bool? IsArray { get; set; }
+    public int? Length { get; set; }
+    public int? NumLength { get; set; }
+    public int? CharLength { get; set; }
+    public int? DatePrecision { get; set; }
+    public int? NumPrecision { get; set; }
+    public int? NumScale { get; set; }
+    public string? Default { get; set; }
+    public string? DefaultType { get; set; }
+    public string? Comment { get; set; }
+    public string? Collation { get; set; }
+    public string? Charset { get; set; }
+    public string? OnUpdate { get; set; }
+    public string? After { get; set; }
+    public string? EnumValues { get; set; }
+    public string? Key { get; set; }
+}
+
 public sealed class TableStructureDto
 {
     public string? Name { get; set; }
-    public List<Dictionary<string, object?>>? Fields { get; set; }
+    public List<FieldDto>? Fields { get; set; }
     public List<Dictionary<string, object?>>? Foreigns { get; set; }
     public List<Dictionary<string, object?>>? Indexes { get; set; }
 }
