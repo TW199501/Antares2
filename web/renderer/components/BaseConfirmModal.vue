@@ -1,5 +1,5 @@
 <template>
-   <Dialog :open="true" @update:open="(v) => { if (!v) hideModal(); }">
+   <Dialog :open="open" @update:open="(v) => { if (!v) hideModal(); }">
       <DialogContent
          :class="[modalSizeClass, '!p-0 !gap-0 !rounded-xl !shadow-2xl !border-border/70 overflow-hidden']"
          @open-auto-focus="onOpenAutoFocus"
@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, PropType, useSlots } from 'vue';
+import { computed, onBeforeUnmount, PropType, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const { t } = useI18n();
 
 const props = defineProps({
+   /**
+    * Controls Dialog open state. Default true means callers can keep using
+    * `v-if="modalOpen"` pattern from before — for backward compat.
+    *
+    * Recommended pattern (avoids overlay-leak Bug R1):
+    *   parent uses `<Modal :open="modalOpen" @hide="modalOpen = false" />` so
+    *   Reka UI animates close before unmount.
+    */
+   open: {
+      type: Boolean,
+      default: true
+   },
    size: {
       type: String as PropType<'small' | 'medium' | '400' | 'large' | 'resize'>,
       validator: (prop: string) => ['small', 'medium', '400', 'large', 'resize'].includes(prop),
@@ -113,4 +125,32 @@ const hideModal = () => {
 const onOpenAutoFocus = (e: Event) => {
    if (props.disableAutofocus) e.preventDefault();
 };
+
+/**
+ * Defensive overlay-orphan sweep — Bug R1.
+ *
+ * Reka UI's DialogOverlay is Teleported to <body>. If a caller still uses
+ * `v-if="modalOpen"` (rather than `:open="modalOpen"`), the parent removes
+ * BaseConfirmModal from DOM **before** Reka's transition-leave hook runs,
+ * leaving the overlay div orphaned. Subsequent clicks anywhere in the app
+ * are intercepted by `<div class="fixed inset-0 ... pointer-events: auto">`.
+ *
+ * This sweep targets only orphan overlays — those whose owning DialogContent
+ * is no longer in DOM (data-state still "open" but contentNode unmounted).
+ */
+onBeforeUnmount(() => {
+   requestAnimationFrame(() => {
+      const overlays = document.querySelectorAll(
+         'div.fixed.inset-0.z-50[data-state="open"][aria-hidden="true"]'
+      );
+      overlays.forEach(o => {
+         // If its sibling DialogContent isn't in DOM, this is an orphan.
+         const peers = o.parentElement?.querySelectorAll('[role="dialog"][data-state="open"]');
+         if (!peers || peers.length === 0) o.remove();
+      });
+      // Restore body pointer-events if Reka left it disabled
+      if (document.body.style.pointerEvents === 'none')
+         document.body.style.pointerEvents = '';
+   });
+});
 </script>
