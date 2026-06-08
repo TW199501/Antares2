@@ -48,10 +48,8 @@ Antares 是一款以 [Tauri v2](https://tauri.app/) 和 [Vue.js](https://github.
 *   MySQL / MariaDB
 *   PostgreSQL
 *   SQLite
-*   Firebird SQL
+*   ~~Firebird SQL~~ — 0.8.4 起移除（Firebird 請用 Antares2 ≤ 0.8.3）
 *   SQL Server（Antares2 新增完整支援）
-*   DuckDB
-*   更多...
 
 ## 支援的作業系統
 

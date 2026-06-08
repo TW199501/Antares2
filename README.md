@@ -48,10 +48,8 @@ This fork continues in the same spirit — open source, MIT licensed, community 
 * MySQL / MariaDB
 * PostgreSQL
 * SQLite
-* Firebird SQL
+* ~~Firebird SQL~~ — dropped in 0.8.4 (use Antares2 ≤ 0.8.3 for Firebird)
 * SQL Server (full support added in Antares2)
-* DuckDB
-* More...
 
 ## Supported operating systems
 
