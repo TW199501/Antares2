@@ -3,6 +3,9 @@
       "targets": ["dmg", "app"],
       "resources": {
          "resources/antares-server": "antares-server"
+      },
+      "macOS": {
+         "entitlements": "entitlements.mac.plist"
       }
    }
 }
