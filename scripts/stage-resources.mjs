@@ -13,6 +13,7 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const STAGING = join(ROOT, 'src-tauri', 'resources');
@@ -43,5 +44,26 @@ console.log(`staging resources (target=${targetArg}) …`);
 
 const binaryName = process.platform === 'win32' ? 'antares-server.exe' : 'antares-server';
 copyFile(`sidecar-net/${binaryName}`, binaryName);
+
+// macOS: sign the embedded sidecar with hardened runtime + entitlements BEFORE
+// `tauri build` bundles it into Antares2.app. Notarization rejects the bundle if
+// this nested Mach-O isn't independently signed with the same Developer ID.
+// No-op off macOS or when APPLE_SIGNING_IDENTITY is unset (local unsigned builds
+// and Windows/Linux are unaffected).
+if (process.platform === 'darwin' && process.env.APPLE_SIGNING_IDENTITY) {
+   const staged = join(STAGING, binaryName);
+   const entitlements = join(ROOT, 'src-tauri', 'entitlements.mac.plist');
+   console.log(`  · codesign (hardened runtime) ${binaryName}`);
+   const r = spawnSync('codesign', [
+      '--force', '--options', 'runtime', '--timestamp',
+      '--entitlements', entitlements,
+      '--sign', process.env.APPLE_SIGNING_IDENTITY,
+      staged
+   ], { stdio: 'inherit' });
+   if (r.status !== 0) {
+      console.error('  ✗ codesign of sidecar failed');
+      process.exit(r.status ?? 1);
+   }
+}
 
 console.log(`\n✓ staged → ${STAGING}`);
