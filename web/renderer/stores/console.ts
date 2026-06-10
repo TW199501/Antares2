@@ -33,13 +33,13 @@ export const useConsoleStore = defineStore('console', {
             this.queryLogs.push(record);
 
             if (this.queryLogs.length > logsSize)
-               this.queryLogs = this.queryLogs.slice(0, logsSize);
+               this.queryLogs = this.queryLogs.slice(-logsSize);
          }
          else if (type === 'debug') {
             this.debugLogs.push(record);
 
             if (this.debugLogs.length > logsSize)
-               this.debugLogs = this.debugLogs.slice(0, logsSize);
+               this.debugLogs = this.debugLogs.slice(-logsSize);
          }
       },
       openConsole () {
