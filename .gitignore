@@ -39,6 +39,7 @@ coverage
 .claude-code-history
 sidecar-stdout.log
 sidecar-stderr.log
+.air/
 
 # Local DB credentials for preflight:dbs / capture:contract — never commit
 .env.test
@@ -48,6 +49,7 @@ sidecar-stderr.log
 **/obj/
 sidecar-net/
 
-# Visual Studio per-user workspace state (auto-generated, not portable)
+# IDE per-user workspace state (auto-generated, not portable)
 .vs/
+.idea/
 **/Properties/launchSettings.json
