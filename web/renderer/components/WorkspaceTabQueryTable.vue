@@ -382,11 +382,18 @@ const fields = computed(() => {
 // from JOIN queries that return the same field from aliased tables. Previous
 // code used `if (findIndex(...))` which is inverted: `0` is falsy so the
 // first match was silently excluded and higher indices re-pushed duplicates.
-const filteredFields = computed(() => fields.value.reduce((acc, cur) => {
-   if (acc.findIndex(f => JSON.stringify(f) === JSON.stringify(cur)) === -1)
-      acc.push(cur);
+const filteredFields = computed(() => {
+   const seen = new Set<string>();
+   const acc: TableField[] = [];
+   for (const cur of fields.value) {
+      const sig = JSON.stringify(cur);
+      if (!seen.has(sig)) {
+         seen.add(sig);
+         acc.push(cur);
+      }
+   }
    return acc;
-}, [] as TableField[]));
+});
 const keyUsage = computed(() => {
    const source = resultsWithRows.value[resultsetIndex.value] ?? props.results[0];
    return source?.keys ?? [];

@@ -883,25 +883,23 @@ const maxSize = computed(() => {
    }, 0);
 });
 
-watch(breadcrumbs, (newVal, oldVal) => {
-   if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-      setTimeout(() => {
-         const element = document.querySelector<HTMLElement>('.workspace-explorebar-database .selected');
+watch(breadcrumbs, () => {
+   setTimeout(() => {
+      const element = document.querySelector<HTMLElement>('.workspace-explorebar-database .selected');
 
-         if (element) {
-            const rect = element.getBoundingClientRect();
-            const elemTop = rect.top;
-            const elemBottom = rect.bottom;
-            const isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
+      if (element) {
+         const rect = element.getBoundingClientRect();
+         const elemTop = rect.top;
+         const elemBottom = rect.bottom;
+         const isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
 
-            if (!isVisible) {
-               element.setAttribute('tabindex', '-1');
-               element.focus();
-               element.removeAttribute('tabindex');
-            }
+         if (!isVisible) {
+            element.setAttribute('tabindex', '-1');
+            element.focus();
+            element.removeAttribute('tabindex');
          }
-      }, 100);
-   }
+      }
+   }, 100);
 });
 
 const selectSchema = async (schema: string) => {
