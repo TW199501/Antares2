@@ -54,7 +54,6 @@ public sealed class SchemaDdlService : IDynamicApiController
                 => $"ALTER DATABASE `{name}` CHARACTER SET {SafeIdent(payload.Charset ?? "utf8mb4")} COLLATE {SafeIdent(payload.Collation)}",
             "pg" when !string.IsNullOrEmpty(payload.Charset)
                 => $"ALTER DATABASE \"{name}\" SET timezone TO '{payload.Charset?.Replace("'", "''")}'",
-            "mssql" => $"ALTER DATABASE [{name}] MODIFY NAME = [{name}]",   // no-op shape; per-attr ALTER lands in Phase 12 detail
             _ => string.Empty
         };
         if (string.IsNullOrEmpty(sql)) return new { status = "success" };

@@ -27,20 +27,17 @@ public sealed class ConnectionService : IDynamicApiController
     private readonly ConnectionRegistry _registry;
     private readonly SshTunnelService _ssh;
     private readonly SchemaTreeBuilder _structureBuilder;
-    private readonly IEnumerable<IQueryCanceller> _cancellers;
     private readonly ILogger<ConnectionService> _logger;
 
     public ConnectionService(
         ConnectionRegistry registry,
         SshTunnelService ssh,
         SchemaTreeBuilder structureBuilder,
-        IEnumerable<IQueryCanceller> cancellers,
         ILogger<ConnectionService> logger)
     {
         _registry = registry;
         _ssh = ssh;
         _structureBuilder = structureBuilder;
-        _cancellers = cancellers;
         _logger = logger;
     }
 
