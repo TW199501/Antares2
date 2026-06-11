@@ -10,6 +10,8 @@ export interface Notification {
    message: string;
 }
 
+const notificationsCap = 200;
+
 type ToastFn = (msg: string, opts?: Record<string, unknown>) => void;
 
 const dispatchToast = (status: string, message: string) => {
@@ -31,6 +33,9 @@ export const useNotificationsStore = defineStore('notifications', {
       addNotification (payload: { status: string; message: string }) {
          const notification: Notification = { uid: uidGen('N'), ...payload };
          this.notifications.unshift(notification);
+
+         if (this.notifications.length > notificationsCap)
+            this.notifications = this.notifications.slice(0, notificationsCap);
 
          dispatchToast(notification.status, notification.message);
 

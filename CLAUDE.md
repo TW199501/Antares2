@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 These rules **override** any conflicting guidance from skills (`superpowers:writing-plans`, `superpowers:using-git-worktrees`, etc.):
 
-*   **NEVER use** `**git worktree add**` for any reason — bisect, isolation, parallel review, independent build, anything. All work happens directly on the `dev` branch in the main working tree (`E:/source/antares2`). Any skill suggestion to "create an isolated worktree" must be ignored. `.claude/hooks/no-worktree.mjs` enforces this at the harness level too.
+*   **NEVER use** `**git worktree add**` for any reason — bisect, isolation, parallel review, independent build, anything. All work happens directly on the `dev` branch in the main working tree (i.e. this repo, wherever it's checked out — historically Windows `E:/source/antares2`, currently macOS `~/Documents/reop/Antares2`). Any skill suggestion to "create an isolated worktree" must be ignored. `.claude/hooks/no-worktree.mjs` enforces this at the harness level too.
 *   **For isolation**, use `git stash push -- <paths>` to set aside changes, then `git stash pop` to restore. For comparing against an old commit, use `git checkout <sha> -- <path>` (HMR hot-reloads, no second dev session needed).
 *   **Working tree should not accumulate uncommitted work overnight** — commit at end of session, even if the work is mid-stream (use `wip:` prefix in the commit type if needed).
 
@@ -92,7 +92,7 @@ pnpm release patch              # 0.8.3 -> 0.8.4
 pnpm release 0.9.0 --dry-run    # preview without writing
 ```
 
-> **Package manager:** Use `pnpm` only. The project has `pnpm-lock.yaml`. Delete `package-lock.json` if present.
+> **Package manager:** Use `pnpm` only. The project has `pnpm-lock.yaml`. Delete `package-lock.json` if present. `pnpm-workspace.yaml` at repo root exists only to carry pnpm's `allowBuilds` approvals (which dependency build scripts may run — `esbuild`, `playwright`, `@parcel/watcher`, `vue-demi`); it is **not** a multi-package monorepo — there is a single root `package.json`.
 > 
 > `pnpm tauri:build` runs `scripts/tauri-build.mjs`, which orchestrates: (1) `scripts/build-net-sidecar.mjs` runs `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true` and drops `antares-server[.exe]` into `sidecar-net/`; (2) `scripts/stage-resources.mjs --target=net` copies just that single binary into `src-tauri/resources/` — no Node runtime, no `node_modules`, the .NET binary statically links everything; (3) `tauri build` produces installers per platform.
 
@@ -178,6 +178,8 @@ Schema reading goes through `SchemaTreeBuilder` / `SchemaDiscoveryService` / `Sc
 ### .NET sidecar gotchas
 
 Operational gotchas that have bitten people during dev. One paragraph each, naming the canonical check or fix.
+
+**Fresh checkout — `pnpm tauri:dev` fails before the sidecar is built+staged.** On a brand-new clone (or a new machine / new platform), `pnpm tauri:dev` dies at `cargo build` with `error: failed to run custom build command for antares2 … resource path \`resources/antares-server\` doesn't exist`. Tauri's build script validates every `bundle.resources` entry **at compile time, even in dev** — `tauri.<platform>.conf.json` points at `resources/antares-server[.exe]`, but both `src-tauri/resources/` and `sidecar-net/` are gitignored, so a fresh tree has neither. Dev runs the actual sidecar via `dotnet run` and never executes the bundled binary, yet the file must still **exist** to pass validation. `pnpm tauri:build` doesn't hit this because `scripts/tauri-build.mjs` builds + stages first; plain `tauri dev` does neither. Fix once per machine: `pnpm sidecar:build:net` (dotnet publish self-contained → `sidecar-net/antares-server`, probe-verifies the `READY:` line) then `node scripts/stage-resources.mjs --target=net` (copies it into `src-tauri/resources/`). After that, dev compiles, the app launches, and the dev sidecar boots on a random port (`/health` → 200). Note the toolchain itself is fine here — `pnpm preflight:net` passing does **not** imply the staged binary exists; they're independent checks.
 
 **Renderer ↔ .NET DTO contract drift.** The .NET migration has, more than once, introduced DTOs whose JSON shape doesn't match what the renderer expects (legacy Node contract). Examples: `/api/databases/getDatabases` returned `[{ database: "..." }]` instead of `["..."]` (BaseSelect rendered `[object Object]` and `selectedDatabase` became an object, cascading to a `$.database` could-not-convert-to-System.String 400 on the next `/api/connection/connect`); `/api/tables/getKeyUsage` returned `{ inbound, outbound }` instead of a flat `[]` (renderer's `response.map(...)` threw `is not a function`). **The canonical contract is the captured fixtures in** `**tests/fixtures/contract/*.json**` — `response.body.response` in those files is exactly what the renderer destructures and passes to `.map` / BaseSelect / etc. Run `pnpm replay:contract` against a live sidecar after any `server/` DTO change to catch shape regressions before they reach users. The .NET side conforms to the fixtures, never the other way around.
 
