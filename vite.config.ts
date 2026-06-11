@@ -41,7 +41,19 @@ export default defineConfig({
    },
    server: {
       port: 5173,
-      strictPort: true
+      strictPort: true,
+      watch: {
+         // Tauri/cargo churns build artifacts under src-tauri/target while
+         // compiling; on Windows (esp. ARM64) Vite's watcher hits EBUSY on the
+         // build-script .exe and kills `beforeDevCommand`. Never watch the Rust
+         // shell, .NET sidecar, or their build output — the renderer needs none.
+         ignored: [
+            '**/src-tauri/**',
+            '**/server/bin/**',
+            '**/server/obj/**',
+            '**/sidecar-net/**'
+         ]
+      }
    },
    build: {
       outDir: 'dist',
