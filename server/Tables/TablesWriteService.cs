@@ -694,7 +694,14 @@ ELSE
         }
         var sql = $"UPDATE {qualified} SET {col} = @v WHERE {string.Join(" AND ", whereParts)}";
         await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
-        return new { status = "success" };
+        // Renderer (useResultTables.ts:updateField) reads `response.reload`:
+        // false → applyUpdate() patches the cell in-place, true → full reload
+        // (legacy Node did this for blob fields). Without a `response` object the
+        // renderer throws "Cannot read properties of undefined (reading 'reload')",
+        // shows an error toast, and skips applyUpdate — so every cell edit looked
+        // like it failed even though the UPDATE committed. reload=false is correct
+        // for scalar cells; blob-aware reload can be added later if needed.
+        return new { status = "success", response = new { reload = false } };
     }
 
     [HttpPost("/api/tables/deleteRows"), NonUnify]
@@ -730,22 +737,38 @@ ELSE
         var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
         var faker = new Faker();
         var inserted = 0;
-        for (var n = 0; n < Math.Max(1, p.Count); n++)
+        var repeat = Math.Max(1, p.Repeat);
+        var row = p.Row ?? new Dictionary<string, FakeCellDto>();
+        var fields = p.Fields ?? new Dictionary<string, string>();
+        for (var n = 0; n < repeat; n++)
         {
             ct.ThrowIfCancellationRequested();
             var values = new Dictionary<string, object?>();
-            foreach (var col in p.Columns ?? new List<FakeColumnDto>())
+            foreach (var kv in row)
             {
-                values[col.Name] = GenerateFake(faker, col.Semantic, col.DataType);
+                var cell = kv.Value;
+                // group 'manual' → use the literal value the user typed into the
+                // add-row UI; any other group is a faker semantic → generate one
+                // (fields[col] carries the column data type for type-aware fakes).
+                if (string.Equals(cell?.Group, "manual", StringComparison.OrdinalIgnoreCase))
+                    values[kv.Key] = cell?.Value;
+                else
+                {
+                    fields.TryGetValue(kv.Key, out var dataType);
+                    values[kv.Key] = GenerateFake(faker, cell?.Group, dataType);
+                }
             }
             if (values.Count == 0) break;
-            var cols = string.Join(", ", values.Keys.Select(k => QuoteIdent(entry.Client, k)));
-            var paramNames = string.Join(", ", values.Keys.Select(k => $"@{k}"));
+            var keys = values.Keys.ToList();
+            var cols = string.Join(", ", keys.Select(k => QuoteIdent(entry.Client, k)));
+            var paramNames = string.Join(", ", keys.Select((_, idx) => $"@p{idx}"));
+            var paramObj = new Dictionary<string, object?>();
+            for (var idx = 0; idx < keys.Count; idx++) paramObj[$"p{idx}"] = values[keys[idx]];
             var sql = $"INSERT INTO {qualified} ({cols}) VALUES ({paramNames})";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, values), ct);
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
             inserted += 1;
         }
-        return new { status = "success", response = inserted };
+        return new { status = "success", response = new { affectedRows = inserted } };
     }
 
     private static object? GenerateFake(Faker f, string? semantic, string? dataType)
@@ -961,15 +984,21 @@ public sealed class DeleteRowsPayload : TableTargetPayload
 
 public sealed class InsertFakeRowsPayload : TableTargetPayload
 {
-    public int Count { get; set; } = 1;
-    public List<FakeColumnDto>? Columns { get; set; }
+    // Renderer (Tables.ts:insertTableFakeRows + ModalFakerRows.vue, the add-row UI)
+    // sends the legacy Node contract: per-column { group, value }, a repeat count,
+    // a column→datatype map, and a locale. The original .NET DTO bound Count/Columns
+    // which the renderer never sends, so p.Columns was always null → zero rows
+    // inserted while still returning success (the "add row does nothing" bug).
+    public Dictionary<string, FakeCellDto>? Row { get; set; }
+    public int Repeat { get; set; } = 1;
+    public Dictionary<string, string>? Fields { get; set; }
+    public string? Locale { get; set; }
 }
 
-public sealed class FakeColumnDto
+public sealed class FakeCellDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? DataType { get; set; }
-    public string? Semantic { get; set; }
+    public string? Group { get; set; }
+    public object? Value { get; set; }
 }
 
 /// <summary>
