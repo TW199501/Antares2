@@ -26,7 +26,7 @@
       ".claude/worktrees/**": true
    },
    "i18n-ally.localesPaths": [
-      "src/renderer/i18n"
+      "web/renderer/i18n"
    ],
    "i18n-ally.sourceLanguage": "en-US",
    "i18n-ally.keystyle": "nested",
@@ -35,7 +35,7 @@
    "i18n-ally.namespace": false,
    "i18n-ally.pathMatcher": "{locale}.json",
    "i18n-ally-next.localesPaths": [
-      "src/renderer/i18n"
+      "web/renderer/i18n"
    ],
    "i18n-ally-next.sourceLanguage": "en-US",
    "i18n-ally-next.keystyle": "nested",

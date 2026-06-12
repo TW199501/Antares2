@@ -1,6 +1,6 @@
 {
    "productName": "Antares2",
-   "version": "0.8.3",
+   "version": "0.8.7",
    "identifier": "com.tw199501.antares2",
    "build": {
       "beforeDevCommand": "npm run vite:dev",
@@ -11,11 +11,7 @@
    "bundle": {
       "active": true,
       "targets": ["nsis", "msi"],
-      "resources": {
-         "resources/sidecar/antares-server.cjs": "sidecar/antares-server.cjs",
-         "resources/workers": "workers",
-         "resources/node_modules": "node_modules"
-      },
+      "resources": {},
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico", "icons/icon.icns"]
    },
    "app": {

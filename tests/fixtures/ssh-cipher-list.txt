@@ -1,0 +1,9 @@
+# Phase 1 SSH cipher matrix probe list (plan v5 §168).
+# Comments and blank lines ignored. One cipher / kex name per line.
+# scripts/probe-ssh.mjs runs antares-ssh-probe once per line and aggregates the
+# results into docs/net-migration/ssh-cipher-matrix.md.
+aes256-ctr
+aes128-gcm@openssh.com
+aes256-gcm@openssh.com
+chacha20-poly1305@openssh.com
+curve25519-sha256

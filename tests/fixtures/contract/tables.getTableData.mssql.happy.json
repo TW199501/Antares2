@@ -1,0 +1,184 @@
+{
+   "metadata": {
+      "captured_at": "2026-01-01T00:00:00.000Z",
+      "dialect": "mssql",
+      "scenario": "happy",
+      "anonymized": true,
+      "source": "hand-crafted-from-wrapper-and-route-source"
+   },
+   "request": {
+      "route": "/api/tables/getData",
+      "method": "POST",
+      "headers": {
+         "Content-Type": "application/json",
+         "X-Sidecar-Token": "<REDACTED>"
+      },
+      "payload": {
+         "uid": "00000000-0000-0000-0000-000000000001",
+         "schema": "dbo",
+         "table": "users",
+         "limit": 100,
+         "page": 1,
+         "sortParams": {
+            "field": "id",
+            "dir": "asc"
+         },
+         "where": null
+      }
+   },
+   "response": {
+      "status": 200,
+      "body": {
+         "status": "success",
+         "response": {
+            "rows": [
+               { "id": 1, "name": "Alice", "created_at": "2026-01-01T00:00:00.000Z" },
+               { "id": 2, "name": "Bob", "created_at": "2026-01-01T00:00:00.000Z" },
+               { "id": 3, "name": "Carol", "created_at": "2026-01-01T00:00:00.000Z" },
+               { "id": 4, "name": "Dave", "created_at": "2026-01-01T00:00:00.000Z" },
+               { "id": 5, "name": "Eve", "created_at": "2026-01-01T00:00:00.000Z" }
+            ],
+            "report": {
+               "affectedRows": 0
+            },
+            "fields": [
+               {
+                  "name": "id",
+                  "alias": "id",
+                  "schema": "dbo",
+                  "table": "users",
+                  "orgTable": "users",
+                  "tableAlias": "",
+                  "type": "INT",
+                  "length": 10,
+                  "key": "pri",
+                  "nullable": false,
+                  "autoIncrement": true,
+                  "default": null,
+                  "collation": null,
+                  "numPrecision": 10,
+                  "numScale": 0,
+                  "datePrecision": null,
+                  "charLength": null
+               },
+               {
+                  "name": "name",
+                  "alias": "name",
+                  "schema": "dbo",
+                  "table": "users",
+                  "orgTable": "users",
+                  "tableAlias": "",
+                  "type": "NVARCHAR",
+                  "length": 50,
+                  "key": null,
+                  "nullable": true,
+                  "autoIncrement": false,
+                  "default": null,
+                  "collation": "SQL_Latin1_General_CP1_CI_AS",
+                  "numPrecision": null,
+                  "numScale": null,
+                  "datePrecision": null,
+                  "charLength": 50
+               },
+               {
+                  "name": "created_at",
+                  "alias": "created_at",
+                  "schema": "dbo",
+                  "table": "users",
+                  "orgTable": "users",
+                  "tableAlias": "",
+                  "type": "DATETIME2",
+                  "length": 27,
+                  "key": null,
+                  "nullable": true,
+                  "autoIncrement": false,
+                  "default": null,
+                  "collation": null,
+                  "numPrecision": null,
+                  "numScale": null,
+                  "datePrecision": 7,
+                  "charLength": null
+               }
+            ],
+            "keys": [],
+            "duration": 8
+         }
+      }
+   },
+   "expected": {
+      "status": "success",
+      "response": {
+         "rows": [
+            { "id": 1, "name": "Alice", "created_at": "2026-01-01T00:00:00.000Z" },
+            { "id": 2, "name": "Bob", "created_at": "2026-01-01T00:00:00.000Z" },
+            { "id": 3, "name": "Carol", "created_at": "2026-01-01T00:00:00.000Z" },
+            { "id": 4, "name": "Dave", "created_at": "2026-01-01T00:00:00.000Z" },
+            { "id": 5, "name": "Eve", "created_at": "2026-01-01T00:00:00.000Z" }
+         ],
+         "report": {
+            "affectedRows": 0
+         },
+         "fields": [
+            {
+               "name": "id",
+               "alias": "id",
+               "schema": "dbo",
+               "table": "users",
+               "orgTable": "users",
+               "tableAlias": "",
+               "type": "INT",
+               "length": 10,
+               "key": "pri",
+               "nullable": false,
+               "autoIncrement": true,
+               "default": null,
+               "collation": null,
+               "numPrecision": 10,
+               "numScale": 0,
+               "datePrecision": null,
+               "charLength": null
+            },
+            {
+               "name": "name",
+               "alias": "name",
+               "schema": "dbo",
+               "table": "users",
+               "orgTable": "users",
+               "tableAlias": "",
+               "type": "NVARCHAR",
+               "length": 50,
+               "key": null,
+               "nullable": true,
+               "autoIncrement": false,
+               "default": null,
+               "collation": "SQL_Latin1_General_CP1_CI_AS",
+               "numPrecision": null,
+               "numScale": null,
+               "datePrecision": null,
+               "charLength": 50
+            },
+            {
+               "name": "created_at",
+               "alias": "created_at",
+               "schema": "dbo",
+               "table": "users",
+               "orgTable": "users",
+               "tableAlias": "",
+               "type": "DATETIME2",
+               "length": 27,
+               "key": null,
+               "nullable": true,
+               "autoIncrement": false,
+               "default": null,
+               "collation": null,
+               "numPrecision": null,
+               "numScale": null,
+               "datePrecision": 7,
+               "charLength": null
+            }
+         ],
+         "keys": [],
+         "duration": 8
+      }
+   }
+}

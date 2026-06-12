@@ -1,7 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 
-const ROOT = path.resolve('src/renderer');
+const ROOT = path.resolve('web/renderer');
 const FILE_EXTS = new Set(['.ts', '.js', '.vue']);
 
 const forbiddenPatterns = [

@@ -1,12 +1,14 @@
 {
   "include": [
-    "./src/renderer/**/*",
-    "./src/common/**/*",
-    "./src/main/**/*"
+    "./web/renderer/**/*",
+    "./web/common/**/*",
+    "./vitest.config.ts",
+    "./playwright.config.ts",
+    "./e2e/**/*",
+    "./tests/**/*"
   ],
   "exclude": [
-    "./src/renderer/libs/ext-language_tools.js",
-    "./src/main/ipc-handlers/**/*"
+    "./web/renderer/libs/ext-language_tools.js"
   ],
   "compilerOptions": {
     "target": "ESNext",
@@ -27,8 +29,9 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "paths": {
-      "common/*": ["./src/common/*"],
-      "@/*": ["./src/renderer/*"],
+      "common/*": ["./web/common/*"],
+      "@/*": ["./web/renderer/*"],
+      "@tests/*": ["./tests/*"],
     }
   }
 }

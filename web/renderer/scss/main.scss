@@ -1,0 +1,251 @@
+/* stylelint-disable */
+:root {
+  --primary-color: #e36929;
+  --primary-color-dark: color-mix(in srgb, var(--primary-color), #000 30%);
+  --primary-color-shadow: 0 0 0 0.1rem rgba(227, 105, 41, 0.2);
+}
+
+@import "variables";
+@import "transitions";
+@import "data-types";
+@import "table-keys";
+@import "fake-tables";
+@import "editor-icons";
+@import "db-icons";
+@import "themes/dark-theme";
+@import "themes/light-theme";
+
+body {
+  user-select: none;
+  background-color: #000;
+}
+
+a {
+  color: var(--primary-color);
+
+  &:hover {
+    color: var(--primary-color-dark);
+  }
+}
+
+::selection,
+option:hover,
+option:focus,
+option:active,
+option:checked {
+  background-color: var(--primary-color);
+  color: $light-color;
+}
+
+/* Custom utility classes still referenced by Vue components */
+
+.c-help {
+  cursor: help;
+}
+
+.no-outline {
+  outline: none !important;
+}
+
+.no-radius {
+  border-radius: 0 !important;
+}
+
+.no-border {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.cut-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cancellable {
+  color: transparent !important;
+  min-height: 0.8rem;
+  position: relative;
+
+  > .mdi,
+  > .span {
+    visibility: hidden;
+  }
+
+  &::after {
+    content: "\2715";
+    color: $light-color;
+    font-weight: 700;
+    top: 36%;
+    display: block;
+    height: 0.8rem;
+    left: 50%;
+    margin-left: -0.4rem;
+    margin-top: -0.4rem;
+    opacity: 1;
+    padding: 0;
+    position: absolute;
+    width: 0.8rem;
+    z-index: 1;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Universal fake-table row sizing — every .table .th / .td across the app:
+   屬性 view、資料 view、進程列表、未來新增的任何 .table 結構,都吃這條.
+   1 張規則,1 個 single source of truth. 不再 per-component 堆 scoped style.
+   ───────────────────────────────────────────────────────────────── */
+.table {
+  .th, .td {
+    // outer 29 = content 28 + bottom border 1 (Tailwind preflight 設 box-sizing
+    // border-box,所以 height 必須是 29 才能讓 content 留 28).
+    height: 29px;
+    line-height: 28px;
+    vertical-align: middle;
+    border: none;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+  }
+}
+
+/* Workspace query result-table specifics (sticky header, font/padding,
+   ellipsis truncation) — sizing 已由上面的 .table .th/.td 覆蓋. */
+.workspace-query-results {
+  overflow: auto;
+  white-space: nowrap;
+
+  .table {
+    width: auto;
+    border-collapse: separate;
+
+    .th {
+      position: sticky;
+      top: 0;
+      padding: 0;
+      font-weight: 700;
+      font-size: 0.7rem;
+      z-index: 1;
+
+      > div {
+        padding: 0 0.2rem;
+        min-width: -webkit-fill-available;
+      }
+    }
+
+    .td {
+      padding: 0 0.2rem;
+      text-overflow: ellipsis;
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      font-size: 0.7rem;
+      position: relative;
+
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+}
+
+.workspace-tabs {
+  align-content: baseline;
+
+  .workspace-query-runner {
+    .workspace-query-runner-footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0.6rem 0.4rem;
+      align-items: center;
+
+      .workspace-query-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .workspace-query-info {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+        gap: 0.6rem;
+
+        > div {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+      }
+    }
+  }
+}
+
+.process-row .td:last-child {
+  width: 100%;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* Animations */
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(359deg);
+  }
+}
+
+.rotate {
+  animation: rotation 0.8s infinite linear;
+}
+
+/* Ace Editor (used by BaseTextEditor) */
+.ace_editor {
+  &.ace_autocomplete {
+    border-radius: $border-radius;
+
+    .ace_marker-layer {
+      .ace_active-line,
+      .ace_line-hover {
+        border-radius: $border-radius;
+      }
+    }
+  }
+}
+
+/* sql-highlight (used by ScratchpadNote / DebugConsole / WorkspaceTabQueryTable) */
+code.sql {
+  font-family: monospace;
+}
+
+.sql-hl-keyword {
+  color: var(--primary-color);
+}
+
+.sql-hl-function {
+  color: darkorchid;
+}
+
+.sql-hl-number {
+  color: $number-color;
+}
+
+.sql-hl-string {
+  color: $string-color;
+}
+
+.sql-hl-special {
+  color: goldenrod;
+}
+
+.sql-hl-bracket {
+  color: darkorchid;
+}

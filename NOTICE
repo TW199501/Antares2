@@ -1,0 +1,22 @@
+antares2 NOTICE
+================
+
+This product includes:
+
+- antares2 itself, MIT-licensed (LICENSE)
+  Copyright (c) 2020 Fabio Di Stasio (upstream antares-sql/antares)
+  Copyright (c) 2026 ELF International Express CO., LTD. (this fork)
+
+- .NET 10 runtime (MIT, Microsoft Corporation)
+- Furion (Apache 2.0, MonkSoul) — https://furion.net
+- SqlSugar (MIT/Apache 2.0, donet5) — https://github.com/donet5/SqlSugar
+- SSH.NET (MIT, Renci) — https://github.com/sshnet/SSH.NET
+- MySqlConnector (MIT) — https://mysqlconnector.net
+- Npgsql (PostgreSQL License) — https://www.npgsql.org
+- Microsoft.Data.SqlClient (MIT, Microsoft)
+- Microsoft.Data.Sqlite (MIT, Microsoft)
+- Bogus (MIT, bchavez) — https://github.com/bchavez/Bogus
+
+For full license texts of bundled binary dependencies, see
+the per-package metadata in the .NET self-contained binary
+distribution and `pnpm licenses` for Node-side build tools.

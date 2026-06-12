@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const ROOT = path.resolve('src/renderer');
+const ROOT = path.resolve('web/renderer');
 const FILE_EXTS = new Set(['.ts', '.js', '.vue']);
 
 const forbiddenPatterns: { name: string; regex: RegExp }[] = [

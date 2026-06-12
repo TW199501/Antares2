@@ -1,0 +1,55 @@
+import moment from 'moment';
+
+export function useFilters () {
+   const cutText = (string: string, length: number, escape?: boolean) => {
+      if (typeof string !== 'string') return string;
+      if (escape) string = string.replace(/\s{2,}/g, ' ');
+      return string.length > length ? `${string.substring(0, length)}...` : string;
+   };
+
+   const lastPart = (string: string, length: number) => {
+      if (!string) return '';
+
+      string = string.split(/[/\\]+/).pop();
+      if (string.length >= length)
+         string = `...${string.slice(-length)}`;
+      return string;
+   };
+
+   const formatDate = (date: Date) => moment(date).isValid() ? moment(date).format('HH:mm:ss - YYYY/MM/DD') : date;
+
+   const localeString = (number: number | null) => {
+      if (number !== null)
+         return number.toLocaleString();
+   };
+
+   // Accept the union actually returned by callers (e.g. fieldLength() returns
+   // number | string | null | undefined). Implementation already handles all
+   // falsy values via the early-return.
+   const wrapNumber = (num: number | string | null | undefined | false) => {
+      if (!num) return '';
+      return `(${num})`;
+   };
+
+   const parseKeys = (keys: Record<number, string>[]) => {
+      // Platform detection using browser-compatible navigator API
+      const isMacOS = navigator.platform.startsWith('Mac');
+      return (keys as string[]).map(k => (
+         k.split('+')
+            .map(sk => (
+               `<code class="text-bold">${sk}</code>`
+            )))
+         .join('+')
+         .replaceAll('CommandOrControl', isMacOS ? 'Command' : 'Control')
+      ).join(', ');
+   };
+
+   return {
+      cutText,
+      formatDate,
+      wrapNumber,
+      lastPart,
+      localeString,
+      parseKeys
+   };
+}

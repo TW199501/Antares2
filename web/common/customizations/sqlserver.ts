@@ -1,0 +1,61 @@
+import sqlServerTypes from '../data-types/sqlserver';
+import { Customizations } from '../interfaces/customizations';
+import { defaults } from './defaults';
+
+export const customizations: Customizations = {
+   ...defaults,
+   defaultPort: 1433,
+   defaultUser: 'sa',
+   defaultDatabase: 'master',
+   systemSchemas: ['master', 'model', 'msdb', 'tempdb'],
+   dataTypes: sqlServerTypes,
+   indexTypes: ['PRIMARY', 'INDEX', 'UNIQUE'],
+   foreignActions: ['RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT', 'NO ACTION'],
+   database: true,
+   collations: true,
+   sslConnection: true,
+   sshConnection: true,
+   readOnlyMode: true,
+   singleConnectionMode: true,
+   cancelQueries: true,
+   processesList: true,
+   schemas: true,
+   tables: true,
+   views: true,
+   triggers: true,
+   routines: true,
+   functions: true,
+   schedulers: false,
+   elementsWrapper: '[',
+   elementsWrapperEnd: ']',
+   stringsWrapper: '\'',
+   tableAdd: true,
+   tableDdl: true,
+   viewAdd: true,
+   triggerAdd: true,
+   routineAdd: true,
+   functionAdd: true,
+   schemaExport: true,
+   schemaImport: true,
+   tableSettings: true,
+   tableRealCount: true,
+   tableDuplicate: true,
+   viewSettings: true,
+   triggerSettings: true,
+   routineSettings: true,
+   functionSettings: true,
+   indexes: true,
+   foreigns: true,
+   // SQL Server has no native column reorder via ALTER TABLE. SSMS exposes a
+   // drag-to-reorder UI, but the actual SQL is "drop + recreate + copy data"
+   // which locks the entire table and can break FK / constraint chains. Not
+   // worth exposing a button that does this silently. Hide it.
+   sortableFields: false,
+   nullable: true,
+   autoIncrement: true,
+   comment: true,
+   collation: true,
+   triggerSql: 'T-SQL',
+   procedureSql: 'T-SQL',
+   functionSql: 'T-SQL'
+};

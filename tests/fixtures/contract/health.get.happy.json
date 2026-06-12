@@ -1,0 +1,19 @@
+{
+   "metadata": {
+      "captured_at": "2026-05-06T00:00:00.000Z",
+      "dialect": "any",
+      "scenario": "happy",
+      "anonymized": true,
+      "source": "hand-crafted-phase-2-baseline"
+   },
+   "request": {
+      "route": "/health",
+      "method": "GET",
+      "headers": {}
+   },
+   "response": {
+      "status": 200,
+      "body": "ok"
+   },
+   "expected": "ok"
+}

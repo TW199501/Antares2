@@ -1,0 +1,81 @@
+{
+   "metadata": {
+      "captured_at": "2026-01-01T00:00:00.000Z",
+      "dialect": "mssql",
+      "scenario": "happy",
+      "anonymized": true,
+      "source": "hand-crafted-from-wrapper-and-route-source"
+   },
+   "request": {
+      "route": "/api/schema/getCollations",
+      "method": "POST",
+      "headers": {
+         "Content-Type": "application/json",
+         "X-Sidecar-Token": "<REDACTED>"
+      },
+      "payload": {
+         "uid": "00000000-0000-0000-0000-000000000001"
+      }
+   },
+   "response": {
+      "status": 200,
+      "body": {
+         "status": "success",
+         "response": [
+            {
+               "charset": "",
+               "collation": "Chinese_Taiwan_Stroke_CI_AS",
+               "compiled": true,
+               "default": false,
+               "id": "Chinese_Taiwan_Stroke_CI_AS",
+               "sortLen": 0
+            },
+            {
+               "charset": "",
+               "collation": "Latin1_General_100_CI_AS",
+               "compiled": true,
+               "default": false,
+               "id": "Latin1_General_100_CI_AS",
+               "sortLen": 0
+            },
+            {
+               "charset": "",
+               "collation": "SQL_Latin1_General_CP1_CI_AS",
+               "compiled": true,
+               "default": false,
+               "id": "SQL_Latin1_General_CP1_CI_AS",
+               "sortLen": 0
+            }
+         ]
+      }
+   },
+   "expected": {
+      "status": "success",
+      "response": [
+         {
+            "charset": "",
+            "collation": "Chinese_Taiwan_Stroke_CI_AS",
+            "compiled": true,
+            "default": false,
+            "id": "Chinese_Taiwan_Stroke_CI_AS",
+            "sortLen": 0
+         },
+         {
+            "charset": "",
+            "collation": "Latin1_General_100_CI_AS",
+            "compiled": true,
+            "default": false,
+            "id": "Latin1_General_100_CI_AS",
+            "sortLen": 0
+         },
+         {
+            "charset": "",
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "compiled": true,
+            "default": false,
+            "id": "SQL_Latin1_General_CP1_CI_AS",
+            "sortLen": 0
+         }
+      ]
+   }
+}

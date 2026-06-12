@@ -1,5 +1,3 @@
-#[cfg(debug_assertions)]
-use std::net::TcpStream;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::sync::Mutex;
@@ -28,68 +26,59 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         .to_path_buf();
 
     // Dev build: exe is at <project>/src-tauri/target/debug/antares2.exe
-    // Vite's sidecarPlugin already starts the server on port 5555 during `tauri dev`.
-    // If port 5555 is already in use, reuse it instead of starting a second process.
+    // Spawn `dotnet run --project server/AntaresServer.csproj` so source edits in
+    // server/ pick up on the next `pnpm tauri:dev` without a separate build step.
+    // dotnet handles JIT compilation + execution; Furion startup adds ~3s warm-up
+    // versus the legacy tsx path's ~1s.
     #[cfg(debug_assertions)]
-    {
-        const DEV_PORT: u16 = 5555;
-        if TcpStream::connect(format!("127.0.0.1:{}", DEV_PORT)).is_ok() {
-            *SIDECAR_PORT.lock().unwrap() = DEV_PORT;
-            let _ = app.emit("sidecar-ready", DEV_PORT);
-            return Ok(());
-        }
-    }
-
-    // Dev build: run the TypeScript source directly via tsx to avoid __dirname issues in the .cjs bundle.
-    #[cfg(debug_assertions)]
-    let (node_bin, server_arg, node_modules) = {
+    let (program, args) = {
         let project_root = exe_dir
-            .parent()          // target/
-            .and_then(|p| p.parent())  // src-tauri/
-            .and_then(|p| p.parent())  // project root
+            .parent()                 // target/
+            .and_then(|p| p.parent()) // src-tauri/
+            .and_then(|p| p.parent()) // project root
             .ok_or("cannot find project root from exe path")?
             .to_path_buf();
 
-        let tsx_cli = project_root.join("node_modules").join("tsx").join("dist").join("cli.cjs");
-        let server_ts = project_root.join("src").join("main").join("server.ts");
-        let node_modules = project_root.join("node_modules");
-
-        if !tsx_cli.exists() {
-            return Err(format!("tsx not found at {:?}", tsx_cli).into());
-        }
-        if !server_ts.exists() {
-            return Err(format!("server.ts not found at {:?}", server_ts).into());
+        let server_proj = project_root.join("server").join("AntaresServer.csproj");
+        if !server_proj.exists() {
+            return Err(format!(".NET sidecar project not found at {:?}", server_proj).into());
         }
 
-        ("node".to_string(), vec![tsx_cli.to_string_lossy().to_string(), server_ts.to_string_lossy().to_string()], node_modules)
+        let proj_arg = server_proj.to_string_lossy().to_string();
+        (
+            "dotnet".to_string(),
+            vec![
+                "run".to_string(),
+                "--project".to_string(),
+                proj_arg,
+                "--configuration".to_string(),
+                "Debug".to_string(),
+                "--no-launch-profile".to_string(),
+            ],
+        )
     };
 
-    // Release build: use the bundled node.exe and pre-built .cjs bundle.
+    // Release build: spawn the .NET 10 self-contained single-file sidecar binary
+    // staged into Tauri's resource dir by stage-resources.mjs --target=net.
+    // Phase 17 cutover (plan v5): replaced `sidecar/antares-server.cjs` + bundled
+    // node runtime with a single `antares-server[.exe]`.
     #[cfg(not(debug_assertions))]
-    let (node_bin, server_arg, node_modules) = {
-        let server_js = exe_dir.join("sidecar").join("antares-server.cjs");
-        if !server_js.exists() {
-            return Err(format!("Server bundle not found at {:?}", server_js).into());
+    let (program, args) = {
+        #[cfg(windows)]
+        let bin_name = "antares-server.exe";
+        #[cfg(not(windows))]
+        let bin_name = "antares-server";
+
+        let server_bin = exe_dir.join(bin_name);
+        if !server_bin.exists() {
+            return Err(format!(".NET sidecar binary not found at {:?}", server_bin).into());
         }
-
-        let node_exe  = exe_dir.join("sidecar").join("node.exe"); // Windows
-        let node_unix = exe_dir.join("sidecar").join("node");     // macOS / Linux
-        let node_bin = if node_exe.exists() {
-            node_exe.to_string_lossy().to_string()
-        } else if node_unix.exists() {
-            node_unix.to_string_lossy().to_string()
-        } else {
-            "node".to_string() // last resort: system node
-        };
-
-        let node_modules = exe_dir.join("node_modules");
-        (node_bin, vec![server_js.to_string_lossy().to_string()], node_modules)
+        (server_bin.to_string_lossy().to_string(), Vec::<String>::new())
     };
 
     #[allow(unused_mut)]
-    let mut cmd = StdCommand::new(&node_bin);
-    cmd.args(&server_arg)
-        .env("NODE_PATH", node_modules.to_string_lossy().to_string())
+    let mut cmd = StdCommand::new(&program);
+    cmd.args(&args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 

@@ -1,0 +1,16 @@
+{
+   "version": 1,
+   "description": "Per-fixture replay baseline. Each entry says whether replay-contract.mjs should run the fixture (expect: pass) or skip it (expect: skip) at the current phase. Skipped fixtures await their owner-phase implementation.",
+   "fixtures": [
+      { "name": "health.get.happy", "expect": "pass", "ownerPhase": 2, "reason": "phase-2-skeleton-baseline" },
+      { "name": "connection.connect.mssql.happy", "expect": "skip", "ownerPhase": 6, "reason": "pending-phase-6-connection-group" },
+      { "name": "connection.disconnect.mssql.happy", "expect": "skip", "ownerPhase": 6, "reason": "pending-phase-6-connection-group" },
+      { "name": "databases.getDatabases.mssql.happy", "expect": "skip", "ownerPhase": 7, "reason": "pending-phase-7-schema-discovery" },
+      { "name": "schema.getStructure.mssql.happy", "expect": "skip", "ownerPhase": 7, "reason": "pending-phase-7-schema-discovery" },
+      { "name": "schema.getVersion.mssql.happy", "expect": "skip", "ownerPhase": 7, "reason": "pending-phase-7-schema-discovery" },
+      { "name": "schema.rawQuery.mssql.happy", "expect": "skip", "ownerPhase": 7, "reason": "pending-phase-7-schema-discovery" },
+      { "name": "schema.getCollations.mssql.happy", "expect": "skip", "ownerPhase": 8, "reason": "pending-phase-8-schema-metadata" },
+      { "name": "tables.getTableData.mssql.happy", "expect": "skip", "ownerPhase": 10, "reason": "pending-phase-10-tables-read" },
+      { "name": "tables.getTableColumns.mssql.happy", "expect": "skip", "ownerPhase": 10, "reason": "pending-phase-10-tables-read" }
+   ]
+}

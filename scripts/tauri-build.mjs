@@ -22,17 +22,20 @@ function run (cmd, args, opts = {}) {
    return r.status ?? 1;
 }
 
-// ── Step 1: sidecar ──────────────────────────────────────────────────────────
-const sidecarStatus = run('node', ['scripts/build-sidecar.mjs']);
+// ── Step 1: .NET sidecar build (Phase 17 cutover) ───────────────────────────
+// Switched from scripts/build-sidecar.mjs (Node bundle) to build-net-sidecar.mjs
+// (.NET 10 self-contained single-file binary). Node bundle script remains for
+// `git revert` rollback per plan v5 §830.
+const sidecarStatus = run('node', ['scripts/build-net-sidecar.mjs']);
 if (sidecarStatus !== 0) {
    console.error('Sidecar build failed.');
    process.exit(sidecarStatus);
 }
 
 // ── Step 1b: stage resources ────────────────────────────────────────────────
-// Tauri's object-form `**/*` glob flattens subdirs; we pre-stage with preserved
-// structure into src-tauri/resources/ and reference that in tauri.conf.json.
-const stageStatus = run('node', ['scripts/stage-resources.mjs']);
+// .NET target stages a single antares-server[.exe] binary; the Node BFS-walked
+// node_modules / workers staging is bypassed entirely with --target=net.
+const stageStatus = run('node', ['scripts/stage-resources.mjs', '--target=net']);
 if (stageStatus !== 0) {
    console.error('Resource staging failed.');
    process.exit(stageStatus);

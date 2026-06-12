@@ -1,0 +1,44 @@
+name: Contract replay (.NET sidecar)
+
+on:
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'scripts/build-net-sidecar.mjs'
+      - 'scripts/replay-contract.mjs'
+      - 'tests/fixtures/contract/**'
+      - '.github/workflows/contract-replay.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'server/**'
+      - 'scripts/build-net-sidecar.mjs'
+      - 'scripts/replay-contract.mjs'
+      - 'tests/fixtures/contract/**'
+      - '.github/workflows/contract-replay.yml'
+  workflow_dispatch:
+
+jobs:
+  replay:
+    name: ${{ matrix.os }} replay --target=net
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+
+      - name: Build .NET sidecar
+        run: node scripts/build-net-sidecar.mjs
+
+      - name: Run contract replay
+        run: node scripts/replay-contract.mjs --target=net

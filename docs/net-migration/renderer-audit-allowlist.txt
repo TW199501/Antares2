@@ -1,0 +1,14 @@
+# Renderer-immutability audit allowlist.
+#
+# Every commit between docs/net-migration/baseline-tag.txt and HEAD that touches
+# web/renderer/ or web/common/ MUST appear in this file with a reason. Format:
+#
+#   <commit-sha-or-prefix> <file-pattern>  <reason>
+#
+# - sha can be full or short (≥ 7 chars); pattern is a literal substring match
+#   of the file path (no globs). Lines starting with `#` are comments.
+# - Empty initially: the .NET migration is supposed to leave web/ untouched.
+#   If something legitimate must change (rare), justify here AND get user sign-off.
+
+# (no entries — web/renderer/ and web/common/ are immutable for the duration of
+#  the .NET migration unless a row is explicitly added above this line.)

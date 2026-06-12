@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>antares-server</AssemblyName>
+    <RootNamespace>Antares.Server</RootNamespace>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <!-- Microsoft.Data.SqlClient ships native SNI bits as runtime "content" (not
+         just managed native libraries). Without IncludeAllContentForSelfExtract,
+         single-file publish leaves Microsoft.Data.SqlClient.SNI.x64.dll out of
+         the bundle → first call to TdsParser throws "type initializer threw an
+         exception" on the user's machine.
+         IncludeNativeLibrariesForSelfExtract is the standard companion that lets
+         the bootloader extract the native libs to a temp dir before main runs. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Furion" Version="4.9.8.58" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.214" />
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Npgsql" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Bogus" Version="35.6.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Configuration\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

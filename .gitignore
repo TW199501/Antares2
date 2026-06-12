@@ -2,14 +2,16 @@
 .worktrees
 dist
 build
-misc/*
-!misc/.gitkeep
 node_modules
 thumbs.db
 NOTES.md
 *.txt
+!tests/fixtures/ssh-cipher-list.txt
+!docs/net-migration/baseline-tag.txt
+!docs/net-migration/renderer-audit-allowlist.txt
 *.heapsnapshot
 .claude-code-history
+.claude/scheduled_tasks.lock
 .codex-history/
 .openmcp/
 skills.json
@@ -21,6 +23,7 @@ src-tauri/resources/
 # Large binary executables (too big for GitHub)
 sidecar/node.exe
 sidecar/node
+sidecar-net/
 src-tauri/binaries/*.exe
 
 # Test / debug artifacts (not for GitHub)
@@ -32,3 +35,21 @@ verify-*.png
 debug-*.png
 current-snap.yml
 e2e-results/
+coverage
+.claude-code-history
+sidecar-stdout.log
+sidecar-stderr.log
+.air/
+
+# Local DB credentials for preflight:dbs / capture:contract — never commit
+.env.test
+
+# .NET build artifacts (server/ + server-probes/)
+**/bin/
+**/obj/
+sidecar-net/
+
+# IDE per-user workspace state (auto-generated, not portable)
+.vs/
+.idea/
+**/Properties/launchSettings.json

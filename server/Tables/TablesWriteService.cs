@@ -1,0 +1,1039 @@
+using Antares.Server.Connections;
+using Bogus;
+using Furion.DynamicApiController;
+using Furion.UnifyResult;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Antares.Server.Tables;
+
+/// <summary>
+/// Phase 11 endpoints: 8 table-write actions under /api/tables/.
+///
+/// DDL (create / alter / duplicate / truncate / drop) and data mutation
+/// (updateCell / deleteRows / insertFakeRows). Per-DB SQL syntax differences
+/// are handled inline via Sanitize / per-dialect SQL templates.
+///
+/// Cell value escaping uses parameterized queries via SqlSugar where possible
+/// to avoid R13 SQL injection. SQLite ALTER (drop column, rename column) on
+/// older SQLite versions requires the 6-step CREATE-COPY-DROP-RENAME emulation
+/// — for now we use SqlSugar's built-in fallback and let DB testing surface
+/// gaps (Phase 11 Plan §602).
+/// </summary>
+[ApiDescriptionSettings(KeepName = true)]
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
+public sealed class TablesWriteService : IDynamicApiController
+{
+    private readonly ConnectionRegistry _registry;
+    private readonly ILogger<TablesWriteService> _logger;
+
+    public TablesWriteService(ConnectionRegistry registry, ILogger<TablesWriteService> logger)
+    {
+        _registry = registry;
+        _logger = logger;
+    }
+
+    [HttpPost("/api/tables/create"), NonUnify]
+    public async Task<object> Create([FromBody] CreateTablePayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        if (p.Columns is null || p.Columns.Count == 0)
+            throw new ArgumentException("at least one column is required");
+
+        var colsSql = string.Join(", ", p.Columns.Select(c => RenderColumn(entry.Client, c)));
+        var pk = p.Columns.Where(c => c.IsPrimary).Select(c => QuoteIdent(entry.Client, c.Name)).ToList();
+        if (pk.Count > 0) colsSql += $", PRIMARY KEY ({string.Join(", ", pk)})";
+        var sql = $"CREATE TABLE {qualified} ({colsSql})";
+
+        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        return new { status = "success" };
+    }
+
+    [HttpPost("/api/tables/alter"), NonUnify]
+    public async Task<object> Alter([FromBody] AlterTablePayload p, CancellationToken ct)
+    {
+        // 漸進式實作 — per plan T3-T5:
+        //   T3 (done): Options.Comment 路徑
+        //   T4 (本 commit): Additions[] (ADD COLUMN per-flavor)
+        //   T5 (next): Deletions / Changes / IndexChanges / ForeignChanges / CheckChanges
+        var entry = _registry.Require(p.Uid);
+
+        if (p.Options is not null && p.Options.Count > 0)
+        {
+            await ApplyTableOptionsAsync(entry, p.Schema, p.Table, p.Options, ct);
+        }
+
+        if (p.Additions is not null && p.Additions.Count > 0)
+        {
+            await ApplyAdditionsAsync(entry, p.Schema, p.Table, p.Additions, ct);
+        }
+
+        if (p.Deletions is not null && p.Deletions.Count > 0)
+        {
+            await ApplyDeletionsAsync(entry, p.Schema, p.Table, p.Deletions, ct);
+        }
+
+        if (p.Changes is not null && p.Changes.Count > 0)
+        {
+            await ApplyChangesAsync(entry, p.Schema, p.Table, p.Changes, ct);
+        }
+
+        if (p.IndexChanges is not null)
+        {
+            await ApplyIndexChangesAsync(entry, p.Schema, p.Table, p.IndexChanges, ct);
+        }
+
+        if (p.ForeignChanges is not null)
+        {
+            await ApplyForeignChangesAsync(entry, p.Schema, p.Table, p.ForeignChanges, ct);
+        }
+
+        if (p.CheckChanges is not null)
+        {
+            await ApplyCheckChangesAsync(entry, p.Schema, p.Table, p.CheckChanges, ct);
+        }
+
+        _logger.LogInformation(
+            "ALTER TABLE {Table} — options={OptCount}, additions={Adds}, changes={Chg}, deletions={Del}",
+            p.Table,
+            p.Options?.Count ?? 0,
+            p.Additions?.Count ?? 0,
+            p.Changes?.Count ?? 0,
+            p.Deletions?.Count ?? 0);
+
+        return new { status = "success" };
+    }
+
+    /// <summary>
+    /// DROP COLUMN per-flavor.全 flavor 都是 `ALTER TABLE x DROP COLUMN c`,
+    /// 但 SQLite 3.35.0+ 才原生支援 — 早期版本 SqlSugar 內部會用 6-step recreate 模擬,
+    /// 我們直接走 raw 等 driver 報錯讓 user 看訊息.
+    /// </summary>
+    private static async Task ApplyDeletionsAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        List<FieldDto> deletions, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+        var qualified = QualifyTable(entry.Client, schema, table);
+
+        foreach (var f in deletions)
+        {
+            if (string.IsNullOrEmpty(f.Name)) continue;
+            var col = QuoteIdent(entry.Client, f.Name);
+            var sql = $"ALTER TABLE {qualified} DROP COLUMN {col}";
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        }
+    }
+
+    /// <summary>
+    /// CHANGE COLUMN per-flavor.這條路徑是 properties tab「修改欄位類型 / 重新命名 / 改 NOT NULL」走的:
+    ///
+    ///   mysql/maria: CHANGE COLUMN `oldName` `newName` TYPE(len) ... — 一次包 rename + alter
+    ///   mssql:       sp_rename + ALTER COLUMN(rename 跟 type 改是兩條獨立指令)
+    ///   pg:          RENAME COLUMN + ALTER COLUMN TYPE + ALTER COLUMN SET/DROP DEFAULT
+    ///                + ALTER COLUMN SET/DROP NOT NULL
+    ///   sqlite:      RENAME COLUMN(3.25+) — type 改不支援,我們 skip 並 log warn
+    /// </summary>
+    private async Task ApplyChangesAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        List<FieldDto> changes, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+        var qualified = QualifyTable(entry.Client, schema, table);
+
+        foreach (var f in changes)
+        {
+            if (string.IsNullOrEmpty(f.Name) || string.IsNullOrEmpty(f.Type)) continue;
+            var orgName = string.IsNullOrEmpty(f.OrgName) ? f.Name : f.OrgName;
+
+            switch (entry.Client)
+            {
+                case "mysql":
+                case "maria":
+                {
+                    var typeUpper = f.Type.ToUpperInvariant();
+                    var lengthSpec = BuildLengthSpec(f);
+                    var sql = $"ALTER TABLE {qualified} CHANGE COLUMN `{Sanitize(orgName)}` `{Sanitize(f.Name)}` {typeUpper}{lengthSpec}"
+                        + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
+                        + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
+                        + (f.Nullable == false ? " NOT NULL" : " NULL")
+                        + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
+                        + RenderDefault(f)
+                        + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
+                        + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
+                        + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty);
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+                    break;
+                }
+                case "mssql":
+                {
+                    // 必須先 rename(若 orgName 不同),再 alter type — 因為 sp_rename 後續才認新名字.
+                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
+                    {
+                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(
+                            "EXEC sp_rename @oldname, @newname, 'COLUMN'",
+                            new { oldname = $"{Sanitize(table)}.{Sanitize(orgName)}", newname = f.Name }), ct);
+                    }
+                    var col = QuoteIdent(entry.Client, f.Name);
+                    var typeUpper = f.Type.ToUpperInvariant();
+                    var lengthSpec = BuildLengthSpec(f);
+                    var sql = $"ALTER TABLE {qualified} ALTER COLUMN {col} {typeUpper}{lengthSpec}"
+                        + (f.Nullable == false ? " NOT NULL" : " NULL");
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+
+                    // MSSQL 欄級註解走 update extended_properties — 跟 T3 表級邏輯類似.
+                    if (!string.IsNullOrEmpty(f.Comment))
+                    {
+                        const string commentSql = @"
+IF EXISTS (
+    SELECT 1 FROM sys.extended_properties ep
+    JOIN sys.tables t ON ep.major_id = t.object_id
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    JOIN sys.columns c ON c.object_id = t.object_id AND c.column_id = ep.minor_id
+    WHERE s.name = @sc AND t.name = @t AND c.name = @c AND ep.name = 'MS_Description'
+)
+    EXEC sp_updateextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;
+ELSE
+    EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;";
+                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(commentSql,
+                            new { sc = schema, t = table, c = f.Name, v = f.Comment }), ct);
+                    }
+                    break;
+                }
+                case "pg":
+                {
+                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
+                    {
+                        var sqlR = $"ALTER TABLE {qualified} RENAME COLUMN {QuoteIdent(entry.Client, orgName)} TO {QuoteIdent(entry.Client, f.Name)}";
+                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlR), ct);
+                    }
+                    var col = QuoteIdent(entry.Client, f.Name);
+                    var typeUpper = f.Type.ToUpperInvariant();
+                    var lengthSpec = BuildLengthSpec(f);
+                    var arr = f.IsArray == true ? "[]" : string.Empty;
+                    var sqlT = $"ALTER TABLE {qualified} ALTER COLUMN {col} TYPE {typeUpper}{lengthSpec}{arr}";
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlT), ct);
+
+                    var nullSql = f.Nullable == false
+                        ? $"ALTER TABLE {qualified} ALTER COLUMN {col} SET NOT NULL"
+                        : $"ALTER TABLE {qualified} ALTER COLUMN {col} DROP NOT NULL";
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(nullSql), ct);
+
+                    var defSql = f.Default is null
+                        ? $"ALTER TABLE {qualified} ALTER COLUMN {col} DROP DEFAULT"
+                        : (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase)
+                            ? $"ALTER TABLE {qualified} ALTER COLUMN {col} SET DEFAULT {f.Default}"
+                            : $"ALTER TABLE {qualified} ALTER COLUMN {col} SET DEFAULT '{f.Default.Replace("'", "''")}'");
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(defSql), ct);
+
+                    if (f.Comment is not null)
+                    {
+                        var esc = f.Comment.Replace("'", "''");
+                        var commentSql = $"COMMENT ON COLUMN {qualified}.{col} IS '{esc}'";
+                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(commentSql), ct);
+                    }
+                    break;
+                }
+                case "sqlite":
+                {
+                    // SQLite 3.25.0+ RENAME COLUMN. 改 type / nullable 需 6-step recreate,
+                    // 這裡 best-effort 只做 rename — type 改交由後續手動處理.
+                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
+                    {
+                        var sqlR = $"ALTER TABLE {qualified} RENAME COLUMN \"{Sanitize(orgName)}\" TO \"{Sanitize(f.Name)}\"";
+                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlR), ct);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("sqlite CHANGE COLUMN type/nullable not supported for {Col} — manual recreate required", f.Name);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// IndexChanges per-flavor.主流是 mysql/maria 的 ALTER TABLE ADD/DROP INDEX,mssql/pg 走 CREATE INDEX / DROP INDEX 獨立語句.
+    /// `Changes[]` 視為 drop-then-add(刪舊名字 + 加新定義).
+    /// </summary>
+    private static async Task ApplyIndexChangesAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        IndexChangesDto idx, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+        var qualified = QualifyTable(entry.Client, schema, table);
+
+        // DROP first(包含 Changes 的舊名)
+        var drops = new List<IndexDto>();
+        if (idx.Deletions is not null) drops.AddRange(idx.Deletions);
+        if (idx.Changes is not null) drops.AddRange(idx.Changes.Select(c => new IndexDto
+        {
+            Name = c.OldName ?? c.Name, Type = c.OldType ?? c.Type, Fields = c.Fields
+        }));
+
+        foreach (var d in drops)
+        {
+            var sql = entry.Client switch
+            {
+                "mysql" or "maria" => d.Type == "PRIMARY"
+                    ? $"ALTER TABLE {qualified} DROP PRIMARY KEY"
+                    : $"ALTER TABLE {qualified} DROP INDEX `{Sanitize(d.Name)}`",
+                "mssql" => $"DROP INDEX [{Sanitize(d.Name)}] ON {qualified}",
+                "pg" => $"DROP INDEX IF EXISTS \"{Sanitize(d.Name)}\"",
+                "sqlite" => $"DROP INDEX IF EXISTS \"{Sanitize(d.Name)}\"",
+                _ => string.Empty
+            };
+            if (!string.IsNullOrEmpty(sql))
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        }
+
+        // ADD(包含 Changes 的新定義)
+        var adds = new List<IndexDto>();
+        if (idx.Additions is not null) adds.AddRange(idx.Additions);
+        if (idx.Changes is not null) adds.AddRange(idx.Changes);
+
+        foreach (var a in adds)
+        {
+            if (a.Fields is null || a.Fields.Count == 0) continue;
+            var sql = RenderAddIndexSql(entry.Client, qualified, a);
+            if (!string.IsNullOrEmpty(sql))
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        }
+    }
+
+    internal static string RenderAddIndexSql(string client, string qualified, IndexDto idx)
+    {
+        var fields = string.Join(",", idx.Fields.Select(f => QuoteIdent(client, f)));
+        return client switch
+        {
+            "mysql" or "maria" => idx.Type == "PRIMARY"
+                ? $"ALTER TABLE {qualified} ADD PRIMARY KEY ({fields})"
+                : idx.Type == "UNIQUE"
+                    ? $"ALTER TABLE {qualified} ADD UNIQUE INDEX `{Sanitize(idx.Name)}` ({fields})"
+                    : $"ALTER TABLE {qualified} ADD INDEX `{Sanitize(idx.Name)}` ({fields})",
+            "mssql" => idx.Type == "PRIMARY"
+                ? $"ALTER TABLE {qualified} ADD CONSTRAINT [{Sanitize(idx.Name)}] PRIMARY KEY ({fields})"
+                : idx.Type == "UNIQUE"
+                    ? $"CREATE UNIQUE INDEX [{Sanitize(idx.Name)}] ON {qualified} ({fields})"
+                    : $"CREATE INDEX [{Sanitize(idx.Name)}] ON {qualified} ({fields})",
+            "pg" => idx.Type == "PRIMARY"
+                ? $"ALTER TABLE {qualified} ADD CONSTRAINT \"{Sanitize(idx.Name)}\" PRIMARY KEY ({fields})"
+                : idx.Type == "UNIQUE"
+                    ? $"CREATE UNIQUE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})"
+                    : $"CREATE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})",
+            "sqlite" => idx.Type == "UNIQUE"
+                ? $"CREATE UNIQUE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})"
+                : $"CREATE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})",
+            _ => string.Empty
+        };
+    }
+
+    /// <summary>
+    /// ForeignChanges per-flavor.MySQL 用 DROP/ADD FOREIGN KEY + CONSTRAINT,
+    /// 其他 flavor 都是 standard ALTER TABLE ... DROP CONSTRAINT / ADD CONSTRAINT.
+    /// </summary>
+    private static async Task ApplyForeignChangesAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        ForeignChangesDto fk, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+        var qualified = QualifyTable(entry.Client, schema, table);
+
+        // DROP first
+        var drops = new List<string>();
+        if (fk.Deletions is not null) drops.AddRange(fk.Deletions.Select(d => d.ConstraintName));
+        if (fk.Changes is not null) drops.AddRange(fk.Changes.Select(c => c.OldName ?? c.ConstraintName));
+
+        foreach (var name in drops.Where(n => !string.IsNullOrEmpty(n)))
+        {
+            var dropSql = entry.Client switch
+            {
+                "mysql" or "maria" => $"ALTER TABLE {qualified} DROP FOREIGN KEY `{Sanitize(name)}`",
+                _ => $"ALTER TABLE {qualified} DROP CONSTRAINT {QuoteIdent(entry.Client, name)}"
+            };
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(dropSql), ct);
+        }
+
+        // ADD(含 Changes 的新定義)
+        var adds = new List<ForeignDto>();
+        if (fk.Additions is not null) adds.AddRange(fk.Additions);
+        if (fk.Changes is not null) adds.AddRange(fk.Changes);
+
+        foreach (var a in adds)
+        {
+            if (string.IsNullOrEmpty(a.ConstraintName) || string.IsNullOrEmpty(a.Field)) continue;
+            var sql = $"ALTER TABLE {qualified} ADD CONSTRAINT {QuoteIdent(entry.Client, a.ConstraintName)} "
+                + $"FOREIGN KEY ({QuoteIdent(entry.Client, a.Field)}) "
+                + $"REFERENCES {QualifyTable(entry.Client, a.RefSchema ?? schema, a.RefTable)} ({QuoteIdent(entry.Client, a.RefField)})"
+                + (!string.IsNullOrEmpty(a.OnUpdate) ? $" ON UPDATE {a.OnUpdate}" : string.Empty)
+                + (!string.IsNullOrEmpty(a.OnDelete) ? $" ON DELETE {a.OnDelete}" : string.Empty);
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        }
+    }
+
+    /// <summary>
+    /// CheckChanges per-flavor.MySQL 8.0+/MariaDB 10.2+ 才支援 CHECK 約束,
+    /// 之前版本 syntax 接受但 silently 忽略 — 我們直接送 SQL 讓 driver 報錯.
+    /// </summary>
+    private static async Task ApplyCheckChangesAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        CheckChangesDto chk, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+        var qualified = QualifyTable(entry.Client, schema, table);
+
+        // DROP first
+        var dropNames = new List<string>();
+        if (chk.Deletions is not null) dropNames.AddRange(chk.Deletions.Select(d => d.Name));
+        if (chk.Changes is not null) dropNames.AddRange(chk.Changes.Select(c => c.Name));
+
+        foreach (var name in dropNames.Where(n => !string.IsNullOrEmpty(n)))
+        {
+            var sql = $"ALTER TABLE {qualified} DROP CONSTRAINT {QuoteIdent(entry.Client, name)}";
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        }
+
+        // ADD(含 Changes 的新定義)
+        var adds = new List<CheckDto>();
+        if (chk.Additions is not null) adds.AddRange(chk.Additions);
+        if (chk.Changes is not null) adds.AddRange(chk.Changes);
+
+        foreach (var a in adds)
+        {
+            if (string.IsNullOrEmpty(a.Clause)) continue;
+            var named = !string.IsNullOrEmpty(a.Name) ? $"CONSTRAINT {QuoteIdent(entry.Client, a.Name)} " : string.Empty;
+            var sql = $"ALTER TABLE {qualified} ADD {named}CHECK ({a.Clause})";
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        }
+    }
+
+    /// <summary>
+    /// 套用 ADD COLUMN per-flavor.
+    ///
+    /// MySQL / Maria 支援單一 `ALTER TABLE x ADD COLUMN ..., ADD COLUMN ...` 多欄一次性;
+    /// MSSQL `ALTER TABLE x ADD col1 def1, col2 def2`(沒有 COLUMN 關鍵字);
+    /// PG 支援 `ALTER TABLE x ADD COLUMN ..., ADD COLUMN ...`;
+    /// SQLite 必須 **每欄一條 ALTER TABLE**(不支援多 ADD COLUMN 串接).
+    ///
+    /// MSSQL 欄級註解必須 ALTER 跑完之後才執行 sp_addextendedproperty — 收進 postSqls.
+    /// PG 欄級註解走 `COMMENT ON COLUMN ...` 也是 post-step.
+    /// </summary>
+    private static async Task ApplyAdditionsAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        List<FieldDto> additions, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table) || additions.Count == 0) return;
+
+        var qualified = QualifyTable(entry.Client, schema, table);
+        var addClauses = new List<string>();
+        var postSqls = new List<(string Sql, object? Params)>();
+
+        foreach (var f in additions)
+        {
+            if (string.IsNullOrEmpty(f.Name) || string.IsNullOrEmpty(f.Type)) continue;
+            addClauses.Add(RenderAddColumnClause(entry.Client, f));
+
+            // post-step: column-level comment for mssql / pg
+            if (!string.IsNullOrEmpty(f.Comment))
+            {
+                if (entry.Client == "mssql")
+                {
+                    postSqls.Add((@"
+EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;",
+                        new { sc = schema, t = table, c = f.Name, v = f.Comment }));
+                }
+                else if (entry.Client == "pg")
+                {
+                    var col = QuoteIdent(entry.Client, f.Name);
+                    var esc = f.Comment.Replace("'", "''");
+                    postSqls.Add(($"COMMENT ON COLUMN {qualified}.{col} IS '{esc}'", null));
+                }
+            }
+        }
+
+        if (addClauses.Count == 0) return;
+
+        switch (entry.Client)
+        {
+            case "sqlite":
+                // SQLite 不支援多 ADD COLUMN 串接,逐條跑.
+                foreach (var clause in addClauses)
+                {
+                    var sql = $"ALTER TABLE {qualified} {clause}";
+                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+                }
+                break;
+            default:
+            {
+                var sql = $"ALTER TABLE {qualified} {string.Join(", ", addClauses)}";
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+                break;
+            }
+        }
+
+        foreach (var (sql, paramsObj) in postSqls)
+        {
+            await Task.Run(() => paramsObj is null
+                ? entry.Db.Ado.ExecuteCommand(sql)
+                : entry.Db.Ado.ExecuteCommand(sql, paramsObj), ct);
+        }
+    }
+
+    /// <summary>
+    /// 渲染單一 ADD COLUMN clause(無 leading `ALTER TABLE x` 前綴).
+    /// 各 flavor 的 keyword / 順序 / 修飾字差異:
+    ///   mssql:  ADD [name] TYPE(len)        IDENTITY(1,1) NULL|NOT NULL DEFAULT v
+    ///   mysql:  ADD COLUMN `name` TYPE(len) UNSIGNED ZEROFILL NULL|NOT NULL AUTO_INCREMENT DEFAULT v COMMENT '...' COLLATE x AFTER `c`
+    ///   pg:     ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
+    ///   sqlite: ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
+    /// </summary>
+    internal static string RenderAddColumnClause(string client, FieldDto f)
+    {
+        var name = QuoteIdent(client, f.Name);
+        var typeUpper = f.Type.ToUpperInvariant();
+        var lengthSpec = BuildLengthSpec(f);
+
+        return client switch
+        {
+            "mssql" => $"ADD {name} {typeUpper}{lengthSpec}"
+                + (f.AutoIncrement == true ? " IDENTITY(1,1)" : string.Empty)
+                + (f.Nullable == false ? " NOT NULL" : " NULL")
+                + RenderDefault(f),
+
+            "mysql" or "maria" => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
+                + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
+                + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
+                + (f.Nullable == false ? " NOT NULL" : " NULL")
+                + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
+                + RenderDefault(f)
+                + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
+                + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
+                + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty)
+                + (!string.IsNullOrEmpty(f.After) ? $" AFTER `{Sanitize(f.After)}`" : string.Empty),
+
+            "pg" => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
+                + (f.IsArray == true ? "[]" : string.Empty)
+                + (f.Nullable == false ? " NOT NULL" : string.Empty)
+                + RenderDefault(f),
+
+            _ => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
+                + (f.Nullable == false ? " NOT NULL" : string.Empty)
+                + RenderDefault(f),
+        };
+    }
+
+    /// <summary>
+    /// 從 FieldDto 拼長度修飾,例如 `(255)`、`(10,2)`、`('a','b')` for ENUM.
+    /// 渲染端會根據 dataType 決定填到 numLength / charLength / datePrecision 哪一個,我們三選一取非空.
+    /// </summary>
+    internal static string BuildLengthSpec(FieldDto f)
+    {
+        // ENUM/SET 的 enumValues 是 'a','b','c' 字串
+        if (!string.IsNullOrEmpty(f.EnumValues))
+            return $"({f.EnumValues})";
+
+        var len = f.NumLength ?? f.CharLength ?? f.DatePrecision ?? f.Length;
+        if (len is null || len <= 0) return string.Empty;
+
+        return f.NumScale is > 0 ? $"({len},{f.NumScale})" : $"({len})";
+    }
+
+    /// <summary>
+    /// 渲染 DEFAULT 子句.遵循 Node baseline 的「`null` 視為不寫 DEFAULT,空字串視為 DEFAULT ''」邏輯.
+    /// `defaultType === 'expression'` 不加引號,否則 raw 字串值會交由 SqlSugar 處理(這裡直接 inline,
+    /// 因為 ALTER TABLE 不能 parameterize column defaults).
+    /// </summary>
+    internal static string RenderDefault(FieldDto f)
+    {
+        if (f.Default is null) return string.Empty;
+        if (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase))
+            return $" DEFAULT {f.Default}";
+        var esc = f.Default.Replace("'", "''");
+        return $" DEFAULT '{esc}'";
+    }
+
+    /// <summary>
+    /// 套用表級選項 diff (rename / comment / collation / engine / autoIncrement).
+    /// T3 階段實作 MSSQL comment 路徑;其他 client / 其他 option 之後補.
+    /// </summary>
+    private static async Task ApplyTableOptionsAsync(
+        ConnectionRegistry.Entry entry, string? schema, string? table,
+        Dictionary<string, object?> options, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(table)) return;
+
+        if (options.TryGetValue("comment", out var commentObj))
+        {
+            var comment = commentObj?.ToString() ?? string.Empty;
+            await SetTableCommentAsync(entry, schema, table, comment, ct);
+        }
+        // TODO T5: rename / collation / engine / autoIncrement
+    }
+
+    /// <summary>
+    /// 設定 / 更新表級註解,per-flavor:
+    ///   mssql: sys.extended_properties (MS_Description, class=1, minor_id=0)
+    ///   mysql: ALTER TABLE ... COMMENT='...'
+    ///   pg:    COMMENT ON TABLE ... IS '...'
+    ///   sqlite: 無 native 註解,無動作.
+    /// </summary>
+    private static async Task SetTableCommentAsync(
+        ConnectionRegistry.Entry entry, string? schema, string table,
+        string comment, CancellationToken ct)
+    {
+        switch (entry.Client)
+        {
+            case "mssql":
+            {
+                // 用 IF EXISTS / ELSE 兩條 stored proc 切換 add / update.
+                // sp_updateextendedproperty 在 description 不存在時會 raise error,
+                // 所以必須先確認再選分支. minor_id=0 表「table 自己」(非 column).
+                const string sql = @"
+IF EXISTS (
+    SELECT 1 FROM sys.extended_properties ep
+    JOIN sys.tables t ON ep.major_id = t.object_id
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    WHERE s.name = @sc AND t.name = @t
+      AND ep.minor_id = 0 AND ep.class = 1 AND ep.name = 'MS_Description'
+)
+    EXEC sp_updateextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t;
+ELSE
+    EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t;";
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql,
+                    new { sc = schema, t = table, v = comment }), ct);
+                break;
+            }
+            case "mysql":
+            case "maria":
+            {
+                var qualifiedTable = QualifyTable(entry.Client, schema, table);
+                var escapedComment = comment.Replace("'", "''");
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(
+                    $"ALTER TABLE {qualifiedTable} COMMENT='{escapedComment}'"), ct);
+                break;
+            }
+            case "pg":
+            {
+                var qualifiedTable = QualifyTable(entry.Client, schema, table);
+                var escapedComment = comment.Replace("'", "''");
+                await Task.Run(() => entry.Db.Ado.ExecuteCommand(
+                    $"COMMENT ON TABLE {qualifiedTable} IS '{escapedComment}'"), ct);
+                break;
+            }
+            // sqlite: 無 native 表級註解,無動作.
+        }
+    }
+
+    [HttpPost("/api/tables/duplicate"), NonUnify]
+    public async Task<object> Duplicate([FromBody] DuplicateTablePayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var src = QualifyTable(entry.Client, p.Schema, p.Source);
+        var dst = QualifyTable(entry.Client, p.Schema, p.Destination);
+        var sql = entry.Client switch
+        {
+            "mssql" => $"SELECT * INTO {dst} FROM {src} WHERE 1=0",
+            "mysql" or "maria" => $"CREATE TABLE {dst} LIKE {src}",
+            "pg" => $"CREATE TABLE {dst} (LIKE {src} INCLUDING ALL)",
+            "sqlite" => $"CREATE TABLE {dst} AS SELECT * FROM {src} WHERE 1=0",
+            _ => string.Empty
+        };
+        if (string.IsNullOrEmpty(sql)) throw new NotSupportedException($"duplicate not supported for {entry.Client}");
+        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        if (p.CopyData)
+        {
+            var copy = $"INSERT INTO {dst} SELECT * FROM {src}";
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(copy), ct);
+        }
+        return new { status = "success" };
+    }
+
+    [HttpPost("/api/tables/truncate"), NonUnify]
+    public async Task<object> Truncate([FromBody] TableTargetPayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        var sql = entry.Client switch
+        {
+            "sqlite" => $"DELETE FROM {qualified}",   // SQLite has no TRUNCATE
+            _ => $"TRUNCATE TABLE {qualified}"
+        };
+        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        return new { status = "success" };
+    }
+
+    [HttpPost("/api/tables/drop"), NonUnify]
+    public async Task<object> Drop([FromBody] TableTargetPayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP TABLE {qualified}"), ct);
+        return new { status = "success" };
+    }
+
+    [HttpPost("/api/tables/updateCell"), NonUnify]
+    public async Task<object> UpdateCell([FromBody] UpdateCellPayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        var col = QuoteIdent(entry.Client, p.Column ?? string.Empty);
+
+        if (p.Primary is null || p.Primary.Count == 0)
+            throw new ArgumentException("primary key cell identifier required");
+
+        var whereParts = new List<string>();
+        var paramObj = new Dictionary<string, object?> { ["v"] = p.Value };
+        var i = 0;
+        foreach (var kv in p.Primary)
+        {
+            var pname = $"p{i}";
+            whereParts.Add($"{QuoteIdent(entry.Client, kv.Key)} = @{pname}");
+            paramObj[pname] = kv.Value;
+            i += 1;
+        }
+        var sql = $"UPDATE {qualified} SET {col} = @v WHERE {string.Join(" AND ", whereParts)}";
+        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
+        return new { status = "success" };
+    }
+
+    [HttpPost("/api/tables/deleteRows"), NonUnify]
+    public async Task<object> DeleteRows([FromBody] DeleteRowsPayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        if (p.Rows is null || p.Rows.Count == 0) return new { status = "success" };
+
+        long affected = 0;
+        foreach (var row in p.Rows)
+        {
+            var whereParts = new List<string>();
+            var paramObj = new Dictionary<string, object?>();
+            var i = 0;
+            foreach (var kv in row)
+            {
+                var pname = $"p{i}";
+                whereParts.Add($"{QuoteIdent(entry.Client, kv.Key)} = @{pname}");
+                paramObj[pname] = kv.Value;
+                i += 1;
+            }
+            var sql = $"DELETE FROM {qualified} WHERE {string.Join(" AND ", whereParts)}";
+            affected += await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
+        }
+        return new { status = "success", response = affected };
+    }
+
+    [HttpPost("/api/tables/insertFakeRows"), NonUnify]
+    public async Task<object> InsertFakeRows([FromBody] InsertFakeRowsPayload p, CancellationToken ct)
+    {
+        var entry = _registry.Require(p.Uid);
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        var faker = new Faker();
+        var inserted = 0;
+        for (var n = 0; n < Math.Max(1, p.Count); n++)
+        {
+            ct.ThrowIfCancellationRequested();
+            var values = new Dictionary<string, object?>();
+            foreach (var col in p.Columns ?? new List<FakeColumnDto>())
+            {
+                values[col.Name] = GenerateFake(faker, col.Semantic, col.DataType);
+            }
+            if (values.Count == 0) break;
+            var cols = string.Join(", ", values.Keys.Select(k => QuoteIdent(entry.Client, k)));
+            var paramNames = string.Join(", ", values.Keys.Select(k => $"@{k}"));
+            var sql = $"INSERT INTO {qualified} ({cols}) VALUES ({paramNames})";
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, values), ct);
+            inserted += 1;
+        }
+        return new { status = "success", response = inserted };
+    }
+
+    private static object? GenerateFake(Faker f, string? semantic, string? dataType)
+    {
+        var sem = (semantic ?? string.Empty).ToLowerInvariant();
+        if (sem.Contains("email")) return f.Internet.Email();
+        if (sem.Contains("url")) return f.Internet.Url();
+        if (sem.Contains("fullname")) return f.Name.FullName();
+        if (sem.Contains("firstname")) return f.Name.FirstName();
+        if (sem.Contains("lastname")) return f.Name.LastName();
+        if (sem.Contains("companyname")) return f.Company.CompanyName();
+        if (sem.Contains("ip")) return f.Internet.Ip();
+        if (sem.Contains("phone")) return f.Phone.PhoneNumber();
+        if (sem.Contains("uuid") || sem.Contains("guid")) return Guid.NewGuid().ToString();
+        if (sem.Contains("password")) return f.Internet.Password();
+        if (sem.Contains("address")) return f.Address.StreetAddress();
+
+        var dt = (dataType ?? string.Empty).ToLowerInvariant();
+        if (dt.Contains("int")) return f.Random.Number();
+        if (dt.Contains("float") || dt.Contains("double") || dt.Contains("decimal") || dt.Contains("numeric")) return f.Random.Double();
+        if (dt.Contains("bool") || dt.Contains("bit")) return f.Random.Bool();
+        if (dt.Contains("date") || dt.Contains("time")) return DateTime.UtcNow;
+        return f.Lorem.Sentence();
+    }
+
+    private static string QualifyTable(string client, string? schema, string? table)
+    {
+        var t = table ?? string.Empty;
+        var s = schema ?? string.Empty;
+        return client switch
+        {
+            "mssql" => string.IsNullOrEmpty(s) ? $"[{Sanitize(t)}]" : $"[{Sanitize(s)}].[{Sanitize(t)}]",
+            "mysql" or "maria" => string.IsNullOrEmpty(s) ? $"`{Sanitize(t)}`" : $"`{Sanitize(s)}`.`{Sanitize(t)}`",
+            "pg" => string.IsNullOrEmpty(s) ? $"\"{Sanitize(t)}\"" : $"\"{Sanitize(s)}\".\"{Sanitize(t)}\"",
+            _ => $"\"{Sanitize(t)}\""
+        };
+    }
+
+    private static string QuoteIdent(string client, string name) => client switch
+    {
+        "mssql" => $"[{Sanitize(name)}]",
+        "mysql" or "maria" => $"`{Sanitize(name)}`",
+        "pg" => $"\"{Sanitize(name)}\"",
+        _ => $"\"{Sanitize(name)}\""
+    };
+
+    private static string Sanitize(string s) =>
+        s.Replace("[", "").Replace("]", "").Replace("`", "").Replace("\"", "").Replace(";", "").Replace("--", "");
+
+    private static string RenderColumn(string client, NewColumnDef c)
+    {
+        var name = QuoteIdent(client, c.Name);
+        var type = c.Type ?? "VARCHAR(255)";
+        var nullable = c.Nullable ? string.Empty : " NOT NULL";
+        var def = string.IsNullOrEmpty(c.Default) ? string.Empty : $" DEFAULT {c.Default}";
+        var auto = c.AutoIncrement ? client switch
+        {
+            "mysql" or "maria" => " AUTO_INCREMENT",
+            "mssql" => " IDENTITY(1,1)",
+            "pg" => "",
+            "sqlite" => " AUTOINCREMENT",
+            _ => ""
+        } : string.Empty;
+        return $"{name} {type}{auto}{nullable}{def}";
+    }
+}
+
+// ---- Payloads / DTOs -------------------------------------------------------
+
+public sealed class CreateTablePayload : TableTargetPayload
+{
+    public List<NewColumnDef> Columns { get; set; } = new();
+}
+
+public sealed class NewColumnDef
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = "VARCHAR(255)";
+    public bool Nullable { get; set; } = true;
+    public string? Default { get; set; }
+    public bool IsPrimary { get; set; }
+    public bool AutoIncrement { get; set; }
+}
+
+public sealed class AlterTablePayload : TableTargetPayload
+{
+    /// <summary>渲染端送的完整 diff payload — 對應 WorkspaceTabPropsTable.vue saveChanges() params.</summary>
+    public TableStructureDto? TableStructure { get; set; }
+    public List<FieldDto>? Additions { get; set; }
+    public List<FieldDto>? Changes { get; set; }
+    public List<FieldDto>? Deletions { get; set; }
+    public IndexChangesDto? IndexChanges { get; set; }
+    public ForeignChangesDto? ForeignChanges { get; set; }
+    public CheckChangesDto? CheckChanges { get; set; }
+    /// <summary>表級選項 diff,key 包含 `comment`/`name`/`collation`/`engine`/`autoIncrement` 等.</summary>
+    public Dictionary<string, object?>? Options { get; set; }
+}
+
+/// <summary>對應 web/common/interfaces/antares.ts TableField — renderer 送的欄位 shape.</summary>
+public sealed class FieldDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string? OrgName { get; set; }
+    public bool? Nullable { get; set; }
+    public bool? Unsigned { get; set; }
+    public bool? Zerofill { get; set; }
+    public bool? AutoIncrement { get; set; }
+    public bool? IsArray { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
+    public int? Length { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
+    public int? NumLength { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
+    public int? CharLength { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
+    public int? DatePrecision { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
+    public int? NumPrecision { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrIntConverter))]
+    public int? NumScale { get; set; }
+    public string? Default { get; set; }
+    public string? DefaultType { get; set; }
+    public string? Comment { get; set; }
+    public string? Collation { get; set; }
+    public string? Charset { get; set; }
+    public string? OnUpdate { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BoolOrStringConverter))]
+    public string? After { get; set; }
+    public string? EnumValues { get; set; }
+    public string? Key { get; set; }
+}
+
+public sealed class TableStructureDto
+{
+    public string? Name { get; set; }
+    public List<FieldDto>? Fields { get; set; }
+    public List<Dictionary<string, object?>>? Foreigns { get; set; }
+    public List<Dictionary<string, object?>>? Indexes { get; set; }
+}
+
+public sealed class IndexChangesDto
+{
+    public List<IndexDto>? Additions { get; set; }
+    public List<IndexDto>? Changes { get; set; }
+    public List<IndexDto>? Deletions { get; set; }
+}
+
+public sealed class ForeignChangesDto
+{
+    public List<ForeignDto>? Additions { get; set; }
+    public List<ForeignDto>? Changes { get; set; }
+    public List<ForeignDto>? Deletions { get; set; }
+}
+
+public sealed class CheckChangesDto
+{
+    public List<CheckDto>? Additions { get; set; }
+    public List<CheckDto>? Changes { get; set; }
+    public List<CheckDto>? Deletions { get; set; }
+}
+
+/// <summary>對應 antares.ts TableIndex.</summary>
+public sealed class IndexDto
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Fields { get; set; } = new();
+    public string Type { get; set; } = string.Empty;
+    public string? OldName { get; set; }
+    public string? OldType { get; set; }
+}
+
+/// <summary>對應 antares.ts TableForeign.</summary>
+public sealed class ForeignDto
+{
+    public string ConstraintName { get; set; } = string.Empty;
+    public string? OldName { get; set; }
+    public string Field { get; set; } = string.Empty;
+    public string RefTable { get; set; } = string.Empty;
+    public string RefField { get; set; } = string.Empty;
+    public string? RefSchema { get; set; }
+    public string? OnUpdate { get; set; }
+    public string? OnDelete { get; set; }
+}
+
+/// <summary>對應 antares.ts TableCheck.</summary>
+public sealed class CheckDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Clause { get; set; } = string.Empty;
+}
+
+public sealed class DuplicateTablePayload
+{
+    public string Uid { get; set; } = string.Empty;
+    public string? Schema { get; set; }
+    public string Source { get; set; } = string.Empty;
+    public string Destination { get; set; } = string.Empty;
+    public bool CopyData { get; set; } = true;
+}
+
+public sealed class UpdateCellPayload : TableTargetPayload
+{
+    public string? Column { get; set; }
+    public object? Value { get; set; }
+    public Dictionary<string, object?>? Primary { get; set; }
+}
+
+public sealed class DeleteRowsPayload : TableTargetPayload
+{
+    public List<Dictionary<string, object?>>? Rows { get; set; }
+}
+
+public sealed class InsertFakeRowsPayload : TableTargetPayload
+{
+    public int Count { get; set; } = 1;
+    public List<FakeColumnDto>? Columns { get; set; }
+}
+
+public sealed class FakeColumnDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string? DataType { get; set; }
+    public string? Semantic { get; set; }
+}
+
+/// <summary>
+/// Renderer 的 TableField interface 對 length / numLength / charLength 等欄位的型別是
+/// `number | false` — `false` 是「沒有長度」的 sentinel(antares.ts:78-110).Plain
+/// `int?` 反序列化會拒絕 bool,造成 400 model-binding error.這個 converter 接受
+/// number/null/false 三種輸入,後兩者都映射為 null.
+/// </summary>
+internal sealed class BoolOrIntConverter : System.Text.Json.Serialization.JsonConverter<int?>
+{
+    public override int? Read(ref System.Text.Json.Utf8JsonReader reader,
+        Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+    {
+        switch (reader.TokenType)
+        {
+            case System.Text.Json.JsonTokenType.Null:
+            case System.Text.Json.JsonTokenType.False:
+            case System.Text.Json.JsonTokenType.True:
+                return null;
+            case System.Text.Json.JsonTokenType.Number:
+                return reader.TryGetInt32(out var v) ? v : (int?)null;
+            case System.Text.Json.JsonTokenType.String:
+                // 部分 sentinel 值會以字串形式出現(空字串).
+                var s = reader.GetString();
+                return int.TryParse(s, out var n) ? n : (int?)null;
+            default:
+                throw new System.Text.Json.JsonException(
+                    $"BoolOrIntConverter cannot read TokenType={reader.TokenType}");
+        }
+    }
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, int? value,
+        System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value.HasValue) writer.WriteNumberValue(value.Value);
+        else writer.WriteNullValue();
+    }
+}
+
+/// <summary>
+/// Renderer 的 TableField.after 是 `string | false` 型別 — `false` 表「插在最前」(FIRST).
+/// `string?` 反序列化會拒絕 bool,造成 400.這個 converter 接受 string/null/bool,後二者
+/// 映射為 null(代表「沒有 after,放在最前」由 ApplyAdditionsAsync 自行決定).
+/// </summary>
+internal sealed class BoolOrStringConverter : System.Text.Json.Serialization.JsonConverter<string?>
+{
+    public override string? Read(ref System.Text.Json.Utf8JsonReader reader,
+        Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+    {
+        return reader.TokenType switch
+        {
+            System.Text.Json.JsonTokenType.Null => null,
+            System.Text.Json.JsonTokenType.False => null,
+            System.Text.Json.JsonTokenType.True => null,
+            System.Text.Json.JsonTokenType.String => reader.GetString(),
+            System.Text.Json.JsonTokenType.Number => reader.TryGetInt64(out var n) ? n.ToString() : null,
+            _ => throw new System.Text.Json.JsonException($"BoolOrStringConverter cannot read TokenType={reader.TokenType}")
+        };
+    }
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, string? value,
+        System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value is null) writer.WriteNullValue();
+        else writer.WriteStringValue(value);
+    }
+}

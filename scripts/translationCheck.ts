@@ -2,7 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { localesNames } from '../src/renderer/i18n/supported-locales';
+import { localesNames } from '../web/renderer/i18n/supported-locales';
 
 const locale = process.argv[2];
 
@@ -18,7 +18,7 @@ if (!Object.keys(localesNames).includes(locale)) {
 
 console.log('Checking missing translations for:', locale);
 
-const i18nDir = join(__dirname, '..', 'src', 'renderer', 'i18n');
+const i18nDir = join(__dirname, '..', 'web', 'renderer', 'i18n');
 const enUS = JSON.parse(readFileSync(join(i18nDir, 'en-US.json'), 'utf-8'));
 const i18nFile = JSON.parse(readFileSync(join(i18nDir, `${locale}.json`), 'utf-8'));
 
