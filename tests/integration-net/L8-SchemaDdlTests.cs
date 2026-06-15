@@ -1,10 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using Antares.Server.Connections;
+using Antares.Server.Infrastructure;
 using Antares.Server.Models.Connection;
 using Antares.Server.Schemas;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Routing;
 using SqlSugar;
 using Xunit;
 using Xunit.Abstractions;
@@ -219,5 +226,61 @@ public sealed class L8_SchemaDdlTests
         Assert.Equal("mydb", p.Name);
         Assert.Equal("utf8mb4", p.Charset);
         Assert.Equal("utf8mb4_general_ci", p.Collation);
+    }
+
+    // ---- Wire-contract: [ExceptionAsEnvelope] covers the three [NonUnify] DDL actions ----
+    // Review finding (L8 important): Create/Update/Delete are [NonUnify] so a SQL exception
+    // bypasses EnvelopeResultProvider.OnException and would surface as raw HTTP 500. The
+    // class-level [ExceptionAsEnvelope] (matching TablesWriteService) converts it to HTTP 200
+    // + { status: "error", response: <message> }. Lock both the presence and the effect.
+
+    [Fact]
+    public void SchemaDdlService_carries_class_level_ExceptionAsEnvelope()
+    {
+        var attr = typeof(SchemaDdlService)
+            .GetCustomAttribute<ExceptionAsEnvelopeAttribute>(inherit: false);
+        Assert.NotNull(attr);
+    }
+
+    [Theory]
+    [InlineData(nameof(SchemaDdlService.Create))]
+    [InlineData(nameof(SchemaDdlService.Update))]
+    [InlineData(nameof(SchemaDdlService.Delete))]
+    public void Each_DDL_action_is_NonUnify_and_covered_by_the_class_level_filter(string method)
+    {
+        var mi = typeof(SchemaDdlService).GetMethod(method)!;
+        // Still hand-shapes its own envelope, so [NonUnify] must remain.
+        Assert.Contains(mi.GetCustomAttributesData(),
+            a => a.AttributeType.Name == "NonUnifyAttribute");
+        // The class-level filter applies to every action — no per-method attribute needed.
+        var classAttr = typeof(SchemaDdlService)
+            .GetCustomAttribute<ExceptionAsEnvelopeAttribute>(inherit: false);
+        Assert.NotNull(classAttr);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task ExceptionAsEnvelope_filter_maps_exception_to_HTTP200_error_envelope()
+    {
+        // Drive the filter exactly as ASP.NET would: a failing DDL (e.g. "Database 'x'
+        // already exists") must become 200 + { status: "error", response: <message> }.
+        var filter = new ExceptionAsEnvelopeAttribute();
+        var ctx = new ExceptionContext(
+            new ActionContext(
+                new DefaultHttpContext(),
+                new RouteData(),
+                new ActionDescriptor()),
+            new List<IFilterMetadata>())
+        {
+            Exception = new InvalidOperationException("Database 'mydb' already exists")
+        };
+
+        await filter.OnExceptionAsync(ctx);
+
+        Assert.True(ctx.ExceptionHandled);
+        var ok = Assert.IsType<OkObjectResult>(ctx.Result);   // HTTP 200, not 500
+        var envelope = ok.Value!;
+        var t = envelope.GetType();
+        Assert.Equal("error", t.GetProperty("status")!.GetValue(envelope));
+        Assert.Equal("Database 'mydb' already exists", t.GetProperty("response")!.GetValue(envelope));
     }
 }
