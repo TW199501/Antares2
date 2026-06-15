@@ -36,6 +36,9 @@ public sealed class TablesWriteService : IDynamicApiController
     [HttpPost("/api/tables/create"), NonUnify]
     public async Task<object> Create([FromBody] CreateTablePayload p, CancellationToken ct)
     {
+        // raw: multi-option CREATE TABLE (per-flavor col defs, PK, auto-increment,
+        // defaults) — DbMaintenance.CreateTable only accepts a List<DbColumnInfo>
+        // that cannot express the full column grammar; keep hand-rolled SQL.
         var entry = _registry.Require(p.Uid);
         var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
         if (p.Columns is null || p.Columns.Count == 0)
@@ -106,23 +109,24 @@ public sealed class TablesWriteService : IDynamicApiController
     }
 
     /// <summary>
-    /// DROP COLUMN per-flavor.全 flavor 都是 `ALTER TABLE x DROP COLUMN c`,
-    /// 但 SQLite 3.35.0+ 才原生支援 — 早期版本 SqlSugar 內部會用 6-step recreate 模擬,
-    /// 我們直接走 raw 等 driver 報錯讓 user 看訊息.
+    /// DROP COLUMN per-flavor via SqlSugar DbMaintenance.DropColumn, which emits
+    /// `ALTER TABLE <q> DROP COLUMN <q>` on mssql/mysql/maria/pg and `ALTER TABLE
+    /// <q> DROP <q>` on sqlite (both forms valid). SqlSugar quotes schema+table+
+    /// column per dialect (Gate-1: mssql [User], mysql/sqlite backtick, pg
+    /// lowercased "user"). SQLite 3.35.0+ supports DROP COLUMN natively; older
+    /// drivers surface their own error — same user-visible behavior as before.
     /// </summary>
     private static async Task ApplyDeletionsAsync(
         ConnectionRegistry.Entry entry, string? schema, string? table,
         List<FieldDto> deletions, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(table)) return;
-        var qualified = QualifyTable(entry.Client, schema, table);
+        var qualified = string.IsNullOrEmpty(schema) ? table : $"{schema}.{table}";
 
         foreach (var f in deletions)
         {
             if (string.IsNullOrEmpty(f.Name)) continue;
-            var col = QuoteIdent(entry.Client, f.Name);
-            var sql = $"ALTER TABLE {qualified} DROP COLUMN {col}";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+            await Task.Run(() => entry.Db.DbMaintenance.DropColumn(qualified, f.Name), ct);
         }
     }
 
@@ -139,6 +143,11 @@ public sealed class TablesWriteService : IDynamicApiController
         ConnectionRegistry.Entry entry, string? schema, string? table,
         List<FieldDto> changes, CancellationToken ct)
     {
+        // raw: type/rename change carries unsigned/zerofill/auto_increment/comment/
+        // collation/on-update/array/enum plus per-flavor multi-statement ordering
+        // (mssql sp_rename-then-alter, pg type+null+default+comment as 4 statements).
+        // DbMaintenance.UpdateColumn/RenameColumn render only `ALTER ... {type}{len}`
+        // and silently drop every modifier above — keep hand-rolled SQL.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -262,6 +271,11 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         IndexChangesDto idx, CancellationToken ct)
     {
+        // raw: DbMaintenance.CreateIndex hardcodes the index name as `Index_<t>_<c>`
+        // (ignoring the user-supplied name the renderer round-trips), forces mssql
+        // NONCLUSTERED, and has no PRIMARY-KEY path — the renderer supports named
+        // unique/normal indexes AND primary keys. DROP-index by name is also
+        // dialect-specific (mysql DROP PRIMARY KEY / DROP INDEX). Keep hand-rolled.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -338,6 +352,7 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         ForeignChangesDto fk, CancellationToken ct)
     {
+        // raw: DbMaintenance has no foreign-key ADD/DROP API; keep hand-rolled SQL.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -381,6 +396,7 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         CheckChangesDto chk, CancellationToken ct)
     {
+        // raw: DbMaintenance has no CHECK-constraint ADD/DROP API; keep hand-rolled SQL.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -424,6 +440,11 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         List<FieldDto> additions, CancellationToken ct)
     {
+        // raw: ADD COLUMN carries unsigned/zerofill/auto_increment/comment/collation/
+        // on-update/after/array/enum and expression-vs-literal defaults plus mysql/pg
+        // batch multi-ADD. DbMaintenance.AddColumn renders only `ALTER ... ADD col
+        // {type}{len}` from DbColumnInfo (no unsigned/zerofill/after/enum/collation/
+        // expression-default fields) and would silently drop them — keep hand-rolled.
         if (string.IsNullOrEmpty(table) || additions.Count == 0) return;
 
         var qualified = QualifyTable(entry.Client, schema, table);
@@ -583,6 +604,10 @@ EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'C
         ConnectionRegistry.Entry entry, string? schema, string table,
         string comment, CancellationToken ct)
     {
+        // raw: DbMaintenance.AddTableRemark on mssql is add-only (sp_addextendedproperty,
+        // hardcoded N'dbo' schema) and throws if the description already exists; this
+        // code does add-or-update via IF EXISTS and honours non-dbo schemas. mysql/pg
+        // remarks are trivial but the mssql update path must be preserved — keep raw.
         switch (entry.Client)
         {
             case "mssql":
@@ -629,6 +654,8 @@ ELSE
     [HttpPost("/api/tables/duplicate"), NonUnify]
     public async Task<object> Duplicate([FromBody] DuplicateTablePayload p, CancellationToken ct)
     {
+        // raw: SELECT INTO / CREATE TABLE LIKE / INCLUDING ALL is a multi-statement
+        // per-flavor structure-clone with no DbMaintenance equivalent — keep raw.
         var entry = _registry.Require(p.Uid);
         var src = QualifyTable(entry.Client, p.Schema, p.Source);
         var dst = QualifyTable(entry.Client, p.Schema, p.Destination);
@@ -654,13 +681,14 @@ ELSE
     public async Task<object> Truncate([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var sql = entry.Client switch
-        {
-            "sqlite" => $"DELETE FROM {qualified}",   // SQLite has no TRUNCATE
-            _ => $"TRUNCATE TABLE {qualified}"
-        };
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        // SqlSugar DbMaintenance.TruncateTable emits `TRUNCATE TABLE <q>` on
+        // mssql/mysql/maria/pg and falls back to `DELETE FROM <q>` (+ an
+        // `UPDATE sqlite_sequence SET seq=0` to reset autoincrement) on sqlite,
+        // which has no TRUNCATE — so the per-flavor switch is now built in. The
+        // sqlite_sequence reset is new vs the old bare DELETE but is the correct
+        // TRUNCATE semantics. Identifiers quoted per dialect (Gate-1).
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
+        await Task.Run(() => entry.Db.DbMaintenance.TruncateTable(table), ct);
         return new { status = "success" };
     }
 
@@ -668,8 +696,11 @@ ELSE
     public async Task<object> Drop([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP TABLE {qualified}"), ct);
+        // SqlSugar DbMaintenance.DropTable emits `DROP TABLE <q>` on every dialect
+        // (identical to the old hand-rolled SQL) and quotes schema+table itself per
+        // flavor (Gate-1: mssql [User], mysql/sqlite backtick, pg lowercased "user").
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
+        await Task.Run(() => entry.Db.DbMaintenance.DropTable(table), ct);
         return new { status = "success" };
     }
 
