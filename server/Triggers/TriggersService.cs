@@ -16,6 +16,7 @@ public sealed class TriggersService : IDynamicApiController
     private readonly ConnectionRegistry _registry;
     public TriggersService(ConnectionRegistry registry) => _registry = registry;
 
+    // raw: DTO needs Table_ (parent table) + Sql (trigger body); DbMaintenance.GetTriggerNames returns List<string> only and cannot supply either field — converting would lose contract fields the renderer consumes.
     [HttpPost("/api/triggers/getInformations")]
     public async Task<List<TriggerInfoDto>> GetInformations([FromBody] TableTargetPayload p, CancellationToken ct)
     {
@@ -33,6 +34,7 @@ public sealed class TriggersService : IDynamicApiController
         return rows.ToList();
     }
 
+    // raw: user-authored CREATE TRIGGER SQL — no DbMaintenance API.
     [HttpPost("/api/triggers/create"), NonUnify]
     public async Task<object> Create([FromBody] TriggerDdlPayload p, CancellationToken ct)
     {
@@ -41,6 +43,7 @@ public sealed class TriggersService : IDynamicApiController
         return new { status = "success" };
     }
 
+    // raw: drop-then-recreate from user-authored trigger SQL — no DbMaintenance API.
     [HttpPost("/api/triggers/alter"), NonUnify]
     public async Task<object> Alter([FromBody] TriggerDdlPayload p, CancellationToken ct)
     {
@@ -51,6 +54,7 @@ public sealed class TriggersService : IDynamicApiController
         return new { status = "success" };
     }
 
+    // raw: DROP TRIGGER — DbMaintenance has no trigger-drop API.
     [HttpPost("/api/triggers/drop"), NonUnify]
     public async Task<object> Drop([FromBody] TriggerDdlPayload p, CancellationToken ct)
     {
@@ -59,6 +63,7 @@ public sealed class TriggersService : IDynamicApiController
         return new { status = "success" };
     }
 
+    // raw: ENABLE/DISABLE TRIGGER (mssql/pg only) — no DbMaintenance API.
     [HttpPost("/api/triggers/toggle"), NonUnify]
     public async Task<object> Toggle([FromBody] TriggerToggleDto p, CancellationToken ct)
     {
