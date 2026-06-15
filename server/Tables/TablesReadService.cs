@@ -76,6 +76,10 @@ ORDER BY c.column_id";
             return rows.ToList();
         }
 
+        // Non-mssql: SqlSugar cross-dialect catalog read. DbColumnInfo supplies every
+        // field TableColumnDto needs (DbColumnName/DataType/Length/DecimalDigits/
+        // IsNullable/DefaultValue/IsIdentity/IsPrimarykey/ColumnDescription), so the
+        // hand-rolled per-flavor information_schema query collapses to one call.
         var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
         var infos = await Task.Run(() =>
         {
@@ -241,6 +245,11 @@ SELECT COALESCE(obj_description((quote_ident(@sc) || '.' || quote_ident(@t))::re
     [HttpPost("/api/tables/getIndexes")]
     public async Task<List<TableIndexDto>> GetIndexes([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // raw: SqlSugar DbMaintenance.GetIndexList(table) returns List<string> (index
+        // names only) in 5.1.4.214 — it carries no Type, no Unique flag, and no
+        // column list, so 3 of TableIndexDto's 4 fields (Type/Unique/Fields) would be
+        // lost. The DTO does not map cleanly; keep the per-dialect grouped catalog SQL
+        // that aggregates Fields via STRING_AGG/GROUP_CONCAT and reads NON_UNIQUE/type_desc.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {
