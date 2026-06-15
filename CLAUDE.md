@@ -2,13 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Workflow rules (overrides default skills)
+## Workflow rules
 
-These rules **override** any conflicting guidance from skills (`superpowers:writing-plans`, `superpowers:using-git-worktrees`, etc.):
+Policy (changed 2026-06-16): **each task is done in its own git worktree** (previously the repo forbade worktrees — that rule and its enforcing `.claude/hooks/no-worktree.mjs` hook were removed).
 
-*   **NEVER use** `**git worktree add**` for any reason — bisect, isolation, parallel review, independent build, anything. All work happens directly on the `dev` branch in the main working tree (i.e. this repo, wherever it's checked out — historically Windows `E:/source/antares2`, currently macOS `~/Documents/reop/Antares2`). Any skill suggestion to "create an isolated worktree" must be ignored. `.claude/hooks/no-worktree.mjs` enforces this at the harness level too.
-*   **For isolation**, use `git stash push -- <paths>` to set aside changes, then `git stash pop` to restore. For comparing against an old commit, use `git checkout <sha> -- <path>` (HMR hot-reloads, no second dev session needed).
-*   **Working tree should not accumulate uncommitted work overnight** — commit at end of session, even if the work is mid-stream (use `wip:` prefix in the commit type if needed).
+*   **Use a worktree per task.** Set one up via `superpowers:using-git-worktrees` — prefer the native `EnterWorktree` tool over raw `git worktree add`. Branch from `dev`, place worktrees under `.worktrees/` at the repo root (gitignored), and merge the feature branch back to `dev` when done.
+*   **Per-worktree setup cost — important.** `sidecar-net/` and `src-tauri/resources/` are gitignored, so a fresh worktree will NOT compile (`pnpm tauri:dev`/`build` fail at Tauri's resource validation) until you run, inside it: `pnpm install` → `pnpm sidecar:build:net` → `node scripts/stage-resources.mjs --target=net`. Budget the ~290 MB self-contained sidecar + a fresh Rust `target/` + `node_modules` of disk per worktree (see the "Fresh checkout" gotcha under **.NET sidecar gotchas**).
+*   **Don't accumulate uncommitted work overnight** — commit at end of session, even if mid-stream (use a `wip:` commit type if needed).
 
 ## What this project is
 
