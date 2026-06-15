@@ -39,16 +39,12 @@ public sealed class TablesWriteService : IDynamicApiController
     {
         // raw: multi-option CREATE TABLE (per-flavor col defs, PK, auto-increment,
         // defaults) — DbMaintenance.CreateTable only accepts a List<DbColumnInfo>
-        // that cannot express the full column grammar; keep hand-rolled SQL.
+        // that cannot express the full column grammar; SQL built by TableDdl.
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
         if (p.Columns is null || p.Columns.Count == 0)
             throw new ArgumentException("at least one column is required");
-
-        var colsSql = string.Join(", ", p.Columns.Select(c => RenderColumn(entry.Client, c)));
-        var pk = p.Columns.Where(c => c.IsPrimary).Select(c => QuoteIdent(entry.Client, c.Name)).ToList();
-        if (pk.Count > 0) colsSql += $", PRIMARY KEY ({string.Join(", ", pk)})";
-        var sql = $"CREATE TABLE {qualified} ({colsSql})";
+        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        var sql = RenderCreateTable(entry.Client, qualified, p.Columns);
 
         await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
         return new { status = "success" };
