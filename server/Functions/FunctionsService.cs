@@ -20,6 +20,10 @@ public sealed class FunctionsService : IDynamicApiController
     [HttpPost("/api/functions/getInformations")]
     public async Task<List<FunctionInfoDto>> GetInformations([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // raw: DbMaintenance.GetFuncList() yields function names only — it cannot supply the
+        // function body, which FunctionInfoDto.Sql carries (OBJECT_DEFINITION / ROUTINE_DEFINITION /
+        // pg_get_functiondef) and the renderer consumes. Converting to GetFuncList would drop the
+        // Sql field and break the wire contract, so the catalog read stays raw to keep field parity.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {
@@ -54,6 +58,11 @@ public sealed class FunctionsService : IDynamicApiController
     public async Task<object> Drop([FromBody] FunctionDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
+        // raw: DbMaintenance.DropFunction(name) emits an UNQUOTED identifier in this SqlSugar
+        // version (5.1.4.214) — empirically locked in L6-FunctionsTests, and the same behavior
+        // verified for the structurally identical DbMaintenance.DropProc (L5) / DropView (L3).
+        // Converting would break dropping a reserved-word function (User/Order/Group/...) that the
+        // hand-rolled per-dialect Quote() path drops correctly — a regression, not a conversion.
         await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP FUNCTION {Quote(entry.Client, p.Name)}"), ct);
         return new { status = "success" };
     }
