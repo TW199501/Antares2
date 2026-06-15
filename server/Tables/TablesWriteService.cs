@@ -40,13 +40,39 @@ public sealed class TablesWriteService : IDynamicApiController
         // raw: multi-option CREATE TABLE (per-flavor col defs, PK, auto-increment,
         // defaults) — DbMaintenance.CreateTable only accepts a List<DbColumnInfo>
         // that cannot express the full column grammar; SQL built by TableDdl.
+        //
+        // The renderer (WorkspaceTabNewTable.vue → Tables.ts:createTable) sends
+        // { uid, schema, fields, foreigns, indexes, checks, options } — the table NAME
+        // lives in options.name and the PRIMARY KEY is a PRIMARY entry in `indexes`,
+        // NOT a `table`/`columns` payload. The old DTO bound Columns/Table (never sent)
+        // so every create threw "at least one column is required" — this binds the real
+        // contract and applies indexes/FKs/checks/comment via the shared Apply* steps.
         var entry = _registry.Require(p.Uid);
-        if (p.Columns is null || p.Columns.Count == 0)
-            throw new ArgumentException("at least one column is required");
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var sql = RenderCreateTable(entry.Client, qualified, p.Columns);
+        var tableName = p.Options is not null && p.Options.TryGetValue("name", out var n) ? n?.ToString() : null;
+        if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("table name required");
+        if (p.Fields is null || p.Fields.Count == 0) throw new ArgumentException("at least one column is required");
 
+        var qualified = QualifyTable(entry.Client, p.Schema, tableName);
+        var indexes = p.Indexes ?? new List<IndexDto>();
+        var primary = indexes.FirstOrDefault(i => i.Type is "PRIMARY" or "PRIMARY KEY");
+        var pkCols = primary?.Fields ?? new List<string>();
+
+        var sql = RenderCreateTableFromFields(entry.Client, qualified, p.Fields, pkCols);
         await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+
+        // Post-steps reuse the ALTER apply logic. PRIMARY is inline in the CREATE above,
+        // so only non-primary indexes are applied here.
+        var nonPrimary = indexes.Where(i => i.Type is not ("PRIMARY" or "PRIMARY KEY")).ToList();
+        if (nonPrimary.Count > 0)
+            await ApplyIndexChangesAsync(entry, p.Schema, tableName, new IndexChangesDto { Additions = nonPrimary }, ct);
+        if (p.Foreigns is { Count: > 0 })
+            await ApplyForeignChangesAsync(entry, p.Schema, tableName, new ForeignChangesDto { Additions = p.Foreigns }, ct);
+        if (p.Checks is { Count: > 0 })
+            await ApplyCheckChangesAsync(entry, p.Schema, tableName, new CheckChangesDto { Additions = p.Checks }, ct);
+        var comment = p.Options is not null && p.Options.TryGetValue("comment", out var cmt) ? cmt?.ToString() : null;
+        if (!string.IsNullOrEmpty(comment))
+            await SetTableCommentAsync(entry, p.Schema, tableName, comment, ct);
+
         return new { status = "success" };
     }
 
@@ -641,19 +667,18 @@ ELSE
 
 // ---- Payloads / DTOs -------------------------------------------------------
 
-public sealed class CreateTablePayload : TableTargetPayload
+// Matches the renderer's CreateTableParams (web/common/interfaces/antares.ts):
+// { uid, schema, fields, foreigns, indexes, checks, options }. Table name + comment
+// live in options; the PRIMARY KEY is a PRIMARY entry in `indexes`.
+public sealed class CreateTablePayload
 {
-    public List<NewColumnDef> Columns { get; set; } = new();
-}
-
-public sealed class NewColumnDef
-{
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = "VARCHAR(255)";
-    public bool Nullable { get; set; } = true;
-    public string? Default { get; set; }
-    public bool IsPrimary { get; set; }
-    public bool AutoIncrement { get; set; }
+    public string Uid { get; set; } = string.Empty;
+    public string? Schema { get; set; }
+    public List<FieldDto>? Fields { get; set; }
+    public List<IndexDto>? Indexes { get; set; }
+    public List<ForeignDto>? Foreigns { get; set; }
+    public List<CheckDto>? Checks { get; set; }
+    public Dictionary<string, object?>? Options { get; set; }
 }
 
 public sealed class AlterTablePayload : TableTargetPayload
