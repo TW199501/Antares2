@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Policy (changed 2026-06-16): **each task is done in its own git worktree** (previously the repo forbade worktrees — that rule and its enforcing `.claude/hooks/no-worktree.mjs` hook were removed).
 
-*   **Use a worktree per task.** Set one up via `superpowers:using-git-worktrees` — prefer the native `EnterWorktree` tool over raw `git worktree add`. Branch from `dev`, place worktrees under `.worktrees/` at the repo root (gitignored), and merge the feature branch back to `dev` when done.
+*   **Use a worktree per task.** Set one up via `superpowers:using-git-worktrees` — use the native `EnterWorktree` tool (it creates the worktree under `.claude/worktrees/`, gitignored). The repo's default branch is the ancient `master`, so `worktree.baseRef` is set to `head` in `.claude/settings.json` — worktrees branch from your current `dev` HEAD, not `origin/master`. Merge the feature branch back to `dev` when done.
 *   **Per-worktree setup cost — important.** `sidecar-net/` and `src-tauri/resources/` are gitignored, so a fresh worktree will NOT compile (`pnpm tauri:dev`/`build` fail at Tauri's resource validation) until you run, inside it: `pnpm install` → `pnpm sidecar:build:net` → `node scripts/stage-resources.mjs --target=net`. Budget the ~290 MB self-contained sidecar + a fresh Rust `target/` + `node_modules` of disk per worktree (see the "Fresh checkout" gotcha under **.NET sidecar gotchas**).
 *   **Don't accumulate uncommitted work overnight** — commit at end of session, even if mid-stream (use a `wip:` commit type if needed).
 
