@@ -80,12 +80,14 @@ ORDER BY c.column_id";
         // field TableColumnDto needs (DbColumnName/DataType/Length/DecimalDigits/
         // IsNullable/DefaultValue/IsIdentity/IsPrimarykey/ColumnDescription), so the
         // hand-rolled per-flavor information_schema query collapses to one call.
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var infos = await Task.Run(() =>
-        {
-            try { return entry.Db.DbMaintenance.GetColumnInfosByTableName(qualified, false); }
-            catch { return entry.Db.DbMaintenance.GetColumnInfosByTableName(p.Table ?? string.Empty, false); }
-        }, ct);
+        // Pass the UNQUOTED `schema.table` and let DbMaintenance quote per dialect
+        // (Gate-1: mssql [User], mysql/sqlite backtick, pg lowercased "user") — same
+        // convention as TablesWriteService.{ApplyDeletionsAsync,Truncate,Drop}. The
+        // old code passed the PRE-QUOTED QualifyTable(...) output, which made SqlSugar
+        // double-quote and forced a schema-losing catch-fallback to the bare table name;
+        // unifying on the unquoted form removes both the double-quote risk and the catch.
+        var qualified = string.IsNullOrEmpty(p.Schema) ? (p.Table ?? string.Empty) : $"{p.Schema}.{p.Table}";
+        var infos = await Task.Run(() => entry.Db.DbMaintenance.GetColumnInfosByTableName(qualified, false), ct);
         return infos.Select((c, idx) => new TableColumnDto
         {
             Order = idx + 1,

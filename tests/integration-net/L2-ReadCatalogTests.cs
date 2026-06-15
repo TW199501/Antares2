@@ -150,6 +150,50 @@ public sealed class L2_ReadCatalogTests
         Assert.Equal(string.Empty, name.Comment);  // null ColumnDescription -> ""
     }
 
+    // Qualifier convention (review fix): GetColumns now passes the UNQUOTED
+    // `schema.table` to GetColumnInfosByTableName and lets SqlSugar quote per dialect
+    // — the same strategy as TablesWriteService.{ApplyDeletionsAsync,Truncate,Drop}.
+    // The old code passed a PRE-QUOTED QualifyTable(...) string, which made SqlSugar
+    // double-quote and forced a schema-losing catch-fallback to the bare table name.
+    // These tests lock that (a) an unquoted qualified name is NOT double-quoted, and
+    // (b) the schema component survives into the catalog query (no bare-table fallback).
+    [Theory]
+    [InlineData("mysql")]
+    [InlineData("maria")]
+    public void GetColumnInfos_unquoted_qualified_name_is_not_double_quoted(string client)
+    {
+        // Mirror of TablesReadService.GetColumns: unquoted `schema.table`.
+        const string schema = "myschema";
+        const string table = "User";
+        var qualified = $"{schema}.{table}";
+
+        var sql = Capture(client, db => db.DbMaintenance.GetColumnInfosByTableName(qualified, false));
+
+        // No nested/double quoting: the raw backtick-wrapped literal `schema.table`
+        // (what would happen if a pre-quoted value were re-quoted) must never appear.
+        Assert.DoesNotContain("``", sql);
+        // The schema name must reach the catalog filter — proves we did NOT silently
+        // drop the schema (the old catch-fallback behavior passed only the bare table).
+        Assert.Contains(schema, sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(table, sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void GetColumnInfos_pg_unquoted_qualified_name_is_not_double_quoted()
+    {
+        const string schema = "myschema";
+        const string table = "User";
+        var qualified = $"{schema}.{table}";
+
+        var sql = Capture("pg", db => db.DbMaintenance.GetColumnInfosByTableName(qualified, false));
+
+        // pg quotes (and folds) identifiers itself; a pre-quoted value would surface as
+        // an escaped-double-quote literal ("") inside the generated SQL. It must not.
+        Assert.DoesNotContain("\"\"", sql);
+        Assert.Contains(schema, sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(table, sql, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ---- GetIndexes stays RAW: prove GetIndexList cannot fill the DTO ---------
 
     // This is the load-bearing guard for the KEEP-RAW decision. GetIndexList(table)
