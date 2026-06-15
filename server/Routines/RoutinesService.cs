@@ -54,11 +54,15 @@ public sealed class RoutinesService : IDynamicApiController
     public async Task<object> Drop([FromBody] RoutineDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        // Converted to the cross-dialect DbMaintenance.DropProc — it emits the correctly
-        // quoted `DROP PROCEDURE <name>` per flavor (mssql [User], mysql/sqlite backtick, pg
-        // lowercased "user"), replacing the hand-rolled Quote() string-interpolation. Operates
-        // on the same p.Name value the raw path used, so the wire contract is byte-identical.
-        await Task.Run(() => entry.Db.DbMaintenance.DropProc(p.Name), ct);
+        // raw: DbMaintenance.DropProc(name) shares the unquoted-identifier behavior empirically
+        // verified for the structurally identical DbMaintenance.DropView in this same SqlSugar
+        // version (5.1.4.214) — see ViewsService.Drop, which emits `DROP VIEW dbo.User` (no
+        // brackets/backticks/quotes) and therefore deliberately keeps the raw per-dialect quoted
+        // DROP. Both are single-identifier DDL-object drops on IDbMaintenance and share the
+        // GetColumnInfosByTableName reserved-word caveat called out in CLAUDE.md. Converting to
+        // DropProc would break dropping a reserved-word procedure (User/Order/Group/...) that the
+        // hand-rolled per-dialect Quote() path drops correctly — a regression, not a conversion.
+        await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP PROCEDURE {Quote(entry.Client, p.Name)}"), ct);
         return new { status = "success" };
     }
 
