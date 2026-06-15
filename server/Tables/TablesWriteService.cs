@@ -448,25 +448,19 @@ ELSE
     public async Task<object> Duplicate([FromBody] DuplicateTablePayload p, CancellationToken ct)
     {
         // raw: SELECT INTO / CREATE TABLE LIKE / INCLUDING ALL is a multi-statement
-        // per-flavor structure-clone with no DbMaintenance equivalent — keep raw.
+        // per-flavor structure-clone with no DbMaintenance equivalent — SQL built by
+        // TableDdl. The renderer sends only { uid, schema, table } (the source), so the
+        // destination is derived as <table>_copy (the broken Source/Destination binding
+        // — both were always empty — is fixed here; see DuplicateTablePayload).
         var entry = _registry.Require(p.Uid);
-        var src = QualifyTable(entry.Client, p.Schema, p.Source);
-        var dst = QualifyTable(entry.Client, p.Schema, p.Destination);
-        var sql = entry.Client switch
-        {
-            "mssql" => $"SELECT * INTO {dst} FROM {src} WHERE 1=0",
-            "mysql" or "maria" => $"CREATE TABLE {dst} LIKE {src}",
-            "pg" => $"CREATE TABLE {dst} (LIKE {src} INCLUDING ALL)",
-            "sqlite" => $"CREATE TABLE {dst} AS SELECT * FROM {src} WHERE 1=0",
-            _ => string.Empty
-        };
-        if (string.IsNullOrEmpty(sql)) throw new NotSupportedException($"duplicate not supported for {entry.Client}");
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
-        if (p.CopyData)
-        {
-            var copy = $"INSERT INTO {dst} SELECT * FROM {src}";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(copy), ct);
-        }
+        if (string.IsNullOrEmpty(p.Table)) throw new ArgumentException("source table required");
+        var destName = $"{p.Table}_copy";
+        var src = QualifyTable(entry.Client, p.Schema, p.Table);
+        var dst = QualifyTable(entry.Client, p.Schema, destName);
+        var stmts = RenderDuplicate(entry.Client, src, dst, p.CopyData);
+        if (stmts.Count == 0) throw new NotSupportedException($"duplicate not supported for {entry.Client}");
+        foreach (var sql in stmts)
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
         return new { status = "success" };
     }
 
@@ -770,12 +764,14 @@ public sealed class CheckDto
     public string Clause { get; set; } = string.Empty;
 }
 
-public sealed class DuplicateTablePayload
+// Renderer sends only { uid, schema, table } (the SOURCE table) — see
+// web/renderer/ipc-api/Tables.ts:duplicateTable + WorkspaceExploreBar.vue. The old
+// DTO bound Source/Destination/CopyData, none of which the renderer sends, so both
+// names were always empty and duplicate produced `CREATE TABLE "" LIKE ""`. Bind the
+// real contract (TableTargetPayload = Uid/Schema/Table) and derive <table>_copy as the
+// destination in Duplicate(). CopyData defaults true (not sent by the renderer today).
+public sealed class DuplicateTablePayload : TableTargetPayload
 {
-    public string Uid { get; set; } = string.Empty;
-    public string? Schema { get; set; }
-    public string Source { get; set; } = string.Empty;
-    public string Destination { get; set; } = string.Empty;
     public bool CopyData { get; set; } = true;
 }
 

@@ -305,4 +305,31 @@ ELSE
         "sqlite" => $"DROP INDEX IF EXISTS \"{Sanitize(idx.Name)}\"",
         _ => string.Empty
     };
+
+    // ---- Duplicate table (structure clone [+ data]) ------------------------
+
+    /// <summary>
+    /// Structure-clone statements per dialect (+ an optional data-copy INSERT):
+    ///   mssql:  SELECT * INTO dst FROM src WHERE 1=0
+    ///   mysql:  CREATE TABLE dst LIKE src
+    ///   pg:     CREATE TABLE dst (LIKE src INCLUDING ALL)
+    ///   sqlite: CREATE TABLE dst AS SELECT * FROM src WHERE 1=0
+    /// Empty list for an unsupported dialect. src/dst must already be qualified+quoted.
+    /// </summary>
+    internal static IReadOnlyList<string> RenderDuplicate(string client, string srcQualified, string dstQualified, bool copyData)
+    {
+        var create = client switch
+        {
+            "mssql" => $"SELECT * INTO {dstQualified} FROM {srcQualified} WHERE 1=0",
+            "mysql" or "maria" => $"CREATE TABLE {dstQualified} LIKE {srcQualified}",
+            "pg" => $"CREATE TABLE {dstQualified} (LIKE {srcQualified} INCLUDING ALL)",
+            "sqlite" => $"CREATE TABLE {dstQualified} AS SELECT * FROM {srcQualified} WHERE 1=0",
+            _ => string.Empty
+        };
+        if (string.IsNullOrEmpty(create)) return System.Array.Empty<string>();
+        var stmts = new List<string> { create };
+        // All four create structure-only; copy rows separately when requested.
+        if (copyData) stmts.Add($"INSERT INTO {dstQualified} SELECT * FROM {srcQualified}");
+        return stmts;
+    }
 }
