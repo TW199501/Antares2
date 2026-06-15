@@ -64,4 +64,26 @@ public sealed class SqlSugarSqlGenTests
         _out.WriteLine($"[{client}] {sql}");
         Assert.Contains(table, sql);
     }
+
+    // Delete path used by TablesWriteService.DeleteRows. The entity-less Deleteable<object>
+    // builder needs an explicit list of IConditionalModel (key col = value) so the WHERE
+    // targets the row's primary-key columns. Lock the per-dialect quoting of the reserved
+    // table "User" and the key column "Id".
+    [Theory]
+    [InlineData("mssql", "[User]", "[Id]")]
+    [InlineData("mysql", "`User`", "`Id`")]
+    [InlineData("pg", "\"user\"", "\"id\"")]
+    [InlineData("sqlite", "`User`", "`Id`")]
+    public void Delete_quotes_reserved_identifiers(string client, string table, string whereCol)
+    {
+        var db = Client(client);
+        var conds = new List<IConditionalModel>
+        {
+            new ConditionalModel { FieldName = "Id", ConditionalType = ConditionalType.Equal, FieldValue = "1" }
+        };
+        var sql = db.Deleteable<object>().AS("User").Where(conds).ToSqlString();
+        _out.WriteLine($"[{client}] {sql}");
+        Assert.Contains(table, sql);
+        Assert.Contains(whereCol, sql);
+    }
 }

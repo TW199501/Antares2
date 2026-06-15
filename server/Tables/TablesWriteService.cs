@@ -3,6 +3,7 @@ using Bogus;
 using Furion.DynamicApiController;
 using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
 
 namespace Antares.Server.Tables;
 
@@ -676,24 +677,24 @@ ELSE
     public async Task<object> UpdateCell([FromBody] UpdateCellPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var col = QuoteIdent(entry.Client, p.Column ?? string.Empty);
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
 
         if (p.Primary is null || p.Primary.Count == 0)
             throw new ArgumentException("primary key cell identifier required");
 
-        var whereParts = new List<string>();
-        var paramObj = new Dictionary<string, object?> { ["v"] = p.Value };
-        var i = 0;
-        foreach (var kv in p.Primary)
+        // SqlSugar entity-less Update: the dict carries BOTH the SET column and the
+        // key columns; WhereColumns(keyCols) marks the keys as the WHERE predicate
+        // (and excludes them from SET). SqlSugar quotes every identifier per dialect,
+        // so no hand-rolled QualifyTable/QuoteIdent is needed here (Gate-1 proven).
+        var dict = new Dictionary<string, object?>
         {
-            var pname = $"p{i}";
-            whereParts.Add($"{QuoteIdent(entry.Client, kv.Key)} = @{pname}");
-            paramObj[pname] = kv.Value;
-            i += 1;
-        }
-        var sql = $"UPDATE {qualified} SET {col} = @v WHERE {string.Join(" AND ", whereParts)}";
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
+            [p.Column ?? string.Empty] = Antares.Server.Infrastructure.JsonValue.Unwrap(p.Value)
+        };
+        var keyCols = p.Primary.Keys.ToArray();
+        foreach (var kv in p.Primary)
+            dict[kv.Key] = Antares.Server.Infrastructure.JsonValue.Unwrap(kv.Value);
+
+        await Task.Run(() => entry.Db.Updateable(dict).AS(table).WhereColumns(keyCols).ExecuteCommand(), ct);
         // Renderer (useResultTables.ts:updateField) reads `response.reload`:
         // false → applyUpdate() patches the cell in-place, true → full reload
         // (legacy Node did this for blob fields). Without a `response` object the
@@ -708,33 +709,36 @@ ELSE
     public async Task<object> DeleteRows([FromBody] DeleteRowsPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        if (p.Rows is null || p.Rows.Count == 0) return new { status = "success" };
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
+        if (p.Rows is null || p.Rows.Count == 0) return new { status = "success", response = new { affectedRows = 0L } };
 
         long affected = 0;
         foreach (var row in p.Rows)
         {
-            var whereParts = new List<string>();
-            var paramObj = new Dictionary<string, object?>();
-            var i = 0;
+            // Build a per-row AND of (keyCol = value) conditionals. SqlSugar's
+            // entity-less Deleteable<object>().Where(List<IConditionalModel>) quotes
+            // each identifier per dialect (Gate-1 proven for the reserved word "User").
+            var conds = new List<IConditionalModel>();
             foreach (var kv in row)
             {
-                var pname = $"p{i}";
-                whereParts.Add($"{QuoteIdent(entry.Client, kv.Key)} = @{pname}");
-                paramObj[pname] = kv.Value;
-                i += 1;
+                conds.Add(new ConditionalModel
+                {
+                    FieldName = kv.Key,
+                    ConditionalType = ConditionalType.Equal,
+                    FieldValue = Antares.Server.Infrastructure.JsonValue.Unwrap(kv.Value)?.ToString()
+                });
             }
-            var sql = $"DELETE FROM {qualified} WHERE {string.Join(" AND ", whereParts)}";
-            affected += await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
+            affected += await Task.Run(
+                () => entry.Db.Deleteable<object>().AS(table).Where(conds).ExecuteCommand(), ct);
         }
-        return new { status = "success", response = affected };
+        return new { status = "success", response = new { affectedRows = affected } };
     }
 
     [HttpPost("/api/tables/insertFakeRows"), NonUnify]
     public async Task<object> InsertFakeRows([FromBody] InsertFakeRowsPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
         var faker = new Faker();
         var inserted = 0;
         var repeat = Math.Max(1, p.Repeat);
@@ -751,7 +755,7 @@ ELSE
                 // add-row UI; any other group is a faker semantic → generate one
                 // (fields[col] carries the column data type for type-aware fakes).
                 if (string.Equals(cell?.Group, "manual", StringComparison.OrdinalIgnoreCase))
-                    values[kv.Key] = cell?.Value;
+                    values[kv.Key] = Antares.Server.Infrastructure.JsonValue.Unwrap(cell?.Value);
                 else
                 {
                     fields.TryGetValue(kv.Key, out var dataType);
@@ -759,13 +763,9 @@ ELSE
                 }
             }
             if (values.Count == 0) break;
-            var keys = values.Keys.ToList();
-            var cols = string.Join(", ", keys.Select(k => QuoteIdent(entry.Client, k)));
-            var paramNames = string.Join(", ", keys.Select((_, idx) => $"@p{idx}"));
-            var paramObj = new Dictionary<string, object?>();
-            for (var idx = 0; idx < keys.Count; idx++) paramObj[$"p{idx}"] = values[keys[idx]];
-            var sql = $"INSERT INTO {qualified} ({cols}) VALUES ({paramNames})";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
+            // SqlSugar entity-less Insert: dict col→value, AS(table) for the target.
+            // Identifiers are quoted per dialect (Gate-1 proven).
+            await Task.Run(() => entry.Db.Insertable(values).AS(table).ExecuteCommand(), ct);
             inserted += 1;
         }
         return new { status = "success", response = new { affectedRows = inserted } };
