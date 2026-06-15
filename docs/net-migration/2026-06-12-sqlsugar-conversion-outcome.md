@@ -118,6 +118,16 @@ faithful extraction (no SQL drift), ready to merge.
   source) but the DTO bound `Source`/`Destination`/`CopyData` (none sent) → empty names
   → `CREATE TABLE "" LIKE ""`. Rebound to `TableTargetPayload`; destination derived as
   `<table>_copy`.
+- **createTable was broken** (found by the pre-merge review) — same DTO-drift class.
+  The renderer sends `{uid,schema,fields,foreigns,indexes,checks,options}` (table name
+  in `options.name`, PRIMARY KEY as a PRIMARY entry in `indexes`), but `CreateTablePayload`
+  bound `Columns`/`Table` (never sent) → every create threw "at least one column is
+  required". Rebound to the real contract; columns render from the rich `FieldDto` via
+  `RenderCreateTableFromFields`, non-primary indexes / FKs / checks / comment applied via
+  the shared `Apply*` steps. Verified end-to-end against real sqlite.
+- Known follow-ups (pre-existing, characterized not fixed): sqlite auto-increment CREATE
+  emits invalid `INT AUTOINCREMENT` (needs `INTEGER PRIMARY KEY AUTOINCREMENT` inline);
+  `<table>_copy` duplicate has no collision-suffix.
 
 ### Why NOT SqlSugar for table-structure DDL (decision, evidence-based)
 
