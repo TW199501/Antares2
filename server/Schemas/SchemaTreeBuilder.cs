@@ -34,6 +34,7 @@ public sealed class SchemaTreeBuilder
     private async Task<List<SchemaInfoDto>> BuildMssqlAsync(ISqlSugarClient db, ISet<string> requested, CancellationToken ct)
     {
         var schemas = new List<SchemaInfoDto>();
+        // raw: schema enumeration with explicit system-schema exclusion list; DbMaintenance.GetDataBaseList lists databases, not user schemas, and offers no system-schema filter.
         var schemaNames = requested.Count > 0
             ? requested.ToList()
             : (await Task.Run(() => db.Ado.SqlQuery<string>("SELECT name FROM sys.schemas WHERE name NOT IN ('sys','INFORMATION_SCHEMA','guest','db_owner','db_accessadmin','db_securityadmin','db_ddladmin','db_backupoperator','db_datareader','db_datawriter','db_denydatareader','db_denydatawriter')"), ct));
@@ -44,6 +45,7 @@ public sealed class SchemaTreeBuilder
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
+                // raw: CTE-heavy metadata read (partition row counts, allocation-page sizes, MS_Description comments) — DbMaintenance.GetTableInfoList supplies only Name/Description, losing Rows/Size the tree needs.
                 // LEFT JOIN sys.extended_properties (class=1 = object, minor_id=0 = the
                 // table itself) for MS_Description so the renderer's table list shows
                 // table-level Chinese descriptions (mirrors the column-level comment fix
@@ -106,6 +108,7 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
     private async Task<List<SchemaInfoDto>> BuildMySqlAsync(ISqlSugarClient db, ISet<string> requested, CancellationToken ct)
     {
         var schemas = new List<SchemaInfoDto>();
+        // raw: schema enumeration with explicit system-schema exclusion list; DbMaintenance.GetDataBaseList offers no system-schema filter.
         var schemaNames = requested.Count > 0
             ? requested.ToList()
             : (await Task.Run(() => db.Ado.SqlQuery<string>("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN ('information_schema','mysql','performance_schema','sys')"), ct));
@@ -116,6 +119,7 @@ WHERE so.type IN ('U','V') AND ss.name = @schema",
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
+                // raw: metadata-heavy read (TABLE_ROWS, DATA_LENGTH+INDEX_LENGTH size, TABLE_COMMENT, ENGINE, TABLE_COLLATION) — DbMaintenance.GetTableInfoList cannot supply these fields.
                 // TABLE_ROWS for InnoDB is an estimate (use SHOW TABLE STATUS / ANALYZE
                 // to refresh stats). DATA_LENGTH+INDEX_LENGTH gives the on-disk byte
                 // total. TABLE_COLLATION is per-table (separate from per-column).
@@ -159,6 +163,7 @@ WHERE TABLE_SCHEMA = @schema",
     private async Task<List<SchemaInfoDto>> BuildPgAsync(ISqlSugarClient db, ISet<string> requested, CancellationToken ct)
     {
         var schemas = new List<SchemaInfoDto>();
+        // raw: schema enumeration with explicit system-schema exclusion list; DbMaintenance.GetDataBaseList offers no system-schema filter.
         var schemaNames = requested.Count > 0
             ? requested.ToList()
             : (await Task.Run(() => db.Ado.SqlQuery<string>("SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema','pg_catalog','pg_toast','pg_temp_1','pg_toast_temp_1')"), ct));
@@ -169,6 +174,7 @@ WHERE TABLE_SCHEMA = @schema",
             var info = new SchemaInfoDto { Name = schemaName };
             try
             {
+                // raw: metadata-heavy read (n_live_tup row estimate, pg_total_relation_size bytes, pg_description comments via multi-join) — DbMaintenance.GetTableInfoList cannot supply these fields.
                 // pg_stat_user_tables.n_live_tup is the planner's row estimate (cheap,
                 // refreshed by ANALYZE). pg_total_relation_size includes table + indexes
                 // + TOAST in bytes. Views: LEFT JOINs naturally yield 0/empty.
@@ -214,6 +220,12 @@ WHERE t.table_schema = @schema",
         var info = new SchemaInfoDto { Name = "main" };
         try
         {
+            // raw: single sqlite_master sweep returns tables+views interleaved in catalog
+            // order with the literal 'table'/'view' type the DTO needs, and excludes
+            // sqlite_% internal objects. Splitting into DbMaintenance.GetTableInfoList +
+            // GetViewInfoList would reorder (tables-then-views), drop the type literal
+            // (DbObjectType enum needs remapping), and cannot be verified to filter
+            // sqlite_% the same way — a contract risk for no metadata gain. Keep raw.
             var tables = await Task.Run(() => db.Ado.SqlQuery<SqliteTableRow>(
                 "SELECT name AS Name, type AS Type FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'"), ct);
             foreach (var t in tables)
