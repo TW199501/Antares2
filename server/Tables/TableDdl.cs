@@ -58,7 +58,9 @@ internal static class TableDdl
         var name = QuoteIdent(client, c.Name);
         var type = c.Type ?? "VARCHAR(255)";
         var nullable = c.Nullable ? string.Empty : " NOT NULL";
-        var def = string.IsNullOrEmpty(c.Default) ? string.Empty : $" DEFAULT {c.Default}";
+        // An identity/auto-increment column must not also carry a DEFAULT — pg and
+        // mssql reject "IDENTITY ... DEFAULT", and it's meaningless on mysql/sqlite.
+        var def = (c.AutoIncrement || string.IsNullOrEmpty(c.Default)) ? string.Empty : $" DEFAULT {c.Default}";
         var auto = c.AutoIncrement ? client switch
         {
             "mysql" or "maria" => " AUTO_INCREMENT",
