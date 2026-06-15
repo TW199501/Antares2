@@ -74,3 +74,29 @@ must-stay-raw methods still use them.
 - Manual real-DB pass (edit cell / add row / alter column / browse columns / list
   views,triggers,routines,functions,databases on MySQL+PG+SQLite+MSSQL incl. a
   reserved-word table): **pending, user-driven**.
+
+## Post-review fixes (final code review, 2026-06-12)
+
+A final code-review pass found two real Important issues, both fixed:
+
+1. **`DeleteRows` discarded key-value CLR types** (`e42d05d`). The converted
+   `Deleteable<object>().Where(ConditionalModel{FieldValue=string})` bound every key as
+   a String/text parameter; mysql/sqlite/mssql implicitly cast, but **Postgres rejects
+   `integer = text` at runtime** — deleting a row by integer PK could fail. New
+   `TablesWriteService.BuildKeyConditional` sets `CSharpTypeName` from the unwrapped
+   CLR type (`long`→`DbType.Int64`, verified offline via `.ToSql()` param inspection)
+   and uses `ConditionalType.EqualNull` for null keys (emits `IS NULL`, no bound param).
+   4 regression tests in `SqlSugarSqlGenTests`.
+2. **NonUnify DDL errors returned raw HTTP 500** on Triggers/Views/Routines/Functions
+   (`80a0787`). Their `[NonUnify]` create/alter/drop/toggle endpoints bypassed the
+   unify provider, so a failing DDL surfaced as 500 (renderer shows a generic toast).
+   Applied class-level `[ExceptionAsEnvelope]` (the same fix L8 used for SchemaDdl) →
+   200 + `{status:"error"}`. Shape-identical to the unify provider's `OnException`, so
+   the unified `GetInformations` reads and the `No active connection` auto-reconnect
+   gate are unaffected.
+
+Review-noted Minor items left for later (pre-existing, not regressions): mssql trigger
+toggle emits `ON []` (renderer sends no table — `TriggersService.BuildToggleSql`);
+`DatabasesService` mysql ordering uses `StringComparer.Ordinal` vs server collation;
+`UpdateCell` empty-SET if the edited column name equals a PK key (not reachable in
+normal cell-edit flow).
