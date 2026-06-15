@@ -16,6 +16,15 @@ public sealed class UsersService : IDynamicApiController
     [HttpPost("/api/users/getUsers")]
     public async Task<List<UserInfoDto>> GetUsers([FromBody] ConnectionService.UidPayload payload, CancellationToken ct)
     {
+        // raw: SqlSugar's DbMaintenance has NO user/login/role enumeration API (it covers
+        // tables/columns/views/indexes/procs/funcs/triggers/primaries/identities/databases only).
+        // Each dialect's principal model is also semantically distinct and irreducible to a
+        // cross-dialect shape — mssql server_principals (type_desc), mysql user@host (Host), pg
+        // pg_roles (rolsuper -> superuser/role) — and the UserInfoDto.Type field is computed
+        // per-dialect by these queries. There is nothing DbMaintenance could supply, so the
+        // catalog read stays raw to keep field parity. (Same outcome as L5-Routines /
+        // L6-Functions GetInformations.) The sqlite/default branch returns an empty list because
+        // SQLite has no user model — documented behavior, not a swallowed exception.
         var entry = _registry.Require(payload.Uid);
         return entry.Client switch
         {
