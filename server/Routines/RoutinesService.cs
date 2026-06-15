@@ -19,6 +19,11 @@ public sealed class RoutinesService : IDynamicApiController
     [HttpPost("/api/routines/getInformations")]
     public async Task<List<RoutineInfoDto>> GetInformations([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // raw: DbMaintenance.GetProcList() returns List<DbProcInfo> (names only) — it cannot
+        // supply the procedure body, which RoutineInfoDto.Sql carries (OBJECT_DEFINITION /
+        // ROUTINE_DEFINITION / routine_definition) and the renderer's RoutineInfos.sql consumes.
+        // Converting to GetProcList would drop the Sql field and break the wire contract, so the
+        // catalog read stays raw to keep field parity.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {
@@ -49,7 +54,11 @@ public sealed class RoutinesService : IDynamicApiController
     public async Task<object> Drop([FromBody] RoutineDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP PROCEDURE {Quote(entry.Client, p.Name)}"), ct);
+        // Converted to the cross-dialect DbMaintenance.DropProc — it emits the correctly
+        // quoted `DROP PROCEDURE <name>` per flavor (mssql [User], mysql/sqlite backtick, pg
+        // lowercased "user"), replacing the hand-rolled Quote() string-interpolation. Operates
+        // on the same p.Name value the raw path used, so the wire contract is byte-identical.
+        await Task.Run(() => entry.Db.DbMaintenance.DropProc(p.Name), ct);
         return new { status = "success" };
     }
 
