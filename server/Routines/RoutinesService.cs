@@ -11,6 +11,9 @@ namespace Antares.Server.Routines;
 /// 4 endpoints. SQLite has no stored-procedure model — returns empty / no-op.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// NonUnify DDL exception path -> 200 + {status:"error"} (parity with
+// TablesWriteService/SchemaDdlService); harmless for the unified read methods.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class RoutinesService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;

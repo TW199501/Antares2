@@ -12,6 +12,12 @@ namespace Antares.Server.Triggers;
 /// Per plan §649-660 Phase 12.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// NonUnify DDL (create/alter/drop/toggle) hand-shape their own envelope; this
+// turns their exception path into 200 + {status:"error"} instead of a raw HTTP
+// 500 the renderer can't read (parity with TablesWriteService/SchemaDdlService).
+// Harmless for the non-NonUnify GetInformations read: same shape the unify
+// provider's OnException already produces.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class TriggersService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;

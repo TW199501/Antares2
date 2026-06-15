@@ -12,6 +12,9 @@ namespace Antares.Server.Views;
 /// 8 endpoints total. Per plan §649-660 Phase 12.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// NonUnify DDL exception path -> 200 + {status:"error"} (parity with
+// TablesWriteService/SchemaDdlService); harmless for the unified read methods.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class ViewsService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;

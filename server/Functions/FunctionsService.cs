@@ -12,6 +12,9 @@ namespace Antares.Server.Functions;
 /// (plpgsql trigger function objects); other DBs use functions only.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// NonUnify DDL exception path -> 200 + {status:"error"} (parity with
+// TablesWriteService/SchemaDdlService); harmless for the unified read methods.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class FunctionsService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;
