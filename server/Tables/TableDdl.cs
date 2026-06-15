@@ -289,4 +289,20 @@ ELSE
             _ => string.Empty
         };
     }
+
+    /// <summary>
+    /// DROP index per dialect. mysql distinguishes PRIMARY (DROP PRIMARY KEY) from a
+    /// named index (DROP INDEX); mssql needs the `ON table`; pg/sqlite use
+    /// DROP INDEX IF EXISTS. Uses the index's (possibly old) name verbatim.
+    /// </summary>
+    internal static string RenderDropIndexSql(string client, string qualified, IndexDto idx) => client switch
+    {
+        "mysql" or "maria" => idx.Type == "PRIMARY"
+            ? $"ALTER TABLE {qualified} DROP PRIMARY KEY"
+            : $"ALTER TABLE {qualified} DROP INDEX `{Sanitize(idx.Name)}`",
+        "mssql" => $"DROP INDEX [{Sanitize(idx.Name)}] ON {qualified}",
+        "pg" => $"DROP INDEX IF EXISTS \"{Sanitize(idx.Name)}\"",
+        "sqlite" => $"DROP INDEX IF EXISTS \"{Sanitize(idx.Name)}\"",
+        _ => string.Empty
+    };
 }

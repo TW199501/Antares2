@@ -191,16 +191,7 @@ public sealed class TablesWriteService : IDynamicApiController
 
         foreach (var d in drops)
         {
-            var sql = entry.Client switch
-            {
-                "mysql" or "maria" => d.Type == "PRIMARY"
-                    ? $"ALTER TABLE {qualified} DROP PRIMARY KEY"
-                    : $"ALTER TABLE {qualified} DROP INDEX `{Sanitize(d.Name)}`",
-                "mssql" => $"DROP INDEX [{Sanitize(d.Name)}] ON {qualified}",
-                "pg" => $"DROP INDEX IF EXISTS \"{Sanitize(d.Name)}\"",
-                "sqlite" => $"DROP INDEX IF EXISTS \"{Sanitize(d.Name)}\"",
-                _ => string.Empty
-            };
+            var sql = RenderDropIndexSql(entry.Client, qualified, d);
             if (!string.IsNullOrEmpty(sql))
                 await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
         }
