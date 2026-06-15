@@ -19,7 +19,6 @@ function detectRid() {
    if (platform === 'win32' && arch === 'x64') return 'win-x64';
    if (platform === 'win32' && arch === 'arm64') return 'win-arm64';
    if (platform === 'linux' && arch === 'x64') return 'linux-x64';
-   if (platform === 'darwin' && arch === 'x64') return 'osx-x64';
    if (platform === 'darwin' && arch === 'arm64') return 'osx-arm64';
    throw new Error(`unsupported platform/arch: ${platform}/${arch}`);
 }

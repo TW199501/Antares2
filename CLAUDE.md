@@ -143,7 +143,7 @@ Three invariants the renderer assumes on every HTTP response — violating any o
 | `web/renderer/components/` | Vue SFCs; `Base*` = reusable primitives, `The*` = single-instance layout |
 | `src-tauri/` | Rust Tauri shell; `src/lib.rs` registers plugins, `src/sidecar.rs` manages the .NET child process (dev = `dotnet run`, release = pre-published binary) |
 | `server/` | **.NET 10 / Furion 4.9.8 sidecar (the only backend).** `Program.cs` boots Furion via `Serve.Run()`; `Startup.cs` (an `AppStartup`) registers DI + middleware. Subfolders by resource: `Connections/`, `Schemas/`, `Tables/`, `Views/`, `Triggers/`, `Routines/`, `Functions/`, `Schedulers/`, `Users/`, `Ai/`, `WebSockets/`, `Workers/`, `Health/`, `Echo/`, `Application/`. `Configuration/` holds static config (`Server.json`). `Infrastructure/` holds cross-cutting pieces: `EnvelopeResultProvider` (Furion `IUnifyResultProvider` impl), `SidecarTokenMiddleware`, `ReadyLineHook` (`IHostedService` that prints `READY:<port>:<token>`), `TokenGenerator`, `PortAllocator`. `Models/` holds DTOs. Built with `pnpm sidecar:build:net` (which calls `dotnet publish`) — output lands in `sidecar-net/antares-server[.exe]` |
-| `server/AntaresServer.csproj` | net10.0, `PublishSingleFile=true`, `SelfContained=true`, RIDs `win-x64;linux-x64;osx-x64;osx-arm64`. NuGet deps: Furion 4.9.8.57, SqlSugarCore 5.1.4.214, MySqlConnector 2.4, Npgsql 8.0.5, Microsoft.Data.SqlClient 5.2.2, Microsoft.Data.Sqlite 9.0, SSH.NET 2024.2, Bogus 35.6 |
+| `server/AntaresServer.csproj` | net10.0, `PublishSingleFile=true`, `SelfContained=true`, RIDs `win-x64;win-arm64;linux-x64;osx-arm64`. NuGet deps: Furion 4.9.8.57, SqlSugarCore 5.1.4.214, MySqlConnector 2.4, Npgsql 8.0.5, Microsoft.Data.SqlClient 5.2.2, Microsoft.Data.Sqlite 9.0, SSH.NET 2024.2, Bogus 35.6 |
 | `tests/integration-net/` | xUnit tests for the .NET sidecar (9 specs as of 2026-06-08, growing) — split into root-level integration (`SkeletonHealthTests` spawns the binary + probes `/health`; `ConnectionConfigBuilderTests` covers the per-flavor switch), `Infrastructure/` unit tests (`EnvelopeResultProviderTests`, `PortAllocatorTests`, `ReadyLineHookTests`, `SidecarTokenMiddlewareTests`, `TokenSourceTests`), `Connections/` (`ConnectionConfigBuilderConnStringTests`), and `Tables/` (`TablesDdlRenderTests` — pure-function `ALTER` DDL renderer). Run via `dotnet test tests/integration-net/Server.IntegrationTests.csproj`, **not** vitest |
 | `sidecar-net/` | Build output of `pnpm sidecar:build:net` — `antares-server[.exe]` (~290 MB self-contained). **Gitignored** — staged into the bundle by `stage-resources.mjs --target=net`. CI / release builds rebuild from source |
 | `scripts/build-net-sidecar.mjs` | Wraps `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true`, then runs the published binary in `--probe-mode` to mechanically verify it can boot and emit `READY:` |
@@ -311,8 +311,8 @@ Tauri v2 auto-merges `tauri.{windows,macos,linux}.conf.json` on top of base `tau
 
 Five workflow files live under `.github/workflows/`. Two drive routine builds, three are auxiliary:
 
-*   `**test-build.yml**` — triggers on push to `dev` (and manual dispatch). Runs vitest unit tests + `test:coverage:check` (hard 60/60 gate) on Linux as a separate job, then builds 4 platforms (Windows / macOS Intel x64 / macOS Apple Silicon / Linux) and uploads as `actions/upload-artifact` with 3-day retention. The unit-test job is the merge gate; coverage failure blocks before the build matrix even starts.
-*   `**release.yml**` — triggers on tag `v[0-9]+.[0-9]+.[0-9]+`, builds the same 4 platforms, and uploads via `ncipollo/release-action` to a **public** (non-draft) GitHub Release. See `### Release process` below for the full flow.
+*   `**test-build.yml**` — triggers on push to `dev` (and manual dispatch). Runs vitest unit tests + `test:coverage:check` (hard 60/60 gate) on Linux as a separate job, then builds 3 platforms (Windows / macOS Apple Silicon / Linux) and uploads as `actions/upload-artifact` with 3-day retention. The unit-test job is the merge gate; coverage failure blocks before the build matrix even starts.
+*   `**release.yml**` — triggers on tag `v[0-9]+.[0-9]+.[0-9]+`, builds the same 3 platforms, and uploads via `ncipollo/release-action` to a **public** (non-draft) GitHub Release. See `### Release process` below for the full flow.
 *   `**codeql-analysis.yml**` — GitHub-managed security scan, scheduled.
 *   `**test-e2e-win.yml**` — Playwright e2e on Windows, **manual dispatch only** (the `push` trigger is commented out). Not part of the merge gate.
 *   `**create-generated-sources.yml**` — upstream legacy from `antares-sql/antares`, retained but not relied on.
@@ -329,7 +329,7 @@ The canonical release flow is **one command**: `pnpm release <version>` (e.g. `p
 4.  Pauses for the author to fill in the prose section (skip via `--no-prompt`).
 5.  Commits `chore(release): bump version <prev> -> <next>`, annotated tag `vX.Y.Z`, pushes `dev` + tag.
 
-Tag push triggers `release.yml`. Each of the 4 build jobs ends with `ncipollo/release-action` which **creates one public Release** (`draft: false`) with `**docs/release-notes-vX.Y.Z.md**` **as the body** (`bodyFile`), `omitBodyDuringUpdate: true` so only the first finishing job sets the body. Subsequent jobs add their artifacts.
+Tag push triggers `release.yml`. Each of the 3 build jobs ends with `ncipollo/release-action` which **creates one public Release** (`draft: false`) with `**docs/release-notes-vX.Y.Z.md**` **as the body** (`bodyFile`), `omitBodyDuringUpdate: true` so only the first finishing job sets the body. Subsequent jobs add their artifacts.
 
 **Three pre-existing bugs were closed in the v0.8.3 release work; if anything regresses, check these first:**
 
@@ -348,7 +348,7 @@ What IS already in place (does no harm without activation):
 
 *   `tauri-plugin-updater = "2"` declared in `src-tauri/Cargo.toml`
 *   `updater:default` + `process:allow-restart` permissions in `src-tauri/capabilities/default.json`
-*   4 build jobs in `.github/workflows/release.yml` pass `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` env vars to `pnpm tauri:build` (silently ignored when secrets are unset)
+*   3 build jobs in `.github/workflows/release.yml` pass `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` env vars to `pnpm tauri:build` (silently ignored when secrets are unset)
 *   Renderer flow: `web/renderer/ipc-api/Updater.ts` + `application` Pinia store (`checkForUpdates` / `installUpdate`) + `ModalSettingsUpdate.vue` UI + i18n keys. With the plugin not registered, `check()` throws → caught → status becomes `'nocheck'` → the "Check for updates" button in settings is a graceful no-op instead of crashing.
 
 **Activating the feature** is a one-time setup:
