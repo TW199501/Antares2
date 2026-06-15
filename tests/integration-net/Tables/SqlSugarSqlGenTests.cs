@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Antares.Server.Connections;
 using Antares.Server.Models.Connection;
+using Antares.Server.Tables;
 using SqlSugar;
 using Xunit;
 using Xunit.Abstractions;
@@ -85,5 +86,52 @@ public sealed class SqlSugarSqlGenTests
         _out.WriteLine($"[{client}] {sql}");
         Assert.Contains(table, sql);
         Assert.Contains(whereCol, sql);
+    }
+
+    // DeleteRows must PRESERVE the key value's CLR type, not stringify it. Without
+    // CSharpTypeName, SqlSugar binds a String/text param — Postgres then rejects
+    // `integer = text` at runtime (delete-row fails). BuildKeyConditional sets the
+    // type so an integer key binds as DbType.Int64. Regression guard for the
+    // code-review finding (2026-06-12). Verified offline via .ToSql() param list.
+    [Fact]
+    public void Delete_preserves_integer_key_param_type()
+    {
+        var db = Client("pg");
+        var conds = new List<IConditionalModel> { TablesWriteService.BuildKeyConditional("id", 42L) };
+        var (sql, pars) = db.Deleteable<object>().AS("User").Where(conds).ToSql();
+        _out.WriteLine($"{sql}  [{pars[0].DbType} {pars[0].Value?.GetType().Name}]");
+        var p = Assert.Single(pars);
+        Assert.IsType<long>(p.Value);                 // NOT the "42" string the old code produced
+        Assert.Equal(System.Data.DbType.Int64, p.DbType);
+    }
+
+    [Fact]
+    public void Delete_keeps_string_key_param_as_string()
+    {
+        var db = Client("pg");
+        var conds = new List<IConditionalModel> { TablesWriteService.BuildKeyConditional("code", "A1") };
+        var (_, pars) = db.Deleteable<object>().AS("User").Where(conds).ToSql();
+        Assert.IsType<string>(Assert.Single(pars).Value);
+    }
+
+    [Fact]
+    public void Delete_double_key_binds_double_param()
+    {
+        var db = Client("pg");
+        var conds = new List<IConditionalModel> { TablesWriteService.BuildKeyConditional("ratio", 1.5d) };
+        var (_, pars) = db.Deleteable<object>().AS("User").Where(conds).ToSql();
+        Assert.IsType<double>(Assert.Single(pars).Value);
+    }
+
+    [Fact]
+    public void Delete_null_key_uses_is_null_not_equals_param()
+    {
+        var db = Client("pg");
+        var conds = new List<IConditionalModel> { TablesWriteService.BuildKeyConditional("id", null) };
+        var (sql, pars) = db.Deleteable<object>().AS("User").Where(conds).ToSql();
+        _out.WriteLine(sql);
+        Assert.Empty(pars);                            // IS NULL binds no parameter (vs the buggy `= @p` on null)
+        Assert.DoesNotContain("@Condit", sql);         // not an equality-parameter comparison
+        Assert.Contains("NULL", sql, System.StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -751,14 +751,7 @@ ELSE
             // each identifier per dialect (Gate-1 proven for the reserved word "User").
             var conds = new List<IConditionalModel>();
             foreach (var kv in row)
-            {
-                conds.Add(new ConditionalModel
-                {
-                    FieldName = kv.Key,
-                    ConditionalType = ConditionalType.Equal,
-                    FieldValue = Antares.Server.Infrastructure.JsonValue.Unwrap(kv.Value)?.ToString()
-                });
-            }
+                conds.Add(BuildKeyConditional(kv.Key, Antares.Server.Infrastructure.JsonValue.Unwrap(kv.Value)));
             affected += await Task.Run(
                 () => entry.Db.Deleteable<object>().AS(table).Where(conds).ExecuteCommand(), ct);
         }
@@ -823,6 +816,38 @@ ELSE
         if (dt.Contains("bool") || dt.Contains("bit")) return f.Random.Bool();
         if (dt.Contains("date") || dt.Contains("time")) return DateTime.UtcNow;
         return f.Lorem.Sentence();
+    }
+
+    // Build a (keyCol = value) conditional for DeleteRows that PRESERVES the value's
+    // CLR type. ConditionalModel.FieldValue is a string, so without CSharpTypeName
+    // SqlSugar emits a String/text parameter — fine on mysql/sqlite/mssql (implicit
+    // cast), but Postgres rejects `integer = text` at runtime. Setting CSharpTypeName
+    // makes SqlSugar bind a typed parameter (verified offline: "long" -> DbType.Int64).
+    // `value` is already JsonValue.Unwrap'd (long/double/bool/string/null).
+    // Date/Guid PKs arrive from JSON as strings (no type info) and stay text — best
+    // effort; the common integer-PK case is the one this fixes.
+    internal static IConditionalModel BuildKeyConditional(string field, object? value)
+    {
+        if (value is null)
+            return new ConditionalModel { FieldName = field, ConditionalType = ConditionalType.EqualNull, FieldValue = null };
+
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var (text, type) = value switch
+        {
+            bool b => (b ? "true" : "false", "bool"),
+            long l => (l.ToString(inv), "long"),
+            int i => (i.ToString(inv), "int"),
+            double d => (d.ToString(inv), "double"),
+            decimal m => (m.ToString(inv), "decimal"),
+            _ => (value.ToString() ?? string.Empty, "string")
+        };
+        return new ConditionalModel
+        {
+            FieldName = field,
+            ConditionalType = ConditionalType.Equal,
+            FieldValue = text,
+            CSharpTypeName = type
+        };
     }
 
     private static string QualifyTable(string client, string? schema, string? table)
