@@ -151,112 +151,17 @@ public sealed class TablesWriteService : IDynamicApiController
         foreach (var f in changes)
         {
             if (string.IsNullOrEmpty(f.Name) || string.IsNullOrEmpty(f.Type)) continue;
-            var orgName = string.IsNullOrEmpty(f.OrgName) ? f.Name : f.OrgName;
 
-            switch (entry.Client)
-            {
-                case "mysql":
-                case "maria":
-                {
-                    var typeUpper = f.Type.ToUpperInvariant();
-                    var lengthSpec = BuildLengthSpec(f);
-                    var sql = $"ALTER TABLE {qualified} CHANGE COLUMN `{Sanitize(orgName)}` `{Sanitize(f.Name)}` {typeUpper}{lengthSpec}"
-                        + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
-                        + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
-                        + (f.Nullable == false ? " NOT NULL" : " NULL")
-                        + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
-                        + RenderDefault(f)
-                        + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
-                        + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
-                        + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty);
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
-                    break;
-                }
-                case "mssql":
-                {
-                    // 必須先 rename(若 orgName 不同),再 alter type — 因為 sp_rename 後續才認新名字.
-                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
-                    {
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(
-                            "EXEC sp_rename @oldname, @newname, 'COLUMN'",
-                            new { oldname = $"{Sanitize(table)}.{Sanitize(orgName)}", newname = f.Name }), ct);
-                    }
-                    var col = QuoteIdent(entry.Client, f.Name);
-                    var typeUpper = f.Type.ToUpperInvariant();
-                    var lengthSpec = BuildLengthSpec(f);
-                    var sql = $"ALTER TABLE {qualified} ALTER COLUMN {col} {typeUpper}{lengthSpec}"
-                        + (f.Nullable == false ? " NOT NULL" : " NULL");
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+            // SQL built by TableDdl.RenderChangeColumn (per-dialect ordered statements,
+            // some parameterized: mssql sp_rename + extended-property comment).
+            var stmts = RenderChangeColumn(entry.Client, qualified, table, schema, f);
+            if (stmts.Count == 0 && entry.Client == "sqlite")
+                _logger.LogWarning("sqlite CHANGE COLUMN type/nullable not supported for {Col} — manual recreate required", f.Name);
 
-                    // MSSQL 欄級註解走 update extended_properties — 跟 T3 表級邏輯類似.
-                    if (!string.IsNullOrEmpty(f.Comment))
-                    {
-                        const string commentSql = @"
-IF EXISTS (
-    SELECT 1 FROM sys.extended_properties ep
-    JOIN sys.tables t ON ep.major_id = t.object_id
-    JOIN sys.schemas s ON t.schema_id = s.schema_id
-    JOIN sys.columns c ON c.object_id = t.object_id AND c.column_id = ep.minor_id
-    WHERE s.name = @sc AND t.name = @t AND c.name = @c AND ep.name = 'MS_Description'
-)
-    EXEC sp_updateextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;
-ELSE
-    EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(commentSql,
-                            new { sc = schema, t = table, c = f.Name, v = f.Comment }), ct);
-                    }
-                    break;
-                }
-                case "pg":
-                {
-                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
-                    {
-                        var sqlR = $"ALTER TABLE {qualified} RENAME COLUMN {QuoteIdent(entry.Client, orgName)} TO {QuoteIdent(entry.Client, f.Name)}";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlR), ct);
-                    }
-                    var col = QuoteIdent(entry.Client, f.Name);
-                    var typeUpper = f.Type.ToUpperInvariant();
-                    var lengthSpec = BuildLengthSpec(f);
-                    var arr = f.IsArray == true ? "[]" : string.Empty;
-                    var sqlT = $"ALTER TABLE {qualified} ALTER COLUMN {col} TYPE {typeUpper}{lengthSpec}{arr}";
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlT), ct);
-
-                    var nullSql = f.Nullable == false
-                        ? $"ALTER TABLE {qualified} ALTER COLUMN {col} SET NOT NULL"
-                        : $"ALTER TABLE {qualified} ALTER COLUMN {col} DROP NOT NULL";
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(nullSql), ct);
-
-                    var defSql = f.Default is null
-                        ? $"ALTER TABLE {qualified} ALTER COLUMN {col} DROP DEFAULT"
-                        : (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase)
-                            ? $"ALTER TABLE {qualified} ALTER COLUMN {col} SET DEFAULT {f.Default}"
-                            : $"ALTER TABLE {qualified} ALTER COLUMN {col} SET DEFAULT '{f.Default.Replace("'", "''")}'");
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(defSql), ct);
-
-                    if (f.Comment is not null)
-                    {
-                        var esc = f.Comment.Replace("'", "''");
-                        var commentSql = $"COMMENT ON COLUMN {qualified}.{col} IS '{esc}'";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(commentSql), ct);
-                    }
-                    break;
-                }
-                case "sqlite":
-                {
-                    // SQLite 3.25.0+ RENAME COLUMN. 改 type / nullable 需 6-step recreate,
-                    // 這裡 best-effort 只做 rename — type 改交由後續手動處理.
-                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
-                    {
-                        var sqlR = $"ALTER TABLE {qualified} RENAME COLUMN \"{Sanitize(orgName)}\" TO \"{Sanitize(f.Name)}\"";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlR), ct);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("sqlite CHANGE COLUMN type/nullable not supported for {Col} — manual recreate required", f.Name);
-                    }
-                    break;
-                }
-            }
+            foreach (var s in stmts)
+                await Task.Run(() => s.Params is null
+                    ? entry.Db.Ado.ExecuteCommand(s.Sql)
+                    : entry.Db.Ado.ExecuteCommand(s.Sql, s.Params), ct);
         }
     }
 

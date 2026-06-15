@@ -161,6 +161,106 @@ internal static class TableDdl
         return $" DEFAULT '{esc}'";
     }
 
+    // ---- ALTER: CHANGE COLUMN (type / rename / modifiers) ------------------
+
+    /// <summary>
+    /// A single DDL statement, optionally parameterized (mssql sp_rename and the
+    /// extended-property comment block bind parameters; everything else is inlined).
+    /// </summary>
+    internal readonly record struct DdlStatement(string Sql, object? Params = null);
+
+    // mssql column-comment add-or-update via extended properties (parameterized).
+    private const string MssqlColumnCommentSql = @"
+IF EXISTS (
+    SELECT 1 FROM sys.extended_properties ep
+    JOIN sys.tables t ON ep.major_id = t.object_id
+    JOIN sys.schemas s ON t.schema_id = s.schema_id
+    JOIN sys.columns c ON c.object_id = t.object_id AND c.column_id = ep.minor_id
+    WHERE s.name = @sc AND t.name = @t AND c.name = @c AND ep.name = 'MS_Description'
+)
+    EXEC sp_updateextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;
+ELSE
+    EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;";
+
+    /// <summary>
+    /// Renders the ordered statement sequence for a column type-change / rename /
+    /// modifier change, per dialect:
+    ///   mysql/maria: single CHANGE COLUMN (rename + type + modifiers in one)
+    ///   mssql:       [sp_rename] → ALTER COLUMN type+null → [extended-property comment]
+    ///   pg:          [RENAME] → ALTER TYPE → SET/DROP NOT NULL → SET/DROP DEFAULT → [COMMENT]
+    ///   sqlite:      RENAME only (type/nullable change needs 6-step recreate — empty list,
+    ///                caller logs a warning)
+    /// </summary>
+    internal static IReadOnlyList<DdlStatement> RenderChangeColumn(
+        string client, string qualifiedTable, string table, string? schema, FieldDto f)
+    {
+        var orgName = string.IsNullOrEmpty(f.OrgName) ? f.Name : f.OrgName;
+        var typeUpper = f.Type.ToUpperInvariant();
+        var lengthSpec = BuildLengthSpec(f);
+        var stmts = new List<DdlStatement>();
+
+        switch (client)
+        {
+            case "mysql":
+            case "maria":
+                stmts.Add(new DdlStatement(
+                    $"ALTER TABLE {qualifiedTable} CHANGE COLUMN `{Sanitize(orgName)}` `{Sanitize(f.Name)}` {typeUpper}{lengthSpec}"
+                    + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
+                    + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
+                    + (f.Nullable == false ? " NOT NULL" : " NULL")
+                    + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
+                    + RenderDefault(f)
+                    + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
+                    + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
+                    + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty)));
+                break;
+
+            case "mssql":
+            {
+                if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
+                    stmts.Add(new DdlStatement("EXEC sp_rename @oldname, @newname, 'COLUMN'",
+                        new { oldname = $"{Sanitize(table)}.{Sanitize(orgName)}", newname = f.Name }));
+                var col = QuoteIdent(client, f.Name);
+                stmts.Add(new DdlStatement(
+                    $"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} {typeUpper}{lengthSpec}"
+                    + (f.Nullable == false ? " NOT NULL" : " NULL")));
+                if (!string.IsNullOrEmpty(f.Comment))
+                    stmts.Add(new DdlStatement(MssqlColumnCommentSql,
+                        new { sc = schema, t = table, c = f.Name, v = f.Comment }));
+                break;
+            }
+
+            case "pg":
+            {
+                var col = QuoteIdent(client, f.Name);
+                if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
+                    stmts.Add(new DdlStatement(
+                        $"ALTER TABLE {qualifiedTable} RENAME COLUMN {QuoteIdent(client, orgName)} TO {col}"));
+                var arr = f.IsArray == true ? "[]" : string.Empty;
+                stmts.Add(new DdlStatement($"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} TYPE {typeUpper}{lengthSpec}{arr}"));
+                stmts.Add(new DdlStatement(f.Nullable == false
+                    ? $"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} SET NOT NULL"
+                    : $"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} DROP NOT NULL"));
+                stmts.Add(new DdlStatement(f.Default is null
+                    ? $"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} DROP DEFAULT"
+                    : (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase)
+                        ? $"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} SET DEFAULT {f.Default}"
+                        : $"ALTER TABLE {qualifiedTable} ALTER COLUMN {col} SET DEFAULT '{f.Default.Replace("'", "''")}'")));
+                if (f.Comment is not null)
+                    stmts.Add(new DdlStatement($"COMMENT ON COLUMN {qualifiedTable}.{col} IS '{f.Comment.Replace("'", "''")}'"));
+                break;
+            }
+
+            case "sqlite":
+                if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
+                    stmts.Add(new DdlStatement(
+                        $"ALTER TABLE {qualifiedTable} RENAME COLUMN \"{Sanitize(orgName)}\" TO \"{Sanitize(f.Name)}\""));
+                // type/nullable change → 6-step recreate, unsupported; empty list, caller warns.
+                break;
+        }
+        return stmts;
+    }
+
     // ---- ALTER: ADD INDEX ---------------------------------------------------
 
     internal static string RenderAddIndexSql(string client, string qualified, IndexDto idx)
