@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.19.0'
+          node-version: '22'
 
       - name: Run audit:renderer
         run: node scripts/audit-renderer-untouched.mjs

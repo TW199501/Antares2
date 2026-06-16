@@ -49,5 +49,6 @@
    "i18n-ally-next.extract.ignored": [
       ""
    ],
-   "i18n-ally-next.extract.keyMaxLength": 40
+   "i18n-ally-next.extract.keyMaxLength": 40,
+   "claudeCode.useTerminal": true
 }

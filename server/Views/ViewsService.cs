@@ -12,6 +12,9 @@ namespace Antares.Server.Views;
 /// 8 endpoints total. Per plan §649-660 Phase 12.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// NonUnify DDL exception path -> 200 + {status:"error"} (parity with
+// TablesWriteService/SchemaDdlService); harmless for the unified read methods.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class ViewsService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;
@@ -20,6 +23,9 @@ public sealed class ViewsService : IDynamicApiController
     [HttpPost("/api/views/getInformations")]
     public async Task<List<ViewInfoDto>> GetInformations([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // raw: DbMaintenance.GetViewInfoList() returns List<DbTableInfo> carrying only
+        // Name/Description/DbObjectType — no view-definition SQL and no schema filter,
+        // so ViewInfoDto.Sql (the whole point of this read) cannot be supplied. Keep raw.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {
@@ -37,6 +43,8 @@ public sealed class ViewsService : IDynamicApiController
     [HttpPost("/api/views/create"), NonUnify]
     public async Task<object> Create([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
+        // raw: IDbMaintenance (SqlSugar 5.1.4.214) has no CreateView — only
+        // CreateTable/CreateIndex/CreateDatabase. No cross-dialect API exists for this.
         var entry = _registry.Require(p.Uid);
         await Task.Run(() => entry.Db.Ado.ExecuteCommand(BuildCreateView(entry.Client, p, materialized: false)), ct);
         return new { status = "success" };
@@ -45,6 +53,9 @@ public sealed class ViewsService : IDynamicApiController
     [HttpPost("/api/views/alter"), NonUnify]
     public async Task<object> Alter([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
+        // raw: no CreateView in IDbMaintenance (see Create); the drop+recreate also keeps
+        // the per-dialect quoted DROP because DbMaintenance.DropView emits UNQUOTED names
+        // (DROP VIEW dbo.User) and would break reserved-word view/schema names — see Drop.
         var entry = _registry.Require(p.Uid);
         var dropSql = entry.Client switch
         {
@@ -62,6 +73,11 @@ public sealed class ViewsService : IDynamicApiController
     [HttpPost("/api/views/drop"), NonUnify]
     public async Task<object> Drop([FromBody] ViewDdlPayload p, CancellationToken ct)
     {
+        // raw: DbMaintenance.DropView(name) in 5.1.4.214 emits an UNQUOTED identifier
+        // (verified: `DROP VIEW dbo.User`, no brackets/backticks/quotes), so it breaks on
+        // reserved-word view/schema names — the same DbMaintenance caveat as
+        // GetColumnInfosByTableName. The hand-rolled per-dialect quoted DROP VIEW below is
+        // strictly safer; converting would be a regression, not a conversion.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {
@@ -76,6 +92,9 @@ public sealed class ViewsService : IDynamicApiController
         return new { status = "success" };
     }
 
+    // raw (all 4 materialized-view endpoints below): PG materialized views have no
+    // DbMaintenance API (no GetMatViewList / CreateMaterializedView / DropMaterializedView)
+    // and definition SQL must come from pg_matviews. PG-only by design.
     [HttpPost("/api/views/getMaterializedInformations")]
     public async Task<List<ViewInfoDto>> GetMaterialized([FromBody] TableTargetPayload p, CancellationToken ct)
     {

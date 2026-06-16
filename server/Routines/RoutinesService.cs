@@ -11,6 +11,9 @@ namespace Antares.Server.Routines;
 /// 4 endpoints. SQLite has no stored-procedure model — returns empty / no-op.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// NonUnify DDL exception path -> 200 + {status:"error"} (parity with
+// TablesWriteService/SchemaDdlService); harmless for the unified read methods.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class RoutinesService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;
@@ -19,6 +22,11 @@ public sealed class RoutinesService : IDynamicApiController
     [HttpPost("/api/routines/getInformations")]
     public async Task<List<RoutineInfoDto>> GetInformations([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // raw: DbMaintenance.GetProcList() returns List<DbProcInfo> (names only) — it cannot
+        // supply the procedure body, which RoutineInfoDto.Sql carries (OBJECT_DEFINITION /
+        // ROUTINE_DEFINITION / routine_definition) and the renderer's RoutineInfos.sql consumes.
+        // Converting to GetProcList would drop the Sql field and break the wire contract, so the
+        // catalog read stays raw to keep field parity.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {
@@ -49,6 +57,14 @@ public sealed class RoutinesService : IDynamicApiController
     public async Task<object> Drop([FromBody] RoutineDdlPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
+        // raw: DbMaintenance.DropProc(name) shares the unquoted-identifier behavior empirically
+        // verified for the structurally identical DbMaintenance.DropView in this same SqlSugar
+        // version (5.1.4.214) — see ViewsService.Drop, which emits `DROP VIEW dbo.User` (no
+        // brackets/backticks/quotes) and therefore deliberately keeps the raw per-dialect quoted
+        // DROP. Both are single-identifier DDL-object drops on IDbMaintenance and share the
+        // GetColumnInfosByTableName reserved-word caveat called out in CLAUDE.md. Converting to
+        // DropProc would break dropping a reserved-word procedure (User/Order/Group/...) that the
+        // hand-rolled per-dialect Quote() path drops correctly — a regression, not a conversion.
         await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP PROCEDURE {Quote(entry.Client, p.Name)}"), ct);
         return new { status = "success" };
     }

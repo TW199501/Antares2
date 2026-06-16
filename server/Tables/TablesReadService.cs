@@ -76,12 +76,18 @@ ORDER BY c.column_id";
             return rows.ToList();
         }
 
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var infos = await Task.Run(() =>
-        {
-            try { return entry.Db.DbMaintenance.GetColumnInfosByTableName(qualified, false); }
-            catch { return entry.Db.DbMaintenance.GetColumnInfosByTableName(p.Table ?? string.Empty, false); }
-        }, ct);
+        // Non-mssql: SqlSugar cross-dialect catalog read. DbColumnInfo supplies every
+        // field TableColumnDto needs (DbColumnName/DataType/Length/DecimalDigits/
+        // IsNullable/DefaultValue/IsIdentity/IsPrimarykey/ColumnDescription), so the
+        // hand-rolled per-flavor information_schema query collapses to one call.
+        // Pass the UNQUOTED `schema.table` and let DbMaintenance quote per dialect
+        // (Gate-1: mssql [User], mysql/sqlite backtick, pg lowercased "user") — same
+        // convention as TablesWriteService.{ApplyDeletionsAsync,Truncate,Drop}. The
+        // old code passed the PRE-QUOTED QualifyTable(...) output, which made SqlSugar
+        // double-quote and forced a schema-losing catch-fallback to the bare table name;
+        // unifying on the unquoted form removes both the double-quote risk and the catch.
+        var qualified = string.IsNullOrEmpty(p.Schema) ? (p.Table ?? string.Empty) : $"{p.Schema}.{p.Table}";
+        var infos = await Task.Run(() => entry.Db.DbMaintenance.GetColumnInfosByTableName(qualified, false), ct);
         return infos.Select((c, idx) => new TableColumnDto
         {
             Order = idx + 1,
@@ -241,6 +247,11 @@ SELECT COALESCE(obj_description((quote_ident(@sc) || '.' || quote_ident(@t))::re
     [HttpPost("/api/tables/getIndexes")]
     public async Task<List<TableIndexDto>> GetIndexes([FromBody] TableTargetPayload p, CancellationToken ct)
     {
+        // raw: SqlSugar DbMaintenance.GetIndexList(table) returns List<string> (index
+        // names only) in 5.1.4.214 — it carries no Type, no Unique flag, and no
+        // column list, so 3 of TableIndexDto's 4 fields (Type/Unique/Fields) would be
+        // lost. The DTO does not map cleanly; keep the per-dialect grouped catalog SQL
+        // that aggregates Fields via STRING_AGG/GROUP_CONCAT and reads NON_UNIQUE/type_desc.
         var entry = _registry.Require(p.Uid);
         var sql = entry.Client switch
         {

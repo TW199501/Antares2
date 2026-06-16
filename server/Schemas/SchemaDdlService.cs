@@ -17,6 +17,14 @@ namespace Antares.Server.Schemas;
 ///   attached database files. Currently no-op pending Phase 12 SQLite-specific path.
 /// </summary>
 [ApiDescriptionSettings(KeepName = true)]
+// Create/Update/Delete are all [NonUnify] (they hand-shape their own
+// { status, response } envelope), which bypasses EnvelopeResultProvider.OnException.
+// Without this filter a failing CREATE/ALTER/DROP DATABASE (already exists, permission
+// denied, etc.) surfaces as a raw HTTP 500 — httpClient.ts:47 short-circuits on !res.ok
+// and shows a generic "API error 500" toast instead of the real DB error. The filter
+// converts the exception to HTTP 200 + { status: "error", response: <message> }, matching
+// the wire contract (200 is canonical for both success and error) and TablesWriteService.
+[Antares.Server.Infrastructure.ExceptionAsEnvelope]
 public sealed class SchemaDdlService : IDynamicApiController
 {
     private readonly ConnectionRegistry _registry;

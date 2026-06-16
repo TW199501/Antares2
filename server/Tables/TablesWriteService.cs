@@ -3,6 +3,8 @@ using Bogus;
 using Furion.DynamicApiController;
 using Furion.UnifyResult;
 using Microsoft.AspNetCore.Mvc;
+using SqlSugar;
+using static Antares.Server.Tables.TableDdl;
 
 namespace Antares.Server.Tables;
 
@@ -35,17 +37,42 @@ public sealed class TablesWriteService : IDynamicApiController
     [HttpPost("/api/tables/create"), NonUnify]
     public async Task<object> Create([FromBody] CreateTablePayload p, CancellationToken ct)
     {
+        // raw: multi-option CREATE TABLE (per-flavor col defs, PK, auto-increment,
+        // defaults) — DbMaintenance.CreateTable only accepts a List<DbColumnInfo>
+        // that cannot express the full column grammar; SQL built by TableDdl.
+        //
+        // The renderer (WorkspaceTabNewTable.vue → Tables.ts:createTable) sends
+        // { uid, schema, fields, foreigns, indexes, checks, options } — the table NAME
+        // lives in options.name and the PRIMARY KEY is a PRIMARY entry in `indexes`,
+        // NOT a `table`/`columns` payload. The old DTO bound Columns/Table (never sent)
+        // so every create threw "at least one column is required" — this binds the real
+        // contract and applies indexes/FKs/checks/comment via the shared Apply* steps.
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        if (p.Columns is null || p.Columns.Count == 0)
-            throw new ArgumentException("at least one column is required");
+        var tableName = p.Options is not null && p.Options.TryGetValue("name", out var n) ? n?.ToString() : null;
+        if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("table name required");
+        if (p.Fields is null || p.Fields.Count == 0) throw new ArgumentException("at least one column is required");
 
-        var colsSql = string.Join(", ", p.Columns.Select(c => RenderColumn(entry.Client, c)));
-        var pk = p.Columns.Where(c => c.IsPrimary).Select(c => QuoteIdent(entry.Client, c.Name)).ToList();
-        if (pk.Count > 0) colsSql += $", PRIMARY KEY ({string.Join(", ", pk)})";
-        var sql = $"CREATE TABLE {qualified} ({colsSql})";
+        var qualified = QualifyTable(entry.Client, p.Schema, tableName);
+        var indexes = p.Indexes ?? new List<IndexDto>();
+        var primary = indexes.FirstOrDefault(i => i.Type is "PRIMARY" or "PRIMARY KEY");
+        var pkCols = primary?.Fields ?? new List<string>();
 
+        var sql = RenderCreateTableFromFields(entry.Client, qualified, p.Fields, pkCols);
         await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+
+        // Post-steps reuse the ALTER apply logic. PRIMARY is inline in the CREATE above,
+        // so only non-primary indexes are applied here.
+        var nonPrimary = indexes.Where(i => i.Type is not ("PRIMARY" or "PRIMARY KEY")).ToList();
+        if (nonPrimary.Count > 0)
+            await ApplyIndexChangesAsync(entry, p.Schema, tableName, new IndexChangesDto { Additions = nonPrimary }, ct);
+        if (p.Foreigns is { Count: > 0 })
+            await ApplyForeignChangesAsync(entry, p.Schema, tableName, new ForeignChangesDto { Additions = p.Foreigns }, ct);
+        if (p.Checks is { Count: > 0 })
+            await ApplyCheckChangesAsync(entry, p.Schema, tableName, new CheckChangesDto { Additions = p.Checks }, ct);
+        var comment = p.Options is not null && p.Options.TryGetValue("comment", out var cmt) ? cmt?.ToString() : null;
+        if (!string.IsNullOrEmpty(comment))
+            await SetTableCommentAsync(entry, p.Schema, tableName, comment, ct);
+
         return new { status = "success" };
     }
 
@@ -105,23 +132,24 @@ public sealed class TablesWriteService : IDynamicApiController
     }
 
     /// <summary>
-    /// DROP COLUMN per-flavor.全 flavor 都是 `ALTER TABLE x DROP COLUMN c`,
-    /// 但 SQLite 3.35.0+ 才原生支援 — 早期版本 SqlSugar 內部會用 6-step recreate 模擬,
-    /// 我們直接走 raw 等 driver 報錯讓 user 看訊息.
+    /// DROP COLUMN per-flavor via SqlSugar DbMaintenance.DropColumn, which emits
+    /// `ALTER TABLE <q> DROP COLUMN <q>` on mssql/mysql/maria/pg and `ALTER TABLE
+    /// <q> DROP <q>` on sqlite (both forms valid). SqlSugar quotes schema+table+
+    /// column per dialect (Gate-1: mssql [User], mysql/sqlite backtick, pg
+    /// lowercased "user"). SQLite 3.35.0+ supports DROP COLUMN natively; older
+    /// drivers surface their own error — same user-visible behavior as before.
     /// </summary>
     private static async Task ApplyDeletionsAsync(
         ConnectionRegistry.Entry entry, string? schema, string? table,
         List<FieldDto> deletions, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(table)) return;
-        var qualified = QualifyTable(entry.Client, schema, table);
+        var qualified = string.IsNullOrEmpty(schema) ? table : $"{schema}.{table}";
 
         foreach (var f in deletions)
         {
             if (string.IsNullOrEmpty(f.Name)) continue;
-            var col = QuoteIdent(entry.Client, f.Name);
-            var sql = $"ALTER TABLE {qualified} DROP COLUMN {col}";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+            await Task.Run(() => entry.Db.DbMaintenance.DropColumn(qualified, f.Name), ct);
         }
     }
 
@@ -138,118 +166,28 @@ public sealed class TablesWriteService : IDynamicApiController
         ConnectionRegistry.Entry entry, string? schema, string? table,
         List<FieldDto> changes, CancellationToken ct)
     {
+        // raw: type/rename change carries unsigned/zerofill/auto_increment/comment/
+        // collation/on-update/array/enum plus per-flavor multi-statement ordering
+        // (mssql sp_rename-then-alter, pg type+null+default+comment as 4 statements).
+        // DbMaintenance.UpdateColumn/RenameColumn render only `ALTER ... {type}{len}`
+        // and silently drop every modifier above — keep hand-rolled SQL.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
         foreach (var f in changes)
         {
             if (string.IsNullOrEmpty(f.Name) || string.IsNullOrEmpty(f.Type)) continue;
-            var orgName = string.IsNullOrEmpty(f.OrgName) ? f.Name : f.OrgName;
 
-            switch (entry.Client)
-            {
-                case "mysql":
-                case "maria":
-                {
-                    var typeUpper = f.Type.ToUpperInvariant();
-                    var lengthSpec = BuildLengthSpec(f);
-                    var sql = $"ALTER TABLE {qualified} CHANGE COLUMN `{Sanitize(orgName)}` `{Sanitize(f.Name)}` {typeUpper}{lengthSpec}"
-                        + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
-                        + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
-                        + (f.Nullable == false ? " NOT NULL" : " NULL")
-                        + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
-                        + RenderDefault(f)
-                        + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
-                        + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
-                        + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty);
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
-                    break;
-                }
-                case "mssql":
-                {
-                    // 必須先 rename(若 orgName 不同),再 alter type — 因為 sp_rename 後續才認新名字.
-                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
-                    {
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(
-                            "EXEC sp_rename @oldname, @newname, 'COLUMN'",
-                            new { oldname = $"{Sanitize(table)}.{Sanitize(orgName)}", newname = f.Name }), ct);
-                    }
-                    var col = QuoteIdent(entry.Client, f.Name);
-                    var typeUpper = f.Type.ToUpperInvariant();
-                    var lengthSpec = BuildLengthSpec(f);
-                    var sql = $"ALTER TABLE {qualified} ALTER COLUMN {col} {typeUpper}{lengthSpec}"
-                        + (f.Nullable == false ? " NOT NULL" : " NULL");
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+            // SQL built by TableDdl.RenderChangeColumn (per-dialect ordered statements,
+            // some parameterized: mssql sp_rename + extended-property comment).
+            var stmts = RenderChangeColumn(entry.Client, qualified, table, schema, f);
+            if (stmts.Count == 0 && entry.Client == "sqlite")
+                _logger.LogWarning("sqlite CHANGE COLUMN type/nullable not supported for {Col} — manual recreate required", f.Name);
 
-                    // MSSQL 欄級註解走 update extended_properties — 跟 T3 表級邏輯類似.
-                    if (!string.IsNullOrEmpty(f.Comment))
-                    {
-                        const string commentSql = @"
-IF EXISTS (
-    SELECT 1 FROM sys.extended_properties ep
-    JOIN sys.tables t ON ep.major_id = t.object_id
-    JOIN sys.schemas s ON t.schema_id = s.schema_id
-    JOIN sys.columns c ON c.object_id = t.object_id AND c.column_id = ep.minor_id
-    WHERE s.name = @sc AND t.name = @t AND c.name = @c AND ep.name = 'MS_Description'
-)
-    EXEC sp_updateextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;
-ELSE
-    EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'COLUMN', @c;";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(commentSql,
-                            new { sc = schema, t = table, c = f.Name, v = f.Comment }), ct);
-                    }
-                    break;
-                }
-                case "pg":
-                {
-                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
-                    {
-                        var sqlR = $"ALTER TABLE {qualified} RENAME COLUMN {QuoteIdent(entry.Client, orgName)} TO {QuoteIdent(entry.Client, f.Name)}";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlR), ct);
-                    }
-                    var col = QuoteIdent(entry.Client, f.Name);
-                    var typeUpper = f.Type.ToUpperInvariant();
-                    var lengthSpec = BuildLengthSpec(f);
-                    var arr = f.IsArray == true ? "[]" : string.Empty;
-                    var sqlT = $"ALTER TABLE {qualified} ALTER COLUMN {col} TYPE {typeUpper}{lengthSpec}{arr}";
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlT), ct);
-
-                    var nullSql = f.Nullable == false
-                        ? $"ALTER TABLE {qualified} ALTER COLUMN {col} SET NOT NULL"
-                        : $"ALTER TABLE {qualified} ALTER COLUMN {col} DROP NOT NULL";
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(nullSql), ct);
-
-                    var defSql = f.Default is null
-                        ? $"ALTER TABLE {qualified} ALTER COLUMN {col} DROP DEFAULT"
-                        : (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase)
-                            ? $"ALTER TABLE {qualified} ALTER COLUMN {col} SET DEFAULT {f.Default}"
-                            : $"ALTER TABLE {qualified} ALTER COLUMN {col} SET DEFAULT '{f.Default.Replace("'", "''")}'");
-                    await Task.Run(() => entry.Db.Ado.ExecuteCommand(defSql), ct);
-
-                    if (f.Comment is not null)
-                    {
-                        var esc = f.Comment.Replace("'", "''");
-                        var commentSql = $"COMMENT ON COLUMN {qualified}.{col} IS '{esc}'";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(commentSql), ct);
-                    }
-                    break;
-                }
-                case "sqlite":
-                {
-                    // SQLite 3.25.0+ RENAME COLUMN. 改 type / nullable 需 6-step recreate,
-                    // 這裡 best-effort 只做 rename — type 改交由後續手動處理.
-                    if (!string.Equals(orgName, f.Name, StringComparison.Ordinal))
-                    {
-                        var sqlR = $"ALTER TABLE {qualified} RENAME COLUMN \"{Sanitize(orgName)}\" TO \"{Sanitize(f.Name)}\"";
-                        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sqlR), ct);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("sqlite CHANGE COLUMN type/nullable not supported for {Col} — manual recreate required", f.Name);
-                    }
-                    break;
-                }
-            }
+            foreach (var s in stmts)
+                await Task.Run(() => s.Params is null
+                    ? entry.Db.Ado.ExecuteCommand(s.Sql)
+                    : entry.Db.Ado.ExecuteCommand(s.Sql, s.Params), ct);
         }
     }
 
@@ -261,6 +199,11 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         IndexChangesDto idx, CancellationToken ct)
     {
+        // raw: DbMaintenance.CreateIndex hardcodes the index name as `Index_<t>_<c>`
+        // (ignoring the user-supplied name the renderer round-trips), forces mssql
+        // NONCLUSTERED, and has no PRIMARY-KEY path — the renderer supports named
+        // unique/normal indexes AND primary keys. DROP-index by name is also
+        // dialect-specific (mysql DROP PRIMARY KEY / DROP INDEX). Keep hand-rolled.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -274,16 +217,7 @@ ELSE
 
         foreach (var d in drops)
         {
-            var sql = entry.Client switch
-            {
-                "mysql" or "maria" => d.Type == "PRIMARY"
-                    ? $"ALTER TABLE {qualified} DROP PRIMARY KEY"
-                    : $"ALTER TABLE {qualified} DROP INDEX `{Sanitize(d.Name)}`",
-                "mssql" => $"DROP INDEX [{Sanitize(d.Name)}] ON {qualified}",
-                "pg" => $"DROP INDEX IF EXISTS \"{Sanitize(d.Name)}\"",
-                "sqlite" => $"DROP INDEX IF EXISTS \"{Sanitize(d.Name)}\"",
-                _ => string.Empty
-            };
+            var sql = RenderDropIndexSql(entry.Client, qualified, d);
             if (!string.IsNullOrEmpty(sql))
                 await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
         }
@@ -302,33 +236,6 @@ ELSE
         }
     }
 
-    internal static string RenderAddIndexSql(string client, string qualified, IndexDto idx)
-    {
-        var fields = string.Join(",", idx.Fields.Select(f => QuoteIdent(client, f)));
-        return client switch
-        {
-            "mysql" or "maria" => idx.Type == "PRIMARY"
-                ? $"ALTER TABLE {qualified} ADD PRIMARY KEY ({fields})"
-                : idx.Type == "UNIQUE"
-                    ? $"ALTER TABLE {qualified} ADD UNIQUE INDEX `{Sanitize(idx.Name)}` ({fields})"
-                    : $"ALTER TABLE {qualified} ADD INDEX `{Sanitize(idx.Name)}` ({fields})",
-            "mssql" => idx.Type == "PRIMARY"
-                ? $"ALTER TABLE {qualified} ADD CONSTRAINT [{Sanitize(idx.Name)}] PRIMARY KEY ({fields})"
-                : idx.Type == "UNIQUE"
-                    ? $"CREATE UNIQUE INDEX [{Sanitize(idx.Name)}] ON {qualified} ({fields})"
-                    : $"CREATE INDEX [{Sanitize(idx.Name)}] ON {qualified} ({fields})",
-            "pg" => idx.Type == "PRIMARY"
-                ? $"ALTER TABLE {qualified} ADD CONSTRAINT \"{Sanitize(idx.Name)}\" PRIMARY KEY ({fields})"
-                : idx.Type == "UNIQUE"
-                    ? $"CREATE UNIQUE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})"
-                    : $"CREATE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})",
-            "sqlite" => idx.Type == "UNIQUE"
-                ? $"CREATE UNIQUE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})"
-                : $"CREATE INDEX \"{Sanitize(idx.Name)}\" ON {qualified} ({fields})",
-            _ => string.Empty
-        };
-    }
-
     /// <summary>
     /// ForeignChanges per-flavor.MySQL 用 DROP/ADD FOREIGN KEY + CONSTRAINT,
     /// 其他 flavor 都是 standard ALTER TABLE ... DROP CONSTRAINT / ADD CONSTRAINT.
@@ -337,6 +244,7 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         ForeignChangesDto fk, CancellationToken ct)
     {
+        // raw: DbMaintenance has no foreign-key ADD/DROP API; keep hand-rolled SQL.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -380,6 +288,7 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         CheckChangesDto chk, CancellationToken ct)
     {
+        // raw: DbMaintenance has no CHECK-constraint ADD/DROP API; keep hand-rolled SQL.
         if (string.IsNullOrEmpty(table)) return;
         var qualified = QualifyTable(entry.Client, schema, table);
 
@@ -423,6 +332,11 @@ ELSE
         ConnectionRegistry.Entry entry, string? schema, string? table,
         List<FieldDto> additions, CancellationToken ct)
     {
+        // raw: ADD COLUMN carries unsigned/zerofill/auto_increment/comment/collation/
+        // on-update/after/array/enum and expression-vs-literal defaults plus mysql/pg
+        // batch multi-ADD. DbMaintenance.AddColumn renders only `ALTER ... ADD col
+        // {type}{len}` from DbColumnInfo (no unsigned/zerofill/after/enum/collation/
+        // expression-default fields) and would silently drop them — keep hand-rolled.
         if (string.IsNullOrEmpty(table) || additions.Count == 0) return;
 
         var qualified = QualifyTable(entry.Client, schema, table);
@@ -481,79 +395,6 @@ EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'C
     }
 
     /// <summary>
-    /// 渲染單一 ADD COLUMN clause(無 leading `ALTER TABLE x` 前綴).
-    /// 各 flavor 的 keyword / 順序 / 修飾字差異:
-    ///   mssql:  ADD [name] TYPE(len)        IDENTITY(1,1) NULL|NOT NULL DEFAULT v
-    ///   mysql:  ADD COLUMN `name` TYPE(len) UNSIGNED ZEROFILL NULL|NOT NULL AUTO_INCREMENT DEFAULT v COMMENT '...' COLLATE x AFTER `c`
-    ///   pg:     ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
-    ///   sqlite: ADD COLUMN "name" TYPE(len) NULL|NOT NULL DEFAULT v
-    /// </summary>
-    internal static string RenderAddColumnClause(string client, FieldDto f)
-    {
-        var name = QuoteIdent(client, f.Name);
-        var typeUpper = f.Type.ToUpperInvariant();
-        var lengthSpec = BuildLengthSpec(f);
-
-        return client switch
-        {
-            "mssql" => $"ADD {name} {typeUpper}{lengthSpec}"
-                + (f.AutoIncrement == true ? " IDENTITY(1,1)" : string.Empty)
-                + (f.Nullable == false ? " NOT NULL" : " NULL")
-                + RenderDefault(f),
-
-            "mysql" or "maria" => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
-                + (f.Unsigned == true ? " UNSIGNED" : string.Empty)
-                + (f.Zerofill == true ? " ZEROFILL" : string.Empty)
-                + (f.Nullable == false ? " NOT NULL" : " NULL")
-                + (f.AutoIncrement == true ? " AUTO_INCREMENT" : string.Empty)
-                + RenderDefault(f)
-                + (!string.IsNullOrEmpty(f.Comment) ? $" COMMENT '{f.Comment.Replace("'", "''")}'" : string.Empty)
-                + (!string.IsNullOrEmpty(f.Collation) ? $" COLLATE {f.Collation}" : string.Empty)
-                + (!string.IsNullOrEmpty(f.OnUpdate) ? $" ON UPDATE {f.OnUpdate}" : string.Empty)
-                + (!string.IsNullOrEmpty(f.After) ? $" AFTER `{Sanitize(f.After)}`" : string.Empty),
-
-            "pg" => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
-                + (f.IsArray == true ? "[]" : string.Empty)
-                + (f.Nullable == false ? " NOT NULL" : string.Empty)
-                + RenderDefault(f),
-
-            _ => $"ADD COLUMN {name} {typeUpper}{lengthSpec}"
-                + (f.Nullable == false ? " NOT NULL" : string.Empty)
-                + RenderDefault(f),
-        };
-    }
-
-    /// <summary>
-    /// 從 FieldDto 拼長度修飾,例如 `(255)`、`(10,2)`、`('a','b')` for ENUM.
-    /// 渲染端會根據 dataType 決定填到 numLength / charLength / datePrecision 哪一個,我們三選一取非空.
-    /// </summary>
-    internal static string BuildLengthSpec(FieldDto f)
-    {
-        // ENUM/SET 的 enumValues 是 'a','b','c' 字串
-        if (!string.IsNullOrEmpty(f.EnumValues))
-            return $"({f.EnumValues})";
-
-        var len = f.NumLength ?? f.CharLength ?? f.DatePrecision ?? f.Length;
-        if (len is null || len <= 0) return string.Empty;
-
-        return f.NumScale is > 0 ? $"({len},{f.NumScale})" : $"({len})";
-    }
-
-    /// <summary>
-    /// 渲染 DEFAULT 子句.遵循 Node baseline 的「`null` 視為不寫 DEFAULT,空字串視為 DEFAULT ''」邏輯.
-    /// `defaultType === 'expression'` 不加引號,否則 raw 字串值會交由 SqlSugar 處理(這裡直接 inline,
-    /// 因為 ALTER TABLE 不能 parameterize column defaults).
-    /// </summary>
-    internal static string RenderDefault(FieldDto f)
-    {
-        if (f.Default is null) return string.Empty;
-        if (string.Equals(f.DefaultType, "expression", StringComparison.OrdinalIgnoreCase))
-            return $" DEFAULT {f.Default}";
-        var esc = f.Default.Replace("'", "''");
-        return $" DEFAULT '{esc}'";
-    }
-
-    /// <summary>
     /// 套用表級選項 diff (rename / comment / collation / engine / autoIncrement).
     /// T3 階段實作 MSSQL comment 路徑;其他 client / 其他 option 之後補.
     /// </summary>
@@ -582,6 +423,10 @@ EXEC sp_addextendedproperty 'MS_Description', @v, 'SCHEMA', @sc, 'TABLE', @t, 'C
         ConnectionRegistry.Entry entry, string? schema, string table,
         string comment, CancellationToken ct)
     {
+        // raw: DbMaintenance.AddTableRemark on mssql is add-only (sp_addextendedproperty,
+        // hardcoded N'dbo' schema) and throws if the description already exists; this
+        // code does add-or-update via IF EXISTS and honours non-dbo schemas. mysql/pg
+        // remarks are trivial but the mssql update path must be preserved — keep raw.
         switch (entry.Client)
         {
             case "mssql":
@@ -628,24 +473,20 @@ ELSE
     [HttpPost("/api/tables/duplicate"), NonUnify]
     public async Task<object> Duplicate([FromBody] DuplicateTablePayload p, CancellationToken ct)
     {
+        // raw: SELECT INTO / CREATE TABLE LIKE / INCLUDING ALL is a multi-statement
+        // per-flavor structure-clone with no DbMaintenance equivalent — SQL built by
+        // TableDdl. The renderer sends only { uid, schema, table } (the source), so the
+        // destination is derived as <table>_copy (the broken Source/Destination binding
+        // — both were always empty — is fixed here; see DuplicateTablePayload).
         var entry = _registry.Require(p.Uid);
-        var src = QualifyTable(entry.Client, p.Schema, p.Source);
-        var dst = QualifyTable(entry.Client, p.Schema, p.Destination);
-        var sql = entry.Client switch
-        {
-            "mssql" => $"SELECT * INTO {dst} FROM {src} WHERE 1=0",
-            "mysql" or "maria" => $"CREATE TABLE {dst} LIKE {src}",
-            "pg" => $"CREATE TABLE {dst} (LIKE {src} INCLUDING ALL)",
-            "sqlite" => $"CREATE TABLE {dst} AS SELECT * FROM {src} WHERE 1=0",
-            _ => string.Empty
-        };
-        if (string.IsNullOrEmpty(sql)) throw new NotSupportedException($"duplicate not supported for {entry.Client}");
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
-        if (p.CopyData)
-        {
-            var copy = $"INSERT INTO {dst} SELECT * FROM {src}";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(copy), ct);
-        }
+        if (string.IsNullOrEmpty(p.Table)) throw new ArgumentException("source table required");
+        var destName = $"{p.Table}_copy";
+        var src = QualifyTable(entry.Client, p.Schema, p.Table);
+        var dst = QualifyTable(entry.Client, p.Schema, destName);
+        var stmts = RenderDuplicate(entry.Client, src, dst, p.CopyData);
+        if (stmts.Count == 0) throw new NotSupportedException($"duplicate not supported for {entry.Client}");
+        foreach (var sql in stmts)
+            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
         return new { status = "success" };
     }
 
@@ -653,13 +494,14 @@ ELSE
     public async Task<object> Truncate([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var sql = entry.Client switch
-        {
-            "sqlite" => $"DELETE FROM {qualified}",   // SQLite has no TRUNCATE
-            _ => $"TRUNCATE TABLE {qualified}"
-        };
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql), ct);
+        // SqlSugar DbMaintenance.TruncateTable emits `TRUNCATE TABLE <q>` on
+        // mssql/mysql/maria/pg and falls back to `DELETE FROM <q>` (+ an
+        // `UPDATE sqlite_sequence SET seq=0` to reset autoincrement) on sqlite,
+        // which has no TRUNCATE — so the per-flavor switch is now built in. The
+        // sqlite_sequence reset is new vs the old bare DELETE but is the correct
+        // TRUNCATE semantics. Identifiers quoted per dialect (Gate-1).
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
+        await Task.Run(() => entry.Db.DbMaintenance.TruncateTable(table), ct);
         return new { status = "success" };
     }
 
@@ -667,8 +509,11 @@ ELSE
     public async Task<object> Drop([FromBody] TableTargetPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand($"DROP TABLE {qualified}"), ct);
+        // SqlSugar DbMaintenance.DropTable emits `DROP TABLE <q>` on every dialect
+        // (identical to the old hand-rolled SQL) and quotes schema+table itself per
+        // flavor (Gate-1: mssql [User], mysql/sqlite backtick, pg lowercased "user").
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
+        await Task.Run(() => entry.Db.DbMaintenance.DropTable(table), ct);
         return new { status = "success" };
     }
 
@@ -676,76 +521,91 @@ ELSE
     public async Task<object> UpdateCell([FromBody] UpdateCellPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        var col = QuoteIdent(entry.Client, p.Column ?? string.Empty);
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
 
         if (p.Primary is null || p.Primary.Count == 0)
             throw new ArgumentException("primary key cell identifier required");
 
-        var whereParts = new List<string>();
-        var paramObj = new Dictionary<string, object?> { ["v"] = p.Value };
-        var i = 0;
-        foreach (var kv in p.Primary)
+        // SqlSugar entity-less Update: the dict carries BOTH the SET column and the
+        // key columns; WhereColumns(keyCols) marks the keys as the WHERE predicate
+        // (and excludes them from SET). SqlSugar quotes every identifier per dialect,
+        // so no hand-rolled QualifyTable/QuoteIdent is needed here (Gate-1 proven).
+        var dict = new Dictionary<string, object?>
         {
-            var pname = $"p{i}";
-            whereParts.Add($"{QuoteIdent(entry.Client, kv.Key)} = @{pname}");
-            paramObj[pname] = kv.Value;
-            i += 1;
-        }
-        var sql = $"UPDATE {qualified} SET {col} = @v WHERE {string.Join(" AND ", whereParts)}";
-        await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
-        return new { status = "success" };
+            [p.Column ?? string.Empty] = Antares.Server.Infrastructure.JsonValue.Unwrap(p.Value)
+        };
+        var keyCols = p.Primary.Keys.ToArray();
+        foreach (var kv in p.Primary)
+            dict[kv.Key] = Antares.Server.Infrastructure.JsonValue.Unwrap(kv.Value);
+
+        await Task.Run(() => entry.Db.Updateable(dict).AS(table).WhereColumns(keyCols).ExecuteCommand(), ct);
+        // Renderer (useResultTables.ts:updateField) reads `response.reload`:
+        // false → applyUpdate() patches the cell in-place, true → full reload
+        // (legacy Node did this for blob fields). Without a `response` object the
+        // renderer throws "Cannot read properties of undefined (reading 'reload')",
+        // shows an error toast, and skips applyUpdate — so every cell edit looked
+        // like it failed even though the UPDATE committed. reload=false is correct
+        // for scalar cells; blob-aware reload can be added later if needed.
+        return new { status = "success", response = new { reload = false } };
     }
 
     [HttpPost("/api/tables/deleteRows"), NonUnify]
     public async Task<object> DeleteRows([FromBody] DeleteRowsPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
-        if (p.Rows is null || p.Rows.Count == 0) return new { status = "success" };
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
+        if (p.Rows is null || p.Rows.Count == 0) return new { status = "success", response = new { affectedRows = 0L } };
 
         long affected = 0;
         foreach (var row in p.Rows)
         {
-            var whereParts = new List<string>();
-            var paramObj = new Dictionary<string, object?>();
-            var i = 0;
+            // Build a per-row AND of (keyCol = value) conditionals. SqlSugar's
+            // entity-less Deleteable<object>().Where(List<IConditionalModel>) quotes
+            // each identifier per dialect (Gate-1 proven for the reserved word "User").
+            var conds = new List<IConditionalModel>();
             foreach (var kv in row)
-            {
-                var pname = $"p{i}";
-                whereParts.Add($"{QuoteIdent(entry.Client, kv.Key)} = @{pname}");
-                paramObj[pname] = kv.Value;
-                i += 1;
-            }
-            var sql = $"DELETE FROM {qualified} WHERE {string.Join(" AND ", whereParts)}";
-            affected += await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, paramObj), ct);
+                conds.Add(BuildKeyConditional(kv.Key, Antares.Server.Infrastructure.JsonValue.Unwrap(kv.Value)));
+            affected += await Task.Run(
+                () => entry.Db.Deleteable<object>().AS(table).Where(conds).ExecuteCommand(), ct);
         }
-        return new { status = "success", response = affected };
+        return new { status = "success", response = new { affectedRows = affected } };
     }
 
     [HttpPost("/api/tables/insertFakeRows"), NonUnify]
     public async Task<object> InsertFakeRows([FromBody] InsertFakeRowsPayload p, CancellationToken ct)
     {
         var entry = _registry.Require(p.Uid);
-        var qualified = QualifyTable(entry.Client, p.Schema, p.Table);
+        var table = string.IsNullOrEmpty(p.Schema) ? p.Table! : $"{p.Schema}.{p.Table}";
         var faker = new Faker();
         var inserted = 0;
-        for (var n = 0; n < Math.Max(1, p.Count); n++)
+        var repeat = Math.Max(1, p.Repeat);
+        var row = p.Row ?? new Dictionary<string, FakeCellDto>();
+        var fields = p.Fields ?? new Dictionary<string, string>();
+        for (var n = 0; n < repeat; n++)
         {
             ct.ThrowIfCancellationRequested();
             var values = new Dictionary<string, object?>();
-            foreach (var col in p.Columns ?? new List<FakeColumnDto>())
+            foreach (var kv in row)
             {
-                values[col.Name] = GenerateFake(faker, col.Semantic, col.DataType);
+                var cell = kv.Value;
+                // group 'manual' → use the literal value the user typed into the
+                // add-row UI; any other group is a faker semantic → generate one
+                // (fields[col] carries the column data type for type-aware fakes).
+                if (string.Equals(cell?.Group, "manual", StringComparison.OrdinalIgnoreCase))
+                    values[kv.Key] = Antares.Server.Infrastructure.JsonValue.Unwrap(cell?.Value);
+                else
+                {
+                    fields.TryGetValue(kv.Key, out var dataType);
+                    values[kv.Key] = GenerateFake(faker, cell?.Group, dataType);
+                }
             }
             if (values.Count == 0) break;
-            var cols = string.Join(", ", values.Keys.Select(k => QuoteIdent(entry.Client, k)));
-            var paramNames = string.Join(", ", values.Keys.Select(k => $"@{k}"));
-            var sql = $"INSERT INTO {qualified} ({cols}) VALUES ({paramNames})";
-            await Task.Run(() => entry.Db.Ado.ExecuteCommand(sql, values), ct);
+            // SqlSugar entity-less Insert: dict col→value, AS(table) for the target.
+            // Identifiers are quoted per dialect (Gate-1 proven).
+            await Task.Run(() => entry.Db.Insertable(values).AS(table).ExecuteCommand(), ct);
             inserted += 1;
         }
-        return new { status = "success", response = inserted };
+        return new { status = "success", response = new { affectedRows = inserted } };
     }
 
     private static object? GenerateFake(Faker f, string? semantic, string? dataType)
@@ -771,63 +631,54 @@ ELSE
         return f.Lorem.Sentence();
     }
 
-    private static string QualifyTable(string client, string? schema, string? table)
+    // Build a (keyCol = value) conditional for DeleteRows that PRESERVES the value's
+    // CLR type. ConditionalModel.FieldValue is a string, so without CSharpTypeName
+    // SqlSugar emits a String/text parameter — fine on mysql/sqlite/mssql (implicit
+    // cast), but Postgres rejects `integer = text` at runtime. Setting CSharpTypeName
+    // makes SqlSugar bind a typed parameter (verified offline: "long" -> DbType.Int64).
+    // `value` is already JsonValue.Unwrap'd (long/double/bool/string/null).
+    // Date/Guid PKs arrive from JSON as strings (no type info) and stay text — best
+    // effort; the common integer-PK case is the one this fixes.
+    internal static IConditionalModel BuildKeyConditional(string field, object? value)
     {
-        var t = table ?? string.Empty;
-        var s = schema ?? string.Empty;
-        return client switch
+        if (value is null)
+            return new ConditionalModel { FieldName = field, ConditionalType = ConditionalType.EqualNull, FieldValue = null };
+
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var (text, type) = value switch
         {
-            "mssql" => string.IsNullOrEmpty(s) ? $"[{Sanitize(t)}]" : $"[{Sanitize(s)}].[{Sanitize(t)}]",
-            "mysql" or "maria" => string.IsNullOrEmpty(s) ? $"`{Sanitize(t)}`" : $"`{Sanitize(s)}`.`{Sanitize(t)}`",
-            "pg" => string.IsNullOrEmpty(s) ? $"\"{Sanitize(t)}\"" : $"\"{Sanitize(s)}\".\"{Sanitize(t)}\"",
-            _ => $"\"{Sanitize(t)}\""
+            bool b => (b ? "true" : "false", "bool"),
+            long l => (l.ToString(inv), "long"),
+            int i => (i.ToString(inv), "int"),
+            double d => (d.ToString(inv), "double"),
+            decimal m => (m.ToString(inv), "decimal"),
+            _ => (value.ToString() ?? string.Empty, "string")
+        };
+        return new ConditionalModel
+        {
+            FieldName = field,
+            ConditionalType = ConditionalType.Equal,
+            FieldValue = text,
+            CSharpTypeName = type
         };
     }
 
-    private static string QuoteIdent(string client, string name) => client switch
-    {
-        "mssql" => $"[{Sanitize(name)}]",
-        "mysql" or "maria" => $"`{Sanitize(name)}`",
-        "pg" => $"\"{Sanitize(name)}\"",
-        _ => $"\"{Sanitize(name)}\""
-    };
-
-    private static string Sanitize(string s) =>
-        s.Replace("[", "").Replace("]", "").Replace("`", "").Replace("\"", "").Replace(";", "").Replace("--", "");
-
-    private static string RenderColumn(string client, NewColumnDef c)
-    {
-        var name = QuoteIdent(client, c.Name);
-        var type = c.Type ?? "VARCHAR(255)";
-        var nullable = c.Nullable ? string.Empty : " NOT NULL";
-        var def = string.IsNullOrEmpty(c.Default) ? string.Empty : $" DEFAULT {c.Default}";
-        var auto = c.AutoIncrement ? client switch
-        {
-            "mysql" or "maria" => " AUTO_INCREMENT",
-            "mssql" => " IDENTITY(1,1)",
-            "pg" => "",
-            "sqlite" => " AUTOINCREMENT",
-            _ => ""
-        } : string.Empty;
-        return $"{name} {type}{auto}{nullable}{def}";
-    }
 }
 
 // ---- Payloads / DTOs -------------------------------------------------------
 
-public sealed class CreateTablePayload : TableTargetPayload
+// Matches the renderer's CreateTableParams (web/common/interfaces/antares.ts):
+// { uid, schema, fields, foreigns, indexes, checks, options }. Table name + comment
+// live in options; the PRIMARY KEY is a PRIMARY entry in `indexes`.
+public sealed class CreateTablePayload
 {
-    public List<NewColumnDef> Columns { get; set; } = new();
-}
-
-public sealed class NewColumnDef
-{
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = "VARCHAR(255)";
-    public bool Nullable { get; set; } = true;
-    public string? Default { get; set; }
-    public bool IsPrimary { get; set; }
-    public bool AutoIncrement { get; set; }
+    public string Uid { get; set; } = string.Empty;
+    public string? Schema { get; set; }
+    public List<FieldDto>? Fields { get; set; }
+    public List<IndexDto>? Indexes { get; set; }
+    public List<ForeignDto>? Foreigns { get; set; }
+    public List<CheckDto>? Checks { get; set; }
+    public Dictionary<string, object?>? Options { get; set; }
 }
 
 public sealed class AlterTablePayload : TableTargetPayload
@@ -938,12 +789,14 @@ public sealed class CheckDto
     public string Clause { get; set; } = string.Empty;
 }
 
-public sealed class DuplicateTablePayload
+// Renderer sends only { uid, schema, table } (the SOURCE table) — see
+// web/renderer/ipc-api/Tables.ts:duplicateTable + WorkspaceExploreBar.vue. The old
+// DTO bound Source/Destination/CopyData, none of which the renderer sends, so both
+// names were always empty and duplicate produced `CREATE TABLE "" LIKE ""`. Bind the
+// real contract (TableTargetPayload = Uid/Schema/Table) and derive <table>_copy as the
+// destination in Duplicate(). CopyData defaults true (not sent by the renderer today).
+public sealed class DuplicateTablePayload : TableTargetPayload
 {
-    public string Uid { get; set; } = string.Empty;
-    public string? Schema { get; set; }
-    public string Source { get; set; } = string.Empty;
-    public string Destination { get; set; } = string.Empty;
     public bool CopyData { get; set; } = true;
 }
 
@@ -961,15 +814,21 @@ public sealed class DeleteRowsPayload : TableTargetPayload
 
 public sealed class InsertFakeRowsPayload : TableTargetPayload
 {
-    public int Count { get; set; } = 1;
-    public List<FakeColumnDto>? Columns { get; set; }
+    // Renderer (Tables.ts:insertTableFakeRows + ModalFakerRows.vue, the add-row UI)
+    // sends the legacy Node contract: per-column { group, value }, a repeat count,
+    // a column→datatype map, and a locale. The original .NET DTO bound Count/Columns
+    // which the renderer never sends, so p.Columns was always null → zero rows
+    // inserted while still returning success (the "add row does nothing" bug).
+    public Dictionary<string, FakeCellDto>? Row { get; set; }
+    public int Repeat { get; set; } = 1;
+    public Dictionary<string, string>? Fields { get; set; }
+    public string? Locale { get; set; }
 }
 
-public sealed class FakeColumnDto
+public sealed class FakeCellDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? DataType { get; set; }
-    public string? Semantic { get; set; }
+    public string? Group { get; set; }
+    public object? Value { get; set; }
 }
 
 /// <summary>

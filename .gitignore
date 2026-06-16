@@ -53,3 +53,4 @@ sidecar-net/
 .vs/
 .idea/
 **/Properties/launchSettings.json
+.claude/worktrees/

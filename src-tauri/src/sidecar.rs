@@ -82,6 +82,15 @@ pub fn spawn_server(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
+    // Dev: `dotnet run --no-launch-profile` does NOT set ASPNETCORE_ENVIRONMENT
+    // (launchSettings.json is skipped), so without this the sidecar boots as
+    // Production and PortAllocator hands out a RANDOM port instead of the fixed
+    // dev port 5555. The renderer's httpClient.ts falls back to 5555, so a random
+    // port leaves every API call hitting a dead port → "connect does nothing".
+    // Force Development here so Program.cs detects dev and binds 5555.
+    #[cfg(debug_assertions)]
+    cmd.env("ASPNETCORE_ENVIRONMENT", "Development");
+
     // Hide the console window on Windows (CREATE_NO_WINDOW = 0x08000000)
     #[cfg(windows)]
     cmd.creation_flags(0x08000000);

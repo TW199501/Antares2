@@ -9,8 +9,11 @@ if (Array.Exists(args, a => a == "--probe-mode"))
 }
 
 // Port selection:
-//   • Dev mode (ASPNETCORE_ENVIRONMENT=Development OR DOTNET_ENVIRONMENT=Development,
-//     which `dotnet run` sets by default) → fixed PortAllocator.DevPort (5555).
+//   • Dev mode (ASPNETCORE_ENVIRONMENT=Development OR DOTNET_ENVIRONMENT=Development) →
+//     fixed PortAllocator.DevPort (5555). NOTE: `dotnet run` does NOT set this by
+//     default, and the Rust shell spawns it with `--no-launch-profile` (skipping
+//     launchSettings.json), so sidecar.rs sets ASPNETCORE_ENVIRONMENT=Development
+//     explicitly on the child. Without it the sidecar boots Production → random port.
 //     The renderer's httpClient.ts:33 falls back to 5555 when running in a plain
 //     browser (no Tauri runtime, e.g. Playwright at localhost:5173), so this match
 //     is required for `pnpm vite:dev` + `dotnet run` workflows to work without Tauri.

@@ -17,8 +17,8 @@ function detectRid() {
    const platform = process.platform;
    const arch = process.arch;
    if (platform === 'win32' && arch === 'x64') return 'win-x64';
+   if (platform === 'win32' && arch === 'arm64') return 'win-arm64';
    if (platform === 'linux' && arch === 'x64') return 'linux-x64';
-   if (platform === 'darwin' && arch === 'x64') return 'osx-x64';
    if (platform === 'darwin' && arch === 'arm64') return 'osx-arm64';
    throw new Error(`unsupported platform/arch: ${platform}/${arch}`);
 }
@@ -59,14 +59,19 @@ if (!existsSync(sourceBin)) {
 copyFileSync(sourceBin, targetBin);
 console.log(`▸ Copied → sidecar-net/${binaryName}`);
 
-console.log('▸ Probing binary for READY line (timeout 10s) ...');
+// First run of a single-file self-extracting bundle (IncludeAllContentForSelfExtract)
+// unpacks ~290MB of native libs to a temp dir before main() runs; on slower hosts
+// (and arm64 first-boot) that cold extract can exceed 10s. 30s leaves margin —
+// warm runs still print READY in well under a second.
+const PROBE_TIMEOUT_MS = 30000;
+console.log(`▸ Probing binary for READY line (timeout ${PROBE_TIMEOUT_MS / 1000}s) ...`);
 const child = spawn(targetBin, ['--probe-mode'], { stdio: ['ignore', 'pipe', 'pipe'] });
 let probeBuffer = '';
 const probeOk = await new Promise((resolveProbe) => {
    const timeout = setTimeout(() => {
       try { child.kill('SIGKILL'); } catch { /* ignore */ }
       resolveProbe(false);
-   }, 10000);
+   }, PROBE_TIMEOUT_MS);
 
    child.stdout.on('data', (chunk) => {
       probeBuffer += chunk.toString();
