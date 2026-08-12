@@ -1,0 +1,810 @@
+# Instincts generated from https://github.com/TW199501/Antares2
+# Generated: 2026-05-10T04:54:13.035Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: Antares2-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: test, fix, docs, feat, chore
+
+## Evidence
+
+- 100 commits analyzed
+- Detected conventional commit pattern
+- Examples: chore: merge release.yml auto-public-release fix back to dev, feat(scripts): add pnpm release for one-shot version bump + tag
+
+---
+id: Antares2-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Commit Length
+
+## Action
+
+Write moderate-length commit messages (~66 characters)
+
+## Evidence
+
+- Average commit message length: 66 chars
+- Based on 100 commits
+
+---
+id: Antares2-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: Antares2-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: Antares2-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Export Style
+
+## Action
+
+Prefer default exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: default
+
+---
+id: Antares2-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: Antares2-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Test Framework
+
+## Action
+
+Use vitest as the test framework
+
+## Evidence
+
+- Test framework detected: vitest
+- File pattern: *.test.ts
+
+---
+id: Antares2-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: Antares2-test-types
+trigger: "when planning tests for a feature"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Test Types
+
+## Action
+
+Write unit, integration, e2e tests to match project standards
+
+## Evidence
+
+- Test types detected: unit, integration, e2e
+- Coverage config: yes
+
+---
+id: Antares2-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: **/schema.*, migrations/*
+
+---
+id: Antares2-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~11x per month
+- Files: src/renderer/components/*, src/renderer/components/ui/switch/*, src/main/routes/*
+
+---
+id: Antares2-workflow-refactoring
+trigger: "when refactoring code"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Refactoring
+
+## Action
+
+Follow the refactoring workflow:
+1. Ensure tests pass before refactor
+2. Refactor code structure
+3. Verify tests still pass
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~6x per month
+- Files: src/**/*
+
+---
+id: Antares2-workflow-release-version-bump-and-tag
+trigger: "when doing release version bump and tag"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Release Version Bump And Tag
+
+## Action
+
+Follow the release-version-bump-and-tag workflow:
+1. Bump version in package.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock (antares2 entry), and src-tauri/tauri.conf.json.
+2. Generate docs/release-notes-vX.Y.Z.md skeleton from git log.
+3. Pause for author to fill in release notes prose.
+4. Commit version bump and release notes.
+5. Create annotated git tag vX.Y.Z.
+6. Push dev branch and tag to origin.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: package.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock
+
+---
+id: Antares2-workflow-update-release-workflow-or-ci-cd
+trigger: "when doing update release workflow or ci cd"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Update Release Workflow Or Ci Cd
+
+## Action
+
+Follow the update-release-workflow-or-ci-cd workflow:
+1. Edit .github/workflows/release.yml or other workflow files.
+2. Adjust permissions, checkout ref, or update action versions.
+3. Document or reference the change in CLAUDE.md or docs.
+4. Test workflow by triggering a build or release.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: .github/workflows/release.yml, .github/workflows/codeql-analysis.yml, CLAUDE.md
+
+---
+id: Antares2-workflow-feature-development-with-plans-and-i18n
+trigger: "when doing feature development with plans and i18n"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Feature Development With Plans And I18n
+
+## Action
+
+Follow the feature-development-with-plans-and-i18n workflow:
+1. Add or update feature implementation files (Vue components, composables, backend route, etc).
+2. Add or update plan/spec in docs/superpowers/plans/ or specs/.
+3. Add or update i18n keys in en-US.json and other locale files.
+4. Run translation check to ensure all locales are in sync.
+5. Document verification steps in commit message.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: web/renderer/components/*.vue, web/renderer/composables/*.ts, web/common/libs/*.ts
+
+---
+id: Antares2-workflow-props-table-ui-iteration
+trigger: "when doing props table ui iteration"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Props Table Ui Iteration
+
+## Action
+
+Follow the props-table-ui-iteration workflow:
+1. Edit WorkspaceTabPropsTable*.vue components for new UI or behavior.
+2. Add or update related modals/components.
+3. Update or add i18n keys for new UI elements.
+4. Document user feedback or plan in docs/superpowers/plans/.
+5. Verify with lint/build/type-check and translation check.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: web/renderer/components/WorkspaceTabPropsTable*.vue, web/renderer/i18n/*.json, docs/superpowers/plans/*.md
+
+---
+id: Antares2-workflow-test-infrastructure-rollout
+trigger: "when doing test infrastructure rollout"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Test Infrastructure Rollout
+
+## Action
+
+Follow the test-infrastructure-rollout workflow:
+1. Install or configure test runner (Vitest, happy-dom, etc).
+2. Add global setup/mocks and test helpers.
+3. Write sample or characterization tests for utilities and composables.
+4. Update test scripts and tsconfig paths.
+5. Verify with pnpm test:unit:run, lint, and type-check.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: package.json, pnpm-lock.yaml, vitest.config.ts
+
+---
+id: Antares2-workflow-i18n-surface-expansion
+trigger: "when doing i18n surface expansion"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow I18n Surface Expansion
+
+## Action
+
+Follow the i18n-surface-expansion workflow:
+1. Add new i18n keys to en-US.json.
+2. Add corresponding translations to zh-TW.json, zh-CN.json, ja-JP.json, ko-KR.json.
+3. Run translation:check to verify 100% coverage.
+4. Document translation conventions and verification.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: web/renderer/i18n/en-US.json, web/renderer/i18n/zh-TW.json, web/renderer/i18n/zh-CN.json
+
+---
+id: Antares2-workflow-plan-or-spec-documentation
+trigger: "when doing plan or spec documentation"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/TW199501/Antares2
+---
+
+# Antares2 Workflow Plan Or Spec Documentation
+
+## Action
+
+Follow the plan-or-spec-documentation workflow:
+1. Write or update plan/spec .md files in docs/superpowers/plans/ or specs/.
+2. Reference or link the plan in related commits.
+3. Update plan as phases progress or new knowledge is integrated.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: docs/superpowers/plans/*.md, docs/superpowers/specs/**/*.md
+
+---
+id: antares2-coding-naming-files
+trigger: "When creating a new file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Coding Naming Files
+
+## Action
+
+Name the file using PascalCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+- Consistent with src/ and web/ structure
+
+---
+id: antares2-coding-naming-functions
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Coding Naming Functions
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: antares2-coding-naming-classes
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Coding Naming Classes
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: antares2-coding-naming-constants
+trigger: "When declaring a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Coding Naming Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: antares2-coding-import-style
+trigger: "When importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Coding Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: antares2-coding-export-style
+trigger: "When exporting modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Coding Export Style
+
+## Action
+
+Use default export style
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: antares2-testing-file-pattern
+trigger: "When adding a test file"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Testing File Pattern
+
+## Action
+
+Name the file with a .test.ts suffix
+
+## Evidence
+
+- Pattern in testing.filePattern
+- Seen in web/common/libs/*.test.ts
+
+---
+id: antares2-testing-framework-vitest
+trigger: "When writing frontend tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Testing Framework Vitest
+
+## Action
+
+Use Vitest as the test runner
+
+## Evidence
+
+- Pattern in testing.framework
+- Seen in vitest.config.ts
+
+---
+id: antares2-testing-types
+trigger: "When planning tests for a feature"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Testing Types
+
+## Action
+
+Include unit, integration, and e2e tests as appropriate
+
+## Evidence
+
+- Pattern in testing.testTypes
+
+---
+id: antares2-testing-coverage-config
+trigger: "When configuring tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Testing Coverage Config
+
+## Action
+
+Enable and maintain test coverage configuration
+
+## Evidence
+
+- Pattern in testing.coverageConfig
+
+---
+id: antares2-git-commit-format
+trigger: "When writing a commit message"
+confidence: 0.95
+domain: git
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Git Commit Format
+
+## Action
+
+Use conventional commit format with type prefix (e.g., feat, fix, chore, docs, refactor, test)
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Examples in commits.examples
+
+---
+id: antares2-git-commit-length
+trigger: "When composing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Git Commit Length
+
+## Action
+
+Keep the commit message concise (average ~66 characters)
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: antares2-workflow-release-version-bump-and-tag
+trigger: "When preparing a new release version"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow Release Version Bump And Tag
+
+## Action
+
+Bump version in all relevant files, generate release notes, commit, tag, and push
+
+## Evidence
+
+- release-version-bump-and-tag workflow
+- Example commit sequence for release
+
+---
+id: antares2-workflow-update-release-workflow-or-ci-cd
+trigger: "When CI/CD or release automation needs to be fixed or improved"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow Update Release Workflow Or Ci Cd
+
+## Action
+
+Edit workflow files, adjust permissions or actions, document in CLAUDE.md, and test
+
+## Evidence
+
+- update-release-workflow-or-ci-cd workflow
+- Example commit sequence for workflow update
+
+---
+id: antares2-workflow-feature-development-with-plans-and-i18n
+trigger: "When adding a new feature or significant UI change"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow Feature Development With Plans And I18n
+
+## Action
+
+Implement feature, update plan/spec, update i18n keys, run translation check, document verification
+
+## Evidence
+
+- feature-development-with-plans-and-i18n workflow
+- Example commit sequence for feature development
+
+---
+id: antares2-workflow-props-table-ui-iteration
+trigger: "When refining the table properties UI based on feedback or new requirements"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow Props Table Ui Iteration
+
+## Action
+
+Edit WorkspaceTabPropsTable components, update modals/i18n, document feedback, verify with lint/build/type-check
+
+## Evidence
+
+- props-table-ui-iteration workflow
+- Example commit sequence for UI iteration
+
+---
+id: antares2-workflow-test-infrastructure-rollout
+trigger: "When introducing or expanding frontend test coverage"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow Test Infrastructure Rollout
+
+## Action
+
+Configure test runner, add helpers, write sample tests, update scripts, verify with pnpm test:unit:run
+
+## Evidence
+
+- test-infrastructure-rollout workflow
+- Example commit sequence for test infra
+
+---
+id: antares2-workflow-i18n-surface-expansion
+trigger: "When a feature or UI change introduces new user-facing text"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow I18n Surface Expansion
+
+## Action
+
+Add new i18n keys to all locale files, run translation check, document verification
+
+## Evidence
+
+- i18n-surface-expansion workflow
+- Example commit sequence for i18n expansion
+
+---
+id: antares2-workflow-plan-or-spec-documentation
+trigger: "When planning a significant architectural change, migration, or test rollout"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: TW199501/Antares2
+---
+
+# Antares2 Workflow Plan Or Spec Documentation
+
+## Action
+
+Write or update plan/spec .md files, reference in related commits, update as phases progress
+
+## Evidence
+
+- plan-or-spec-documentation workflow
+- Example commit sequence for plan/spec docs
+
